@@ -27,13 +27,8 @@
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; }
     
     body { 
-      background-color: #f5f6fa; 
-      color: var(--text); 
-      height: 100vh; 
-      height: 100dvh; 
-      display: flex; 
-      flex-direction: column; 
-      overflow: hidden; 
+      background-color: #f5f6fa; color: var(--text); height: 100vh; height: 100dvh; 
+      display: flex; flex-direction: column; overflow: hidden; 
     }
     
     .hidden { display: none !important; }
@@ -54,8 +49,9 @@
     .header-info h3 { font-size: 18px; margin-bottom: 4px; }
     .header-info span { font-size: 12px; opacity: 0.8; }
     .header-actions { display: flex; align-items: center; gap: 8px; }
-    .add-btn { background: white; color: var(--primary); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; padding-bottom: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    .logout-btn { color: white; background: rgba(255,255,255,0.2); border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
+    
+    .icon-btn { background: white; color: var(--primary); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .text-btn { color: white; background: rgba(255,255,255,0.2); border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
     .pass-btn { color: var(--primary); background: white; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
     
     #tasks-list { flex: 1; overflow-y: auto; padding: 15px; }
@@ -86,15 +82,7 @@
     .progress-bar { height: 100%; background: var(--primary); width: 0%; border-radius: 2px; transition: width 0.1s; }
     .time-display { font-size: 11px; color: var(--text-light); min-width: 35px; text-align: center; }
     
-    .chat-input-area { 
-      background: #f0f0f0; 
-      padding: 10px 15px; 
-      padding-bottom: calc(15px + env(safe-area-inset-bottom)); 
-      display: flex; 
-      align-items: center; 
-      gap: 8px; 
-      border-top: 1px solid var(--border); 
-    }
+    .chat-input-area { background: #f0f0f0; padding: 10px 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); }
     .chat-input { flex: 1; border-radius: 20px; padding: 10px 15px; border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
     .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: 0.2s; }
     .mic-btn { background: var(--white); color: var(--text-light); }
@@ -102,9 +90,23 @@
     
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
+    #admin-view { flex: 1; display: flex; flex-direction: column; background: #f5f6fa; min-height: 0; }
+    .admin-header { background: var(--primary-dark); color: white; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
+    .admin-list { flex: 1; overflow-y: auto; padding: 15px; }
+    .user-card { background: var(--white); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+    .user-info { display: flex; flex-direction: column; gap: 4px; }
+    .user-name { font-weight: bold; font-size: 15px; }
+    .user-role { font-size: 12px; color: var(--text-light); }
+    .user-actions { display: flex; gap: 5px; }
+    .user-btn { border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; color: white; }
+    .btn-edit { background: var(--warning); color: #333; }
+    .btn-toggle { background: var(--danger); }
+    .btn-toggle.active { background: var(--success); }
+
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
     .modal-content { background: var(--white); width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
     .modal-content h3 { margin-bottom: 15px; text-align: center; color: var(--primary-dark); }
+    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
   </style>
 </head>
 <body>
@@ -131,9 +133,11 @@
         <span id="user-info"></span>
       </div>
       <div class="header-actions">
-        <button class="add-btn" onclick="openCreateModal()">+</button>
-        <button class="pass-btn" onclick="openPasswordModal()">تغییر رمز</button>
-        <button class="logout-btn" onclick="handleLogout()">خروج</button>
+        <button class="icon-btn" onclick="openCreateModal()">+</button>
+        <!-- دکمه کاربران فقط برای ادمین نمایش داده می‌شود -->
+        <button class="pass-btn" id="admin-btn" onclick="openAdminPanel()" style="display:none;">کاربران</button>
+        <button class="pass-btn" onclick="openPasswordModal()">رمز</button>
+        <button class="text-btn" onclick="handleLogout()">خروج</button>
       </div>
     </div>
     <div id="tasks-list"></div>
@@ -156,13 +160,20 @@
     <div class="chat-input-area">
       <button class="action-btn mic-btn" id="mic-btn" onclick="toggleRecording()">🎤</button>
       <input type="file" id="audio-upload" accept="audio/*" capture style="display:none;" onchange="handleAudioUpload(event)">
-      
       <input type="text" id="chat-input" class="chat-input" placeholder="پیام...">
       <button class="action-btn" onclick="sendTextMessage()">➤</button>
     </div>
   </div>
 
-  <!-- مودال ثبت دستور جدید -->
+  <div id="admin-view" class="hidden">
+    <div class="admin-header">
+      <button class="back-btn" onclick="closeAdminPanel()">→</button>
+      <h3 style="font-size: 16px;">مدیریت کاربران</h3>
+      <button class="pass-btn" style="margin-right: auto; background: white; color: var(--primary);" onclick="openAddUserModal()">+ کاربر جدید</button>
+    </div>
+    <div class="admin-list" id="users-list-container"></div>
+  </div>
+
   <div id="create-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>ثبت دستور جدید</h3>
@@ -178,7 +189,6 @@
         <label>توضیحات</label>
         <textarea id="task-desc" class="input" rows="3"></textarea>
       </div>
-      
       <div class="form-group">
         <label>تاریخ مهلت (شمسی)</label>
         <div style="display: flex; gap: 5px;">
@@ -187,19 +197,17 @@
             <select id="jDay" class="input" style="width: 33%; padding: 10px;"></select>
         </div>
       </div>
-
       <div class="form-group">
         <label>ساعت مهلت (HH:MM)</label>
         <input type="text" id="task-time" class="input" placeholder="مثلاً: 18:00" value="18:00">
       </div>
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <div class="modal-actions">
         <button class="btn" style="flex:1; background: var(--success);" onclick="submitNewTask()">ثبت و ارسال</button>
         <button class="btn" style="flex:1; background: var(--danger);" onclick="closeCreateModal()">انصراف</button>
       </div>
     </div>
   </div>
 
-  <!-- مودال تغییر رمز عبور -->
   <div id="password-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>تغییر رمز عبور</h3>
@@ -211,15 +219,50 @@
         <label>تکرار رمز عبور جدید</label>
         <input type="password" id="confirm-password" class="input" placeholder="تکرار رمز">
       </div>
-      <div style="display: flex; gap: 10px; margin-top: 20px;">
+      <div class="modal-actions">
         <button class="btn" style="flex:1; background: var(--success);" onclick="submitChangePassword()">ذخیره</button>
         <button class="btn" style="flex:1; background: var(--danger);" onclick="closePasswordModal()">انصراف</button>
       </div>
     </div>
   </div>
 
+  <div id="user-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3 id="user-modal-title">کاربر جدید</h3>
+      <input type="hidden" id="edit-user-id">
+      <div class="form-group">
+        <label>نام و نام خانوادگی</label>
+        <input type="text" id="u-name" class="input">
+      </div>
+      <div class="form-group" id="username-group">
+        <label>نام کاربری</label>
+        <input type="text" id="u-username" class="input" dir="ltr" style="text-align:left;">
+      </div>
+      <div class="form-group" id="password-group">
+        <label>رمز عبور</label>
+        <input type="password" id="u-password" class="input" placeholder="حداقل ۶ کاراکتر">
+      </div>
+      <div class="form-group">
+        <label>نقش</label>
+        <select id="u-role" class="input">
+          <option value="مدیر">مدیر</option>
+          <option value="رئیس">رئیس</option>
+          <option value="سرپرست">سرپرست</option>
+          <option value="کارشناس">کارشناس</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>مدیر مستقیم</label>
+        <select id="u-manager" class="input"></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn" style="flex:1; background: var(--success);" onclick="submitUserForm()">ذخیره</button>
+        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeUserModal()">انصراف</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // ⚠️ اینجا لینک وب اپ خودتان را قرار دهید
     const API_URL = "https://script.google.com/macros/s/AKfycbwAMoEGIwOUk3fGyt8123yJP0f6ygTrTI2Gt-qnKFPAUvWdQbzz4u1W56bGZmsip9Bb8w/exec";
 
     let appToken = null;
@@ -231,14 +274,14 @@
     
     let isPolling = false;
     let isSending = false;
-
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
-
     let audioCache = {}; 
     let currentAudio = null; 
     let currentPlayBtn = null; 
+
+    let cachedUsers = [];
 
     async function callBackend(action, data = {}, token = '') {
       try {
@@ -247,8 +290,7 @@
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify({ action: action, token: token, data: data })
         });
-        const result = await response.json();
-        return result;
+        return await response.json();
       } catch (error) {
         console.error("API Error:", error);
         return { ok: false, error: 'خطا در ارتباط با شبکه' };
@@ -262,12 +304,24 @@
         if (savedToken && savedUser) {
             appToken = savedToken;
             currentUser = JSON.parse(savedUser);
-            document.getElementById('login-view').classList.add('hidden');
-            document.getElementById('main-view').classList.remove('hidden');
-            document.getElementById('user-info').innerText = currentUser.name + ' (' + currentUser.role + ')';
-            loadTasks();
+            showMainView();
         }
     });
+
+    function showMainView() {
+        document.getElementById('login-view').classList.add('hidden');
+        document.getElementById('main-view').classList.remove('hidden');
+        document.getElementById('user-info').innerText = currentUser.name + ' (' + currentUser.role + ')';
+        
+        // 🔒 نمایش دکمه مدیریت کاربران فقط برای ادمین اصلی
+        if (currentUser.username === 'admin') {
+            document.getElementById('admin-btn').style.display = 'block';
+        } else {
+            document.getElementById('admin-btn').style.display = 'none';
+        }
+        
+        loadTasks();
+    }
 
     async function handleLogin() {
       const user = document.getElementById('login-username').value;
@@ -281,18 +335,12 @@
       
       if (res.ok) {
           appToken = res.token; currentUser = res.user;
-          
           localStorage.setItem('appToken', appToken);
           localStorage.setItem('currentUser', JSON.stringify(currentUser));
-
-          document.getElementById('login-view').classList.add('hidden');
-          document.getElementById('main-view').classList.remove('hidden');
-          document.getElementById('user-info').innerText = currentUser.name + ' (' + currentUser.role + ')';
-          loadTasks();
+          showMainView();
       } else { 
           alert(res.error || 'نام کاربری اشتباه است'); 
       }
-      
       btn.disabled = false; btn.innerText = 'ورود به سیستم';
     }
 
@@ -300,20 +348,138 @@
       if (appToken) await callBackend('logout', {}, appToken);
       localStorage.removeItem('appToken');
       localStorage.removeItem('currentUser');
-      
       appToken = null; currentUser = null;
-      document.getElementById('main-view').classList.add('hidden');
-      document.getElementById('chat-view').classList.add('hidden');
-      document.getElementById('login-view').classList.remove('hidden');
-      document.getElementById('login-username').value = '';
-      document.getElementById('login-password').value = '';
+      location.reload();
+    }
+
+    // ================= مدیریت کاربران (Admin) =================
+    async function openAdminPanel() {
+        if (currentUser.username !== 'admin') return alert('شما دسترسی به این بخش ندارید.');
+        document.getElementById('main-view').classList.add('hidden');
+        document.getElementById('admin-view').classList.remove('hidden');
+        await loadAdminUsers();
+    }
+
+    function closeAdminPanel() {
+        document.getElementById('admin-view').classList.add('hidden');
+        document.getElementById('main-view').classList.remove('hidden');
+        loadTasks();
+    }
+
+    async function loadAdminUsers() {
+        const container = document.getElementById('users-list-container');
+        container.innerHTML = '<p style="text-align:center; color:gray;">در حال دریافت...</p>';
+        
+        const res = await callBackend('listUsers', {}, appToken);
+        
+        if (res.ok) {
+            cachedUsers = res.users;
+            container.innerHTML = '';
+            res.users.forEach(u => {
+                const card = document.createElement('div');
+                card.className = 'user-card';
+                
+                let roleColor = '#718093';
+                if (u.role === 'مدیر') roleColor = '#e84118';
+                if (u.role === 'رئیس') roleColor = '#fbc531';
+                if (u.role === 'سرپرست') roleColor = '#00a8ff';
+
+                card.innerHTML = `
+                    <div class="user-info">
+                        <span class="user-name">${u.name} <span style="font-size:10px; color:${roleColor}">(${u.role})</span></span>
+                        <span class="user-role">کاربری: ${u.username} | وضعیت: ${u.active ? '<span style="color:green">فعال</span>' : '<span style="color:red">غیرفعال</span>'}</span>
+                    </div>
+                    <div class="user-actions">
+                        <button class="user-btn btn-edit" onclick="openEditUserModal('${u.id}')">ویرایش</button>
+                        ${u.username !== 'admin' ? `<button class="user-btn btn-toggle ${u.active ? 'active' : ''}" onclick="toggleUser('${u.id}', ${u.active})">${u.active ? 'فعال' : 'غیرفعال'}</button>` : ''}
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        } else {
+            container.innerHTML = '<p style="text-align:center; color:red;">خطا در دریافت لیست کاربران</p>';
+        }
+    }
+
+    async function toggleUser(userId, currentStatus) {
+        if (!confirm('آیا از تغییر وضعیت این کاربر مطمئن هستید؟')) return;
+        const res = await callBackend('toggleUserActive', { userId: userId }, appToken);
+        if (res.ok) loadAdminUsers();
+        else alert(res.error);
+    }
+
+    function openAddUserModal() {
+        document.getElementById('user-modal-title').innerText = 'کاربر جدید';
+        document.getElementById('edit-user-id').value = '';
+        document.getElementById('u-name').value = '';
+        document.getElementById('u-username').value = '';
+        document.getElementById('u-password').value = '';
+        document.getElementById('u-role').value = 'کارشناس';
+        
+        document.getElementById('username-group').style.display = 'block';
+        document.getElementById('password-group').style.display = 'block';
+
+        populateManagersDropdown();
+        document.getElementById('user-modal').classList.remove('hidden');
+    }
+
+    function openEditUserModal(userId) {
+        const user = cachedUsers.find(u => u.id === userId);
+        if (!user) return;
+
+        document.getElementById('user-modal-title').innerText = 'ویرایش کاربر';
+        document.getElementById('edit-user-id').value = user.id;
+        document.getElementById('u-name').value = user.name;
+        document.getElementById('u-username').value = user.username;
+        document.getElementById('u-role').value = user.role;
+        
+        document.getElementById('username-group').style.display = 'none';
+        document.getElementById('password-group').style.display = 'none';
+
+        populateManagersDropdown(user.manager_id);
+        document.getElementById('user-modal').classList.remove('hidden');
+    }
+
+    function closeUserModal() {
+        document.getElementById('user-modal').classList.add('hidden');
+    }
+
+    function populateManagersDropdown(selectedId = '') {
+        const select = document.getElementById('u-manager');
+        select.innerHTML = '<option value="">-- بدون مدیر --</option>';
+        cachedUsers.forEach(u => {
+            if (u.active && u.username !== 'admin') {
+                select.innerHTML += `<option value="${u.id}" ${u.id === selectedId ? 'selected' : ''}>${u.name} (${u.role})</option>`;
+            }
+        });
+    }
+
+    async function submitUserForm() {
+        const editId = document.getElementById('edit-user-id').value;
+        const name = document.getElementById('u-name').value;
+        const username = document.getElementById('u-username').value;
+        const password = document.getElementById('u-password').value;
+        const role = document.getElementById('u-role').value;
+        const manager_id = document.getElementById('u-manager').value;
+
+        if (!name || !role) return alert('نام و نقش الزامی است');
+
+        if (editId) {
+            const updates = { name: name, role: role, manager_id: manager_id };
+            const res = await callBackend('updateUser', { userId: editId, updates: updates }, appToken);
+            if (res.ok) { closeUserModal(); loadAdminUsers(); }
+            else alert(res.error);
+        } else {
+            if (!username || !password) return alert('نام کاربری و رمز الزامی است');
+            const data = { name, username, password, role, manager_id };
+            const res = await callBackend('createUser', data, appToken);
+            if (res.ok) { closeUserModal(); loadAdminUsers(); }
+            else alert(res.error);
+        }
     }
 
     // ================= تغییر رمز عبور =================
-    function openPasswordModal() { 
-        document.getElementById('password-modal').classList.remove('hidden'); 
-    }
-    
+    function openPasswordModal() { document.getElementById('password-modal').classList.remove('hidden'); }
     function closePasswordModal() {
         document.getElementById('password-modal').classList.add('hidden');
         document.getElementById('new-password').value = '';
@@ -323,18 +489,14 @@
     async function submitChangePassword() {
         const p1 = document.getElementById('new-password').value;
         const p2 = document.getElementById('confirm-password').value;
-        
         if (p1.length < 6) return alert('رمز جدید باید حداقل ۶ کاراکتر باشد.');
         if (p1 !== p2) return alert('رمز عبور و تکرار آن یکسان نیستند.');
 
         const res = await callBackend('changePassword', { userId: currentUser.id, newPassword: p1 }, appToken);
-        
         if (res.ok) {
             alert('رمز عبور شما با موفقیت تغییر کرد.');
             closePasswordModal();
-        } else {
-            alert('خطا: ' + res.error);
-        }
+        } else { alert('خطا: ' + res.error); }
     }
 
     // ================= تقویم شمسی =================
@@ -343,7 +505,6 @@
     function initCalendar() {
         const ySelect = document.getElementById('jYear');
         const mSelect = document.getElementById('jMonth');
-        
         const now = new Date();
         const jNow = gregorian_to_jalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
         
@@ -356,7 +517,6 @@
         for (let i = 0; i < 12; i++) {
             mSelect.innerHTML += `<option value="${i+1}" ${i+1 === jNow[1] ? 'selected' : ''}>${jMonths[i]}</option>`;
         }
-        
         updateDays();
         mSelect.onchange = updateDays;
         ySelect.onchange = updateDays;
@@ -366,13 +526,9 @@
         const y = parseInt(document.getElementById('jYear').value);
         const m = parseInt(document.getElementById('jMonth').value);
         const dSelect = document.getElementById('jDay');
-        
         let days = 31;
         if (m >= 7 && m <= 11) days = 30;
-        if (m === 12) {
-            if (isLeapJalali(y)) days = 30; else days = 29;
-        }
-        
+        if (m === 12) { if (isLeapJalali(y)) days = 30; else days = 29; }
         const currentDay = parseInt(dSelect.value) || 1;
         dSelect.innerHTML = '';
         for (let i = 1; i <= days; i++) {
@@ -380,49 +536,29 @@
         }
     }
 
-    function isLeapJalali(jy) {
-        let mod = jy % 33;
-        return [1, 5, 9, 13, 17, 22, 26, 30].includes(mod);
-    }
+    function isLeapJalali(jy) { return [1, 5, 9, 13, 17, 22, 26, 30].includes(jy % 33); }
 
     function jalali_to_gregorian(jy, jm, jd) {
-        let gy = (jy <= 979) ? 621 : 1600;
-        jy -= (jy <= 979) ? 0 : 979;
+        let gy = (jy <= 979) ? 621 : 1600; jy -= (jy <= 979) ? 0 : 979;
         let days = (365 * jy) + (parseInt(jy / 33) * 8) + parseInt(((jy % 33) + 3) / 4) + 78 + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
-        gy += 400 * parseInt(days / 146097);
-        days %= 146097;
-        if (days > 36524) {
-            gy += 100 * parseInt(--days / 36524);
-            days %= 36524;
-            if (days >= 365) days++;
-        }
-        gy += 4 * parseInt(days / 1461);
-        days %= 1461;
-        if (days > 365) {
-            gy += parseInt((days - 1) / 365);
-            days = (days - 1) % 365;
-        }
+        gy += 400 * parseInt(days / 146097); days %= 146097;
+        if (days > 36524) { gy += 100 * parseInt(--days / 36524); days %= 36524; if (days >= 365) days++; }
+        gy += 4 * parseInt(days / 1461); days %= 1461;
+        if (days > 365) { gy += parseInt((days - 1) / 365); days = (days - 1) % 365; }
         let gd = days + 1;
         let sal_a = [0, 31, ((gy % 4 == 0 && gy % 100 != 0) || (gy % 400 == 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-        let gm;
-        for (gm = 0; gm < 13 && gd > sal_a[gm]; gm++) gd -= sal_a[gm];
+        let gm; for (gm = 0; gm < 13 && gd > sal_a[gm]; gm++) gd -= sal_a[gm];
         return [gy, gm, gd];
     }
 
     function gregorian_to_jalali(gy, gm, gd) {
         let g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-        let jy = (gy <= 1600) ? 0 : 979;
-        gy -= (gy <= 1600) ? 621 : 1600;
+        let jy = (gy <= 1600) ? 0 : 979; gy -= (gy <= 1600) ? 621 : 1600;
         let gy2 = (gm > 2) ? (gy + 1) : gy;
         let days = (365 * gy) + (parseInt((gy2 + 3) / 4)) - (parseInt((gy2 + 99) / 100)) + (parseInt((gy2 + 399) / 400)) - 80 + gd + g_d_m[gm - 1];
-        jy += 33 * (parseInt(days / 12053));
-        days %= 12053;
-        jy += 4 * (parseInt(days / 1461));
-        days %= 1461;
-        if (days > 365) {
-            jy += parseInt((days - 1) / 365);
-            days = (days - 1) % 365;
-        }
+        jy += 33 * (parseInt(days / 12053)); days %= 12053;
+        jy += 4 * (parseInt(days / 1461)); days %= 1461;
+        if (days > 365) { jy += parseInt((days - 1) / 365); days = (days - 1) % 365; }
         let jm = (days < 186) ? 1 + parseInt(days / 31) : 7 + parseInt((days - 186) / 30);
         let jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
         return [jy, jm, jd];
@@ -460,9 +596,7 @@
             `;
             list.appendChild(card);
           });
-      } else { 
-          list.innerHTML = '<p style="text-align:center; color:red;">خطا: ' + (res.error || "خطای نامشخص") + '</p>'; 
-      }
+      } else { list.innerHTML = '<p style="text-align:center; color:red;">خطا: ' + (res.error || "خطای نامشخص") + '</p>'; }
     }
 
     async function openCreateModal() {
@@ -474,9 +608,10 @@
       
       const res = await callBackend('listUsers', {}, appToken);
       if (res.ok) {
+          cachedUsers = res.users;
           select.innerHTML = '';
           res.users.forEach(u => {
-            if(u.id !== currentUser.id) {
+            if(u.id !== currentUser.id && u.active) {
               select.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`;
             }
           });
@@ -495,13 +630,11 @@
       const jm = parseInt(document.getElementById('jMonth').value);
       const jd = parseInt(document.getElementById('jDay').value);
       const g = jalali_to_gregorian(jy, jm, jd);
-      
       const due_date = `${g[0]}-${g[1] < 10 ? '0' + g[1] : g[1]}-${g[2] < 10 ? '0' + g[2] : g[2]}`;
 
       if (!to_user_id || !title) return alert('گیرنده و عنوان الزامی است');
 
       const res = await callBackend('createTask', { title, description, to_user_id, due_date, due_time }, appToken);
-      
       if (res.ok) {
           closeCreateModal(); loadTasks();
           document.getElementById('task-title').value = '';
@@ -518,13 +651,11 @@
       document.getElementById('messages-area').innerHTML = '<p style="text-align:center;color:gray">در حال دریافت پیام‌ها...</p>';
       
       const res = await callBackend('getTaskDetail', { taskId }, appToken);
-      
       if (res.ok) {
           currentTaskData = res.task;
           updateTaskInfoUI(res.task);
           const area = document.getElementById('messages-area');
           area.innerHTML = '';
-          
           if(res.messages.length > 0) {
             lastMessageId = res.messages[res.messages.length - 1].id;
             res.messages.forEach(msg => appendMessage(msg));
@@ -549,26 +680,20 @@
     async function pollUpdates() {
       if (!currentTaskId || isPolling) return; 
       isPolling = true;
-      
       const res = await callBackend('getUpdates', { taskId: currentTaskId, lastMessageId: lastMessageId }, appToken);
-      
       if (res.ok) {
           if (res.task.status !== currentTaskData.status) {
             currentTaskData = res.task;
             updateTaskInfoUI(res.task);
           }
-
           if (res.newMessages && res.newMessages.length > 0) {
             const area = document.getElementById('messages-area');
             if (area.innerHTML.includes('پیامی وجود ندارد')) area.innerHTML = '';
-            
             const isScrolledToBottom = area.scrollHeight - area.scrollTop <= area.clientHeight + 50;
-
             res.newMessages.forEach(msg => {
               appendMessage(msg);
               lastMessageId = msg.id;
             });
-
             if (isScrolledToBottom) area.scrollTop = area.scrollHeight;
           }
       }
@@ -579,12 +704,10 @@
       document.getElementById('chat-title').innerText = task.title;
       let displayDate = task.due_date;
       if(displayDate && displayDate.includes('T')) displayDate = displayDate.split('T')[0];
-      
       document.getElementById('chat-task-details').innerHTML = `
         <p>${task.description || 'بدون توضیحات'}</p>
         <span class="status">مهلت: ${displayDate} | وضعیت: ${task.status}</span>
       `;
-
       const actionContainer = document.getElementById('status-actions-container');
       if (currentUser.id === task.to_user_id && task.status !== 'انجام شد' && task.status !== 'لغو شد') {
         actionContainer.classList.remove('hidden');
@@ -608,31 +731,24 @@
               <div class="time-display" id="time-${msg.id}">0:00</div>
             </div>
           `;
-        } else {
-          div.innerText = "فایل صوتی نامعتبر";
-        }
-      } else {
-        div.innerText = msg.content;
-      }
+        } else { div.innerText = "فایل صوتی نامعتبر"; }
+      } else { div.innerText = msg.content; }
       document.getElementById('messages-area').appendChild(div);
     }
 
     // ================= ضبط و ارسال صدا =================
     async function toggleRecording() {
       const micBtn = document.getElementById('mic-btn');
-      
       if (!isRecording) {
         try {
           if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Not supported');
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          
           let options = {};
           if (MediaRecorder.isTypeSupported('audio/webm')) options = { mimeType: 'audio/webm' };
           else if (MediaRecorder.isTypeSupported('audio/mp4')) options = { mimeType: 'audio/mp4' };
 
           mediaRecorder = new MediaRecorder(stream, options);
           mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-
           mediaRecorder.onstop = async () => {
             const mimeType = mediaRecorder.mimeType || 'audio/webm';
             const audioBlob = new Blob(audioChunks, { type: mimeType });
@@ -640,7 +756,6 @@
             await uploadVoiceBlob(audioBlob, mimeType);
             stream.getTracks().forEach(track => track.stop());
           };
-
           audioChunks = [];
           mediaRecorder.start();
           isRecording = true;
@@ -660,22 +775,16 @@
     async function uploadVoiceBlob(blob, mimeType) {
       if (isSending) return; 
       isSending = true;
-      
       const micBtn = document.getElementById('mic-btn');
       micBtn.innerText = '⏳';
-      
       const reader = new FileReader();
       reader.readAsDataURL(blob);
       reader.onloadend = async () => {
         const base64data = reader.result.split(',')[1];
-        
         const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, base64Audio: base64data, mimeType: mimeType }, appToken);
-        
         if (res.ok) setTimeout(pollUpdates, 500);
         else alert('خطا در ارسال: ' + res.error);
-        
-        micBtn.innerText = '🎤'; 
-        isSending = false;
+        micBtn.innerText = '🎤'; isSending = false;
       };
     }
 
@@ -683,19 +792,15 @@
       const file = event.target.files[0];
       if (!file) return;
       if (file.size > 5 * 1024 * 1024) return alert('حجم نباید بیشتر از ۵ مگابایت باشد.');
-      
       const reader = new FileReader();
       reader.onload = async (e) => {
         const base64data = e.target.result.split(',')[1];
         let mimeType = file.type || 'audio/mp4'; 
-        
         const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, base64Audio: base64data, mimeType: mimeType }, appToken);
-        
         if (res.ok) setTimeout(pollUpdates, 500);
         else alert('خطا در ارسال: ' + res.error);
       };
-      reader.readAsDataURL(file);
-      event.target.value = ''; 
+      reader.readAsDataURL(file); event.target.value = ''; 
     }
 
     // ================= پخش صدا =================
@@ -713,11 +818,8 @@
         if(currentPlayBtn) { currentPlayBtn.innerText = '▶'; currentPlayBtn.classList.remove('playing'); }
       }
       if (audioCache[msgId]) { playBlob(audioCache[msgId], msgId, btnElement); return; }
-      
       btnElement.innerText = '⏳';
-      
       const res = await callBackend('getVoiceBase64', { fileId: fileId }, appToken);
-      
       if (res.ok) {
           const byteCharacters = atob(res.base64);
           const byteNumbers = new Array(byteCharacters.length);
@@ -735,7 +837,6 @@
       currentPlayBtn = btnElement;
       audio.play();
       btnElement.innerText = '⏸'; btnElement.classList.add('playing');
-      
       const progressBar = document.getElementById(`progress-${msgId}`);
       const timeDisplay = document.getElementById(`time-${msgId}`);
       audio.ontimeupdate = () => {
@@ -773,19 +874,15 @@
 
     async function sendTextMessage() {
       if (isSending) return; 
-      
       const input = document.getElementById('chat-input');
       const text = input.value.trim();
       if (!text) return;
 
       isSending = true;
       input.value = '';
-      
       const res = await callBackend('sendTextMessage', { taskId: currentTaskId, text: text }, appToken);
-      
       if (res.ok) setTimeout(pollUpdates, 500);
       else alert(res.error);
-      
       isSending = false; 
     }
 
