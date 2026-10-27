@@ -26,12 +26,11 @@
     }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; }
     
-    /* استفاده از 100dvh برای حل مشکل نوار ناوبری گوشی */
     body { 
       background-color: #f5f6fa; 
       color: var(--text); 
       height: 100vh; 
-      height: 100dvh; /* این خط جادویی مشکل را حل می‌کند */
+      height: 100dvh; 
       display: flex; 
       flex-direction: column; 
       overflow: hidden; 
@@ -54,9 +53,10 @@
     .header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
     .header-info h3 { font-size: 18px; margin-bottom: 4px; }
     .header-info span { font-size: 12px; opacity: 0.8; }
-    .header-actions { display: flex; align-items: center; gap: 15px; }
+    .header-actions { display: flex; align-items: center; gap: 8px; }
     .add-btn { background: white; color: var(--primary); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; padding-bottom: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    .logout-btn { color: white; background: rgba(255,255,255,0.2); border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    .logout-btn { color: white; background: rgba(255,255,255,0.2); border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
+    .pass-btn { color: var(--primary); background: white; border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
     
     #tasks-list { flex: 1; overflow-y: auto; padding: 15px; }
     .task-card { background: var(--white); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; border-right: 4px solid var(--primary); }
@@ -86,11 +86,10 @@
     .progress-bar { height: 100%; background: var(--primary); width: 0%; border-radius: 2px; transition: width 0.1s; }
     .time-display { font-size: 11px; color: var(--text-light); min-width: 35px; text-align: center; }
     
-    /* اصلاح فاصله پایین برای گوشی‌های دارای نوار ناوبری */
     .chat-input-area { 
       background: #f0f0f0; 
       padding: 10px 15px; 
-      padding-bottom: calc(15px + env(safe-area-inset-bottom)); /* این خط فاصله ایمن ایجاد می‌کند */
+      padding-bottom: calc(15px + env(safe-area-inset-bottom)); 
       display: flex; 
       align-items: center; 
       gap: 8px; 
@@ -133,6 +132,7 @@
       </div>
       <div class="header-actions">
         <button class="add-btn" onclick="openCreateModal()">+</button>
+        <button class="pass-btn" onclick="openPasswordModal()">تغییر رمز</button>
         <button class="logout-btn" onclick="handleLogout()">خروج</button>
       </div>
     </div>
@@ -162,6 +162,7 @@
     </div>
   </div>
 
+  <!-- مودال ثبت دستور جدید -->
   <div id="create-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>ثبت دستور جدید</h3>
@@ -194,6 +195,25 @@
       <div style="display: flex; gap: 10px; margin-top: 20px;">
         <button class="btn" style="flex:1; background: var(--success);" onclick="submitNewTask()">ثبت و ارسال</button>
         <button class="btn" style="flex:1; background: var(--danger);" onclick="closeCreateModal()">انصراف</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال تغییر رمز عبور -->
+  <div id="password-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>تغییر رمز عبور</h3>
+      <div class="form-group">
+        <label>رمز عبور جدید</label>
+        <input type="password" id="new-password" class="input" placeholder="حداقل ۶ کاراکتر">
+      </div>
+      <div class="form-group">
+        <label>تکرار رمز عبور جدید</label>
+        <input type="password" id="confirm-password" class="input" placeholder="تکرار رمز">
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button class="btn" style="flex:1; background: var(--success);" onclick="submitChangePassword()">ذخیره</button>
+        <button class="btn" style="flex:1; background: var(--danger);" onclick="closePasswordModal()">انصراف</button>
       </div>
     </div>
   </div>
@@ -289,6 +309,35 @@
       document.getElementById('login-password').value = '';
     }
 
+    // ================= تغییر رمز عبور =================
+    function openPasswordModal() { 
+        document.getElementById('password-modal').classList.remove('hidden'); 
+    }
+    
+    function closePasswordModal() {
+        document.getElementById('password-modal').classList.add('hidden');
+        document.getElementById('new-password').value = '';
+        document.getElementById('confirm-password').value = '';
+    }
+
+    async function submitChangePassword() {
+        const p1 = document.getElementById('new-password').value;
+        const p2 = document.getElementById('confirm-password').value;
+        
+        if (p1.length < 6) return alert('رمز جدید باید حداقل ۶ کاراکتر باشد.');
+        if (p1 !== p2) return alert('رمز عبور و تکرار آن یکسان نیستند.');
+
+        const res = await callBackend('changePassword', { userId: currentUser.id, newPassword: p1 }, appToken);
+        
+        if (res.ok) {
+            alert('رمز عبور شما با موفقیت تغییر کرد.');
+            closePasswordModal();
+        } else {
+            alert('خطا: ' + res.error);
+        }
+    }
+
+    // ================= تقویم شمسی =================
     const jMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
 
     function initCalendar() {
@@ -379,6 +428,7 @@
         return [jy, jm, jd];
     }
 
+    // ================= لیست دستورها =================
     async function loadTasks() {
       const list = document.getElementById('tasks-list');
       list.innerHTML = '<p style="text-align:center; color:gray;">در حال بارگذاری...</p>';
@@ -459,6 +509,7 @@
       } else { alert(res.error); }
     }
 
+    // ================= صفحه چت =================
     async function openChat(taskId) {
       currentTaskId = taskId;
       lastMessageId = null;
@@ -566,6 +617,7 @@
       document.getElementById('messages-area').appendChild(div);
     }
 
+    // ================= ضبط و ارسال صدا =================
     async function toggleRecording() {
       const micBtn = document.getElementById('mic-btn');
       
@@ -646,6 +698,7 @@
       event.target.value = ''; 
     }
 
+    // ================= پخش صدا =================
     async function playAudio(fileId, msgId, btnElement) {
       if (currentAudio && currentAudio.msgId === msgId) {
         if(currentAudio.audio.paused) {
@@ -712,6 +765,7 @@
       return `${m}:${s < 10 ? '0' : ''}${s}`;
     }
 
+    // ================= توابع دیگر =================
     async function updateStatus(newStatus) {
       const res = await callBackend('updateTaskStatus', { taskId: currentTaskId, status: newStatus }, appToken);
       if (res.ok) { pollUpdates(); } else { alert(res.error); }
