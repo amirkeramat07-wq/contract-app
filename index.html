@@ -4,10 +4,14 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>پیام‌رسان مدیریت قراردادها</title>
+  
+  <!-- تگ‌های PWA برای نصب روی گوشی -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="مدیریت قراردادها">
   <meta name="theme-color" content="#00a8ff">
+  <link rel="manifest" href="manifest.json">
+  
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
   <style>
@@ -117,6 +121,7 @@
 </head>
 <body>
 
+  <!-- صفحه ورود -->
   <div id="login-view">
     <div class="login-box">
       <h2>پیام‌رسان مدیریت قراردادها</h2>
@@ -132,6 +137,7 @@
     </div>
   </div>
 
+  <!-- صفحه اصلی -->
   <div id="main-view" class="hidden">
     <div class="header">
       <div class="header-info">
@@ -148,6 +154,7 @@
     <div id="tasks-list"></div>
   </div>
 
+  <!-- صفحه چت -->
   <div id="chat-view" class="hidden">
     <div class="chat-header">
       <button class="back-btn" onclick="closeChat()">→</button>
@@ -170,6 +177,7 @@
     </div>
   </div>
 
+  <!-- پنل مدیریت کاربران -->
   <div id="admin-view" class="hidden">
     <div class="admin-header">
       <button class="back-btn" onclick="closeAdminPanel()">→</button>
@@ -950,6 +958,15 @@
     document.getElementById('chat-input').addEventListener('keypress', function (e) {
       if (e.key === 'Enter') sendTextMessage();
     });
+
+    // ثبت Service Worker برای PWA (نصب روی گوشی)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(registration => console.log('ServiceWorker registered'))
+          .catch(err => console.log('ServiceWorker registration failed: ', err));
+      });
+    }
   </script>
 </body>
 </html>
