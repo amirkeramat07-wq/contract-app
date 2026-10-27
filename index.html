@@ -38,17 +38,19 @@
     .input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; outline: none; background: #fff; }
     .input:focus { border-color: var(--primary); }
     
+    /* Login */
     #login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; background: #f5f6fa; }
     .login-box { background: var(--white); padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
     .login-box h2 { text-align: center; margin-bottom: 20px; font-size: 22px; color: var(--primary-dark); }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; }
     
+    /* Main List */
     #main-view { flex: 1; display: flex; flex-direction: column; background: #f5f6fa; min-height: 0; }
     .header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
     .header-info h3 { font-size: 18px; margin-bottom: 4px; }
     .header-info span { font-size: 12px; opacity: 0.8; }
-    .header-actions { display: flex; align-items: center; gap: 8px; }
+    .header-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
     
     .icon-btn { background: white; color: var(--primary); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 20px; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
     .text-btn { color: white; background: rgba(255,255,255,0.2); border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; }
@@ -61,6 +63,7 @@
     .badge { padding: 4px 10px; border-radius: 20px; color: white; font-size: 12px; font-weight: bold; }
     .task-desc { color: var(--text-light); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     
+    /* Chat View */
     #chat-view { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); min-height: 0; }
     .chat-header { background: var(--primary); color: white; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
     .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: white; padding: 0 10px; }
@@ -90,19 +93,22 @@
     
     @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
+    /* Admin Panel */
     #admin-view { flex: 1; display: flex; flex-direction: column; background: #f5f6fa; min-height: 0; }
     .admin-header { background: var(--primary-dark); color: white; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
     .admin-list { flex: 1; overflow-y: auto; padding: 15px; }
-    .user-card { background: var(--white); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
-    .user-info { display: flex; flex-direction: column; gap: 4px; }
+    .user-card { background: var(--white); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .user-info { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 150px; }
     .user-name { font-weight: bold; font-size: 15px; }
     .user-role { font-size: 12px; color: var(--text-light); }
-    .user-actions { display: flex; gap: 5px; }
-    .user-btn { border: none; padding: 5px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; color: white; }
+    .user-actions { display: flex; gap: 5px; flex-wrap: wrap; }
+    .user-btn { border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; color: white; }
     .btn-edit { background: var(--warning); color: #333; }
+    .btn-pass { background: var(--primary); }
     .btn-toggle { background: var(--danger); }
     .btn-toggle.active { background: var(--success); }
 
+    /* Modals */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
     .modal-content { background: var(--white); width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
     .modal-content h3 { margin-bottom: 15px; text-align: center; color: var(--primary-dark); }
@@ -134,7 +140,6 @@
       </div>
       <div class="header-actions">
         <button class="icon-btn" onclick="openCreateModal()">+</button>
-        <!-- دکمه کاربران فقط برای ادمین نمایش داده می‌شود -->
         <button class="pass-btn" id="admin-btn" onclick="openAdminPanel()" style="display:none;">کاربران</button>
         <button class="pass-btn" onclick="openPasswordModal()">رمز</button>
         <button class="text-btn" onclick="handleLogout()">خروج</button>
@@ -174,6 +179,7 @@
     <div class="admin-list" id="users-list-container"></div>
   </div>
 
+  <!-- مودال ثبت دستور -->
   <div id="create-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>ثبت دستور جدید</h3>
@@ -208,6 +214,7 @@
     </div>
   </div>
 
+  <!-- مودال تغییر رمز شخصی -->
   <div id="password-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>تغییر رمز عبور</h3>
@@ -226,6 +233,7 @@
     </div>
   </div>
 
+  <!-- مودال ساخت/ویرایش کاربر -->
   <div id="user-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3 id="user-modal-title">کاربر جدید</h3>
@@ -258,6 +266,27 @@
       <div class="modal-actions">
         <button class="btn" style="flex:1; background: var(--success);" onclick="submitUserForm()">ذخیره</button>
         <button class="btn" style="flex:1; background: var(--danger);" onclick="closeUserModal()">انصراف</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال تغییر رمز توسط ادمین -->
+  <div id="admin-pass-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>تغییر رمز کاربر</h3>
+      <p style="text-align:center; margin-bottom:15px; font-size:14px; color:var(--text-light);" id="admin-pass-username-label"></p>
+      <input type="hidden" id="admin-pass-user-id">
+      <div class="form-group">
+        <label>رمز عبور جدید</label>
+        <input type="password" id="admin-new-password" class="input" placeholder="حداقل ۶ کاراکتر">
+      </div>
+      <div class="form-group">
+        <label>تکرار رمز عبور جدید</label>
+        <input type="password" id="admin-confirm-password" class="input" placeholder="تکرار رمز">
+      </div>
+      <div class="modal-actions">
+        <button class="btn" style="flex:1; background: var(--success);" onclick="submitAdminResetPass()">ذخیره</button>
+        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeAdminPassModal()">انصراف</button>
       </div>
     </div>
   </div>
@@ -313,7 +342,7 @@
         document.getElementById('main-view').classList.remove('hidden');
         document.getElementById('user-info').innerText = currentUser.name + ' (' + currentUser.role + ')';
         
-        // 🔒 نمایش دکمه مدیریت کاربران فقط برای ادمین اصلی
+        // نمایش دکمه مدیریت کاربران فقط برای ادمین اصلی
         if (currentUser.username === 'admin') {
             document.getElementById('admin-btn').style.display = 'block';
         } else {
@@ -391,6 +420,7 @@
                     </div>
                     <div class="user-actions">
                         <button class="user-btn btn-edit" onclick="openEditUserModal('${u.id}')">ویرایش</button>
+                        <button class="user-btn btn-pass" onclick="openAdminResetPassModal('${u.id}', '${u.name}')">رمز</button>
                         ${u.username !== 'admin' ? `<button class="user-btn btn-toggle ${u.active ? 'active' : ''}" onclick="toggleUser('${u.id}', ${u.active})">${u.active ? 'فعال' : 'غیرفعال'}</button>` : ''}
                     </div>
                 `;
@@ -478,7 +508,38 @@
         }
     }
 
-    // ================= تغییر رمز عبور =================
+    // ================= تغییر رمز توسط ادمین =================
+    function openAdminResetPassModal(userId, userName) {
+        document.getElementById('admin-pass-user-id').value = userId;
+        document.getElementById('admin-pass-username-label').innerText = 'کاربر: ' + userName;
+        document.getElementById('admin-new-password').value = '';
+        document.getElementById('admin-confirm-password').value = '';
+        document.getElementById('admin-pass-modal').classList.remove('hidden');
+    }
+
+    function closeAdminPassModal() {
+        document.getElementById('admin-pass-modal').classList.add('hidden');
+    }
+
+    async function submitAdminResetPass() {
+        const userId = document.getElementById('admin-pass-user-id').value;
+        const p1 = document.getElementById('admin-new-password').value;
+        const p2 = document.getElementById('admin-confirm-password').value;
+
+        if (p1.length < 6) return alert('رمز جدید باید حداقل ۶ کاراکتر باشد.');
+        if (p1 !== p2) return alert('رمز عبور و تکرار آن یکسان نیستند.');
+
+        const res = await callBackend('changePassword', { userId: userId, newPassword: p1 }, appToken);
+        
+        if (res.ok) {
+            alert('رمز عبور کاربر با موفقیت تغییر کرد.');
+            closeAdminPassModal();
+        } else {
+            alert('خطا: ' + res.error);
+        }
+    }
+
+    // ================= تغییر رمز شخصی =================
     function openPasswordModal() { document.getElementById('password-modal').classList.remove('hidden'); }
     function closePasswordModal() {
         document.getElementById('password-modal').classList.add('hidden');
