@@ -1,15 +1,732 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>در حال انتقال به پیام‌رسان...</title>
-    <!-- این خط کد، کاربر را به لینک اصلی گوگل هدایت می‌کند -->
-    <script>
-        window.location.href = "https://script.google.com/macros/s/AKfycbwAMoEGIwOUk3fGyt8123yJP0f6ygTrTI2Gt-qnKFPAUvWdQbzz4u1W56bGZmsip9Bb8w/exec";
-    </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>پیام‌رسان مدیریت قراردادها</title>
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="مدیریت قراردادها">
+  <meta name="theme-color" content="#00a8ff">
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --primary: #00a8ff;
+      --primary-dark: #0097e6;
+      --bg: #e5ddd5;
+      --white: #ffffff;
+      --text: #2f3640;
+      --text-light: #718093;
+      --danger: #e84118;
+      --success: #4cd137;
+      --warning: #fbc531;
+      --border: #dcdde1;
+      --chat-bg: #efeae2;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; }
+    body { background-color: #f5f6fa; color: var(--text); height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+    
+    .hidden { display: none !important; }
+    .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; transition: 0.2s; }
+    .btn:active { opacity: 0.8; }
+    .btn:disabled { background: #7f8fa6; cursor: not-allowed; }
+    .input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; outline: none; background: #fff; }
+    .input:focus { border-color: var(--primary); }
+    
+    #login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; background: #f5f6fa; }
+    .login-box { background: var(--white); padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
+    .login-box h2 { text-align: center; margin-bottom: 20px; font-size: 22px; color: var(--primary-dark); }
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; }
+    
+    #main-view { flex: 1; display: flex; flex-direction: column; background: #f5f6fa; }
+    .header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
+    .header-info h3 { font-size: 18px; margin-bottom: 4px; }
+    .header-info span { font-size: 12px; opacity: 0.8; }
+    .header-actions { display: flex; align-items: center; gap: 15px; }
+    .add-btn { background: white; color: var(--primary); border: none; border-radius: 50%; width: 40px; height: 40px; font-size: 24px; display: flex; justify-content: center; align-items: center; cursor: pointer; padding-bottom: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .logout-btn { color: white; background: rgba(255,255,255,0.2); border: none; padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; }
+    
+    #tasks-list { flex: 1; overflow-y: auto; padding: 15px; }
+    .task-card { background: var(--white); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; border-right: 4px solid var(--primary); }
+    .task-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .task-title { font-weight: bold; font-size: 16px; }
+    .badge { padding: 4px 10px; border-radius: 20px; color: white; font-size: 12px; font-weight: bold; }
+    .task-desc { color: var(--text-light); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    
+    #chat-view { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); }
+    .chat-header { background: var(--primary); color: white; padding: 15px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
+    .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: white; padding: 0 10px; }
+    .chat-task-info { padding: 10px 15px; background: var(--white); border-bottom: 1px solid var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .chat-task-info p { font-size: 13px; margin-bottom: 5px; }
+    .chat-task-info .status { color: var(--primary-dark); font-weight: bold; font-size: 12px; }
+    .status-actions { display: flex; gap: 10px; margin-top: 10px; }
+    .status-btn { flex: 1; padding: 8px; border-radius: 8px; border: none; font-weight: bold; color: white; cursor: pointer; }
+    
+    .messages-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
+    .message { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 14px; line-height: 1.5; word-wrap: break-word; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
+    .message.me { background: #dcf8c6; color: var(--text); align-self: flex-start; border-top-right-radius: 2px; }
+    .message.other { background: var(--white); color: var(--text); align-self: flex-end; border-top-left-radius: 2px; }
+    
+    .audio-player { display: flex; align-items: center; gap: 10px; min-width: 200px; padding: 5px 0; }
+    .play-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 16px; }
+    .play-btn.playing { background: var(--danger); }
+    .progress-container { flex: 1; height: 4px; background: rgba(0,0,0,0.1); border-radius: 2px; cursor: pointer; position: relative; }
+    .progress-bar { height: 100%; background: var(--primary); width: 0%; border-radius: 2px; transition: width 0.1s; }
+    .time-display { font-size: 11px; color: var(--text-light); min-width: 35px; text-align: center; }
+    
+    .chat-input-area { background: #f0f0f0; padding: 10px 15px; padding-bottom: 20px; display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); }
+    .chat-input { flex: 1; border-radius: 20px; padding: 10px 15px; border: none; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); transition: 0.2s; }
+    .mic-btn { background: var(--white); color: var(--text-light); }
+    .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; }
+    
+    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
+    .modal-content { background: var(--white); width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
+    .modal-content h3 { margin-bottom: 15px; text-align: center; color: var(--primary-dark); }
+  </style>
 </head>
-<body style="font-family: Tahoma; text-align: center; margin-top: 50px;">
-    <h3>لطفاً صبر کنید، در حال انتقال به برنامه هستید...</h3>
+<body>
+
+  <div id="login-view">
+    <div class="login-box">
+      <h2>پیام‌رسان مدیریت قراردادها</h2>
+      <div class="form-group">
+        <label>نام کاربری</label>
+        <input type="text" id="login-username" class="input" placeholder="مثلاً: admin">
+      </div>
+      <div class="form-group">
+        <label>رمز عبور</label>
+        <input type="password" id="login-password" class="input" placeholder="رمز عبور">
+      </div>
+      <button class="btn" style="width: 100%; background: var(--primary);" id="login-btn" onclick="handleLogin()">ورود به سیستم</button>
+    </div>
+  </div>
+
+  <div id="main-view" class="hidden">
+    <div class="header">
+      <div class="header-info">
+        <h3>دستورها</h3>
+        <span id="user-info"></span>
+      </div>
+      <div class="header-actions">
+        <button class="add-btn" onclick="openCreateModal()">+</button>
+        <button class="logout-btn" onclick="handleLogout()">خروج</button>
+      </div>
+    </div>
+    <div id="tasks-list"></div>
+  </div>
+
+  <div id="chat-view" class="hidden">
+    <div class="chat-header">
+      <button class="back-btn" onclick="closeChat()">→</button>
+      <h3 id="chat-title" style="font-size: 16px;">عنوان دستور</h3>
+    </div>
+    <div class="chat-task-info">
+      <div id="chat-task-details"></div>
+      <div id="status-actions-container" class="status-actions hidden">
+        <button class="status-btn" style="background: var(--primary);" onclick="updateStatus('در حال انجام')">شروع کار</button>
+        <button class="status-btn" style="background: var(--success);" onclick="updateStatus('انجام شد')">اتمام کار</button>
+      </div>
+    </div>
+    <div class="messages-area" id="messages-area"></div>
+    
+    <div class="chat-input-area">
+      <button class="action-btn mic-btn" id="mic-btn" onclick="toggleRecording()">🎤</button>
+      <input type="file" id="audio-upload" accept="audio/*" capture style="display:none;" onchange="handleAudioUpload(event)">
+      
+      <input type="text" id="chat-input" class="chat-input" placeholder="پیام...">
+      <button class="action-btn" onclick="sendTextMessage()">➤</button>
+    </div>
+  </div>
+
+  <div id="create-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>ثبت دستور جدید</h3>
+      <div class="form-group">
+        <label>گیرنده</label>
+        <select id="task-receiver" class="input"></select>
+      </div>
+      <div class="form-group">
+        <label>عنوان دستور</label>
+        <input type="text" id="task-title" class="input">
+      </div>
+      <div class="form-group">
+        <label>توضیحات</label>
+        <textarea id="task-desc" class="input" rows="3"></textarea>
+      </div>
+      
+      <div class="form-group">
+        <label>تاریخ مهلت (شمسی)</label>
+        <div style="display: flex; gap: 5px;">
+            <select id="jYear" class="input" style="width: 33%; padding: 10px;"></select>
+            <select id="jMonth" class="input" style="width: 34%; padding: 10px;"></select>
+            <select id="jDay" class="input" style="width: 33%; padding: 10px;"></select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>ساعت مهلت (HH:MM)</label>
+        <input type="text" id="task-time" class="input" placeholder="مثلاً: 18:00" value="18:00">
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <button class="btn" style="flex:1; background: var(--success);" onclick="submitNewTask()">ثبت و ارسال</button>
+        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeCreateModal()">انصراف</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ⚠️ اینجا لینک وب اپ خودتان را قرار دهید
+    const API_URL = "https://script.google.com/macros/s/AKfycbwAMoEGIwOUk3fGyt8123yJP0f6ygTrTI2Gt-qnKFPAUvWdQbzz4u1W56bGZmsip9Bb8w/exec";
+
+    let appToken = null;
+    let currentUser = null;
+    let currentTaskId = null;
+    let currentTaskData = null;
+    let pollInterval = null;
+    let lastMessageId = null;
+    
+    let isPolling = false;
+    let isSending = false;
+
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
+
+    let audioCache = {}; 
+    let currentAudio = null; 
+    let currentPlayBtn = null; 
+
+    // تابع ارتباط با سرور از طریق fetch
+    async function callBackend(action, data = {}, token = '') {
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: action, token: token, data: data })
+        });
+        const result = await response.json();
+        return result;
+      } catch (error) {
+        console.error("API Error:", error);
+        return { ok: false, error: 'خطا در ارتباط با شبکه' };
+      }
+    }
+
+    // ================= ورود و خروج دائمی =================
+    window.addEventListener('load', () => {
+        const savedToken = localStorage.getItem('appToken');
+        const savedUser = localStorage.getItem('currentUser');
+        
+        if (savedToken && savedUser) {
+            appToken = savedToken;
+            currentUser = JSON.parse(savedUser);
+            document.getElementById('login-view').classList.add('hidden');
+            document.getElementById('main-view').classList.remove('hidden');
+            document.getElementById('user-info').innerText = currentUser.name + ' (' + currentUser.role + ')';
+            loadTasks();
+        }
+    });
+
+    async function handleLogin() {
+      const user = document.getElementById('login-username').value;
+      const pass = document.getElementById('login-password').value;
+      if (!user || !pass) return alert('نام کاربری و رمز را وارد کنید');
+
+      const btn = document.getElementById('login-btn');
+      btn.disabled = true; btn.innerText = 'در حال ورود...';
+
+      const res = await callBackend('login', { username: user, password: pass });
+      
+      if (res.ok) {
+          appToken = res.token; currentUser = res.user;
+          
+          localStorage.setItem('appToken', appToken);
+          localStorage.setItem('currentUser', JSON.stringify(currentUser));
+
+          document.getElementById('login-view').classList.add('hidden');
+          document.getElementById('main-view').classList.remove('hidden');
+          document.getElementById('user-info').innerText = currentUser.name + ' (' + currentUser.role + ')';
+          loadTasks();
+      } else { 
+          alert(res.error || 'نام کاربری اشتباه است'); 
+      }
+      
+      btn.disabled = false; btn.innerText = 'ورود به سیستم';
+    }
+
+    async function handleLogout() {
+      if (appToken) await callBackend('logout', {}, appToken);
+      localStorage.removeItem('appToken');
+      localStorage.removeItem('currentUser');
+      
+      appToken = null; currentUser = null;
+      document.getElementById('main-view').classList.add('hidden');
+      document.getElementById('chat-view').classList.add('hidden');
+      document.getElementById('login-view').classList.remove('hidden');
+      document.getElementById('login-username').value = '';
+      document.getElementById('login-password').value = '';
+    }
+
+    // ================= تقویم شمسی =================
+    const jMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
+
+    function initCalendar() {
+        const ySelect = document.getElementById('jYear');
+        const mSelect = document.getElementById('jMonth');
+        
+        const now = new Date();
+        const jNow = gregorian_to_jalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
+        
+        ySelect.innerHTML = '';
+        for (let i = jNow[0] - 1; i <= jNow[0] + 2; i++) {
+            ySelect.innerHTML += `<option value="${i}" ${i === jNow[0] ? 'selected' : ''}>${i}</option>`;
+        }
+        
+        mSelect.innerHTML = '';
+        for (let i = 0; i < 12; i++) {
+            mSelect.innerHTML += `<option value="${i+1}" ${i+1 === jNow[1] ? 'selected' : ''}>${jMonths[i]}</option>`;
+        }
+        
+        updateDays();
+        mSelect.onchange = updateDays;
+        ySelect.onchange = updateDays;
+    }
+
+    function updateDays() {
+        const y = parseInt(document.getElementById('jYear').value);
+        const m = parseInt(document.getElementById('jMonth').value);
+        const dSelect = document.getElementById('jDay');
+        
+        let days = 31;
+        if (m >= 7 && m <= 11) days = 30;
+        if (m === 12) {
+            if (isLeapJalali(y)) days = 30; else days = 29;
+        }
+        
+        const currentDay = parseInt(dSelect.value) || 1;
+        dSelect.innerHTML = '';
+        for (let i = 1; i <= days; i++) {
+            dSelect.innerHTML += `<option value="${i}" ${i === currentDay ? 'selected' : ''}>${i}</option>`;
+        }
+    }
+
+    function isLeapJalali(jy) {
+        let mod = jy % 33;
+        return [1, 5, 9, 13, 17, 22, 26, 30].includes(mod);
+    }
+
+    function jalali_to_gregorian(jy, jm, jd) {
+        let gy = (jy <= 979) ? 621 : 1600;
+        jy -= (jy <= 979) ? 0 : 979;
+        let days = (365 * jy) + (parseInt(jy / 33) * 8) + parseInt(((jy % 33) + 3) / 4) + 78 + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
+        gy += 400 * parseInt(days / 146097);
+        days %= 146097;
+        if (days > 36524) {
+            gy += 100 * parseInt(--days / 36524);
+            days %= 36524;
+            if (days >= 365) days++;
+        }
+        gy += 4 * parseInt(days / 1461);
+        days %= 1461;
+        if (days > 365) {
+            gy += parseInt((days - 1) / 365);
+            days = (days - 1) % 365;
+        }
+        let gd = days + 1;
+        let sal_a = [0, 31, ((gy % 4 == 0 && gy % 100 != 0) || (gy % 400 == 0)) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+        let gm;
+        for (gm = 0; gm < 13 && gd > sal_a[gm]; gm++) gd -= sal_a[gm];
+        return [gy, gm, gd];
+    }
+
+    function gregorian_to_jalali(gy, gm, gd) {
+        let g_d_m = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        let jy = (gy <= 1600) ? 0 : 979;
+        gy -= (gy <= 1600) ? 621 : 1600;
+        let gy2 = (gm > 2) ? (gy + 1) : gy;
+        let days = (365 * gy) + (parseInt((gy2 + 3) / 4)) - (parseInt((gy2 + 99) / 100)) + (parseInt((gy2 + 399) / 400)) - 80 + gd + g_d_m[gm - 1];
+        jy += 33 * (parseInt(days / 12053));
+        days %= 12053;
+        jy += 4 * (parseInt(days / 1461));
+        days %= 1461;
+        if (days > 365) {
+            jy += parseInt((days - 1) / 365);
+            days = (days - 1) % 365;
+        }
+        let jm = (days < 186) ? 1 + parseInt(days / 31) : 7 + parseInt((days - 186) / 30);
+        let jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
+        return [jy, jm, jd];
+    }
+
+    // ================= لیست دستورها =================
+    async function loadTasks() {
+      const list = document.getElementById('tasks-list');
+      list.innerHTML = '<p style="text-align:center; color:gray;">در حال بارگذاری...</p>';
+      
+      const res = await callBackend('listTasks', { filter: 'all' }, appToken);
+      
+      if (res && res.ok) {
+          list.innerHTML = '';
+          if (res.tasks.length === 0) {
+            list.innerHTML = '<p style="text-align:center; color:gray;">هیچ دستوری وجود ندارد.</p>';
+            return;
+          }
+          res.tasks.forEach(task => {
+            let badgeColor = 'var(--warning)';
+            if (task.status === 'در حال انجام') badgeColor = 'var(--primary)';
+            if (task.status === 'انجام شد') badgeColor = 'var(--success)';
+            if (task.status === 'گذشته از مهلت') badgeColor = 'var(--danger)';
+
+            const card = document.createElement('div');
+            card.className = 'task-card';
+            card.onclick = () => openChat(task.id);
+            
+            card.innerHTML = `
+              <div class="task-card-header">
+                <span class="task-title">${task.title}</span>
+                <span class="badge" style="background:${badgeColor}">${task.status}</span>
+              </div>
+              <div class="task-desc">${task.description || 'بدون توضیحات'}</div>
+            `;
+            list.appendChild(card);
+          });
+      } else { 
+          list.innerHTML = '<p style="text-align:center; color:red;">خطا: ' + (res.error || "خطای نامشخص") + '</p>'; 
+      }
+    }
+
+    async function openCreateModal() {
+      document.getElementById('create-modal').classList.remove('hidden');
+      initCalendar();
+      
+      const select = document.getElementById('task-receiver');
+      select.innerHTML = '<option value="">در حال دریافت لیست...</option>';
+      
+      const res = await callBackend('listUsers', {}, appToken);
+      if (res.ok) {
+          select.innerHTML = '';
+          res.users.forEach(u => {
+            if(u.id !== currentUser.id) {
+              select.innerHTML += `<option value="${u.id}">${u.name} (${u.role})</option>`;
+            }
+          });
+      } else { select.innerHTML = '<option value="">خطا در دریافت لیست</option>'; }
+    }
+
+    function closeCreateModal() { document.getElementById('create-modal').classList.add('hidden'); }
+
+    async function submitNewTask() {
+      const to_user_id = document.getElementById('task-receiver').value;
+      const title = document.getElementById('task-title').value;
+      const description = document.getElementById('task-desc').value;
+      const due_time = document.getElementById('task-time').value;
+
+      const jy = parseInt(document.getElementById('jYear').value);
+      const jm = parseInt(document.getElementById('jMonth').value);
+      const jd = parseInt(document.getElementById('jDay').value);
+      const g = jalali_to_gregorian(jy, jm, jd);
+      
+      const due_date = `${g[0]}-${g[1] < 10 ? '0' + g[1] : g[1]}-${g[2] < 10 ? '0' + g[2] : g[2]}`;
+
+      if (!to_user_id || !title) return alert('گیرنده و عنوان الزامی است');
+
+      const res = await callBackend('createTask', { title, description, to_user_id, due_date, due_time }, appToken);
+      
+      if (res.ok) {
+          closeCreateModal(); loadTasks();
+          document.getElementById('task-title').value = '';
+          document.getElementById('task-desc').value = '';
+      } else { alert(res.error); }
+    }
+
+    // ================= صفحه چت و بهینه‌سازی سرعت =================
+    async function openChat(taskId) {
+      currentTaskId = taskId;
+      lastMessageId = null;
+      document.getElementById('main-view').classList.add('hidden');
+      document.getElementById('chat-view').classList.remove('hidden');
+      document.getElementById('messages-area').innerHTML = '<p style="text-align:center;color:gray">در حال دریافت پیام‌ها...</p>';
+      
+      const res = await callBackend('getTaskDetail', { taskId }, appToken);
+      
+      if (res.ok) {
+          currentTaskData = res.task;
+          updateTaskInfoUI(res.task);
+          const area = document.getElementById('messages-area');
+          area.innerHTML = '';
+          
+          if(res.messages.length > 0) {
+            lastMessageId = res.messages[res.messages.length - 1].id;
+            res.messages.forEach(msg => appendMessage(msg));
+          } else {
+            area.innerHTML = '<p style="text-align:center;color:gray;font-size:12px;">پیامی وجود ندارد.</p>';
+          }
+          area.scrollTop = area.scrollHeight;
+      }
+
+      if(pollInterval) clearInterval(pollInterval);
+      pollInterval = setInterval(pollUpdates, 3000); 
+    }
+
+    function closeChat() {
+      currentTaskId = null; currentTaskData = null; lastMessageId = null;
+      if(pollInterval) clearInterval(pollInterval);
+      document.getElementById('chat-view').classList.add('hidden');
+      document.getElementById('main-view').classList.remove('hidden');
+      loadTasks();
+    }
+
+    async function pollUpdates() {
+      if (!currentTaskId || isPolling) return; 
+      isPolling = true;
+      
+      const res = await callBackend('getUpdates', { taskId: currentTaskId, lastMessageId: lastMessageId }, appToken);
+      
+      if (res.ok) {
+          if (res.task.status !== currentTaskData.status) {
+            currentTaskData = res.task;
+            updateTaskInfoUI(res.task);
+          }
+
+          if (res.newMessages && res.newMessages.length > 0) {
+            const area = document.getElementById('messages-area');
+            if (area.innerHTML.includes('پیامی وجود ندارد')) area.innerHTML = '';
+            
+            const isScrolledToBottom = area.scrollHeight - area.scrollTop <= area.clientHeight + 50;
+
+            res.newMessages.forEach(msg => {
+              appendMessage(msg);
+              lastMessageId = msg.id;
+            });
+
+            if (isScrolledToBottom) area.scrollTop = area.scrollHeight;
+          }
+      }
+      isPolling = false; 
+    }
+
+    function updateTaskInfoUI(task) {
+      document.getElementById('chat-title').innerText = task.title;
+      let displayDate = task.due_date;
+      if(displayDate && displayDate.includes('T')) displayDate = displayDate.split('T')[0];
+      
+      document.getElementById('chat-task-details').innerHTML = `
+        <p>${task.description || 'بدون توضیحات'}</p>
+        <span class="status">مهلت: ${displayDate} | وضعیت: ${task.status}</span>
+      `;
+
+      const actionContainer = document.getElementById('status-actions-container');
+      if (currentUser.id === task.to_user_id && task.status !== 'انجام شد' && task.status !== 'لغو شد') {
+        actionContainer.classList.remove('hidden');
+      } else { actionContainer.classList.add('hidden'); }
+    }
+
+    function appendMessage(msg) {
+      const isMe = msg.from_user_id === currentUser.id;
+      const div = document.createElement('div');
+      div.className = `message ${isMe ? 'me' : 'other'}`;
+      
+      if (msg.type === 'voice') {
+        const fileId = msg.content.split('id=')[1];
+        if(fileId) {
+          div.innerHTML = `
+            <div class="audio-player" id="player-${msg.id}">
+              <button class="play-btn" onclick="playAudio('${fileId}', '${msg.id}', this)">▶</button>
+              <div class="progress-container" onclick="seekAudio(event, '${msg.id}')">
+                <div class="progress-bar" id="progress-${msg.id}"></div>
+              </div>
+              <div class="time-display" id="time-${msg.id}">0:00</div>
+            </div>
+          `;
+        } else {
+          div.innerText = "فایل صوتی نامعتبر";
+        }
+      } else {
+        div.innerText = msg.content;
+      }
+      document.getElementById('messages-area').appendChild(div);
+    }
+
+    // ================= ضبط صدا =================
+    async function toggleRecording() {
+      const micBtn = document.getElementById('mic-btn');
+      
+      if (!isRecording) {
+        try {
+          if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) throw new Error('Not supported');
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          
+          let options = {};
+          if (MediaRecorder.isTypeSupported('audio/webm')) options = { mimeType: 'audio/webm' };
+          else if (MediaRecorder.isTypeSupported('audio/mp4')) options = { mimeType: 'audio/mp4' };
+
+          mediaRecorder = new MediaRecorder(stream, options);
+          mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+
+          mediaRecorder.onstop = async () => {
+            const mimeType = mediaRecorder.mimeType || 'audio/webm';
+            const audioBlob = new Blob(audioChunks, { type: mimeType });
+            audioChunks = [];
+            await uploadVoiceBlob(audioBlob, mimeType);
+            stream.getTracks().forEach(track => track.stop());
+          };
+
+          audioChunks = [];
+          mediaRecorder.start();
+          isRecording = true;
+          micBtn.classList.add('recording');
+          micBtn.innerText = '⏹';
+        } catch (err) {
+          document.getElementById('audio-upload').click();
+        }
+      } else {
+        mediaRecorder.stop();
+        isRecording = false;
+        micBtn.classList.remove('recording');
+        micBtn.innerText = '🎤';
+      }
+    }
+
+    async function uploadVoiceBlob(blob, mimeType) {
+      if (isSending) return; 
+      isSending = true;
+      
+      const micBtn = document.getElementById('mic-btn');
+      micBtn.innerText = '⏳';
+      
+      const reader = new FileReader();
+      reader.readAsDataURL(blob);
+      reader.onloadend = async () => {
+        const base64data = reader.result.split(',')[1];
+        
+        const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, base64Audio: base64data, mimeType: mimeType }, appToken);
+        
+        if (res.ok) setTimeout(pollUpdates, 500);
+        else alert('خطا در ارسال: ' + res.error);
+        
+        micBtn.innerText = '🎤'; 
+        isSending = false;
+      };
+    }
+
+    function handleAudioUpload(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 5 * 1024 * 1024) return alert('حجم نباید بیشتر از ۵ مگابایت باشد.');
+      
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64data = e.target.result.split(',')[1];
+        let mimeType = file.type || 'audio/mp4'; 
+        
+        const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, base64Audio: base64data, mimeType: mimeType }, appToken);
+        
+        if (res.ok) setTimeout(pollUpdates, 500);
+        else alert('خطا در ارسال: ' + res.error);
+      };
+      reader.readAsDataURL(file);
+      event.target.value = ''; 
+    }
+
+    // ================= پخش صدا =================
+    async function playAudio(fileId, msgId, btnElement) {
+      if (currentAudio && currentAudio.msgId === msgId) {
+        if(currentAudio.audio.paused) {
+          currentAudio.audio.play(); btnElement.innerText = '⏸'; btnElement.classList.add('playing');
+        } else {
+          currentAudio.audio.pause(); btnElement.innerText = '▶'; btnElement.classList.remove('playing');
+        }
+        return;
+      }
+      if (currentAudio) {
+        currentAudio.audio.pause();
+        if(currentPlayBtn) { currentPlayBtn.innerText = '▶'; currentPlayBtn.classList.remove('playing'); }
+      }
+      if (audioCache[msgId]) { playBlob(audioCache[msgId], msgId, btnElement); return; }
+      
+      btnElement.innerText = '⏳';
+      
+      const res = await callBackend('getVoiceBase64', { fileId: fileId }, appToken);
+      
+      if (res.ok) {
+          const byteCharacters = atob(res.base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
+          const blob = new Blob([new Uint8Array(byteNumbers)], {type: res.mimeType});
+          const audioUrl = URL.createObjectURL(blob);
+          audioCache[msgId] = audioUrl;
+          playBlob(audioUrl, msgId, btnElement);
+      } else { alert('خطا: ' + res.error); btnElement.innerText = '▶'; }
+    }
+
+    function playBlob(audioUrl, msgId, btnElement) {
+      const audio = new Audio(audioUrl);
+      currentAudio = { audio: audio, msgId: msgId };
+      currentPlayBtn = btnElement;
+      audio.play();
+      btnElement.innerText = '⏸'; btnElement.classList.add('playing');
+      
+      const progressBar = document.getElementById(`progress-${msgId}`);
+      const timeDisplay = document.getElementById(`time-${msgId}`);
+      audio.ontimeupdate = () => {
+        if (audio.duration) {
+          progressBar.style.width = (audio.currentTime / audio.duration) * 100 + '%';
+          timeDisplay.innerText = formatTime(audio.currentTime);
+        }
+      };
+      audio.onended = () => {
+        btnElement.innerText = '▶'; btnElement.classList.remove('playing');
+        progressBar.style.width = '0%'; timeDisplay.innerText = '0:00';
+        currentAudio = null; currentPlayBtn = null;
+      };
+    }
+
+    function seekAudio(event, msgId) {
+      if (!currentAudio || currentAudio.msgId !== msgId) return;
+      const rect = event.currentTarget.getBoundingClientRect();
+      const clickX = rect.right - event.clientX;
+      currentAudio.audio.currentTime = currentAudio.audio.duration * (clickX / rect.width);
+    }
+
+    function formatTime(seconds) {
+      if(isNaN(seconds)) return '0:00';
+      const m = Math.floor(seconds / 60);
+      const s = Math.floor(seconds % 60);
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+    // ================= سایر توابع =================
+    async function updateStatus(newStatus) {
+      const res = await callBackend('updateTaskStatus', { taskId: currentTaskId, status: newStatus }, appToken);
+      if (res.ok) { pollUpdates(); } else { alert(res.error); }
+    }
+
+    async function sendTextMessage() {
+      if (isSending) return; 
+      
+      const input = document.getElementById('chat-input');
+      const text = input.value.trim();
+      if (!text) return;
+
+      isSending = true;
+      input.value = '';
+      
+      const res = await callBackend('sendTextMessage', { taskId: currentTaskId, text: text }, appToken);
+      
+      if (res.ok) setTimeout(pollUpdates, 500);
+      else alert(res.error);
+      
+      isSending = false; 
+    }
+
+    document.getElementById('chat-input').addEventListener('keypress', function (e) {
+      if (e.key === 'Enter') sendTextMessage();
+    });
+  </script>
 </body>
 </html>
