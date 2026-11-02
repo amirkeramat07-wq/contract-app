@@ -361,8 +361,22 @@
     // ================= لیست مخاطبین =================
     async function loadContacts() {
       const container = document.getElementById('contacts-container');
-      container.innerHTML = '<p style="text-align:center; margin-top:20px; color:gray;">در حال دریافت...</p>';
-      const res = await callBackend('getContacts', {}, appToken);
+            container.innerHTML = `
+        <div style="padding: 15px; display: flex; align-items: center; gap: 15px;">
+            <div style="width:50px; height:50px; border-radius:50%; background:#e0e0e0; animation: pulse 1s infinite;"></div>
+            <div style="flex:1;">
+                <div style="width:40%; height:15px; background:#e0e0e0; margin-bottom:8px; border-radius:4px; animation: pulse 1s infinite;"></div>
+                <div style="width:70%; height:12px; background:#e0e0e0; border-radius:4px; animation: pulse 1s infinite;"></div>
+            </div>
+        </div>
+        <div style="padding: 15px; display: flex; align-items: center; gap: 15px;">
+            <div style="width:50px; height:50px; border-radius:50%; background:#e0e0e0; animation: pulse 1s infinite;"></div>
+            <div style="flex:1;">
+                <div style="width:40%; height:15px; background:#e0e0e0; margin-bottom:8px; border-radius:4px; animation: pulse 1s infinite;"></div>
+                <div style="width:70%; height:12px; background:#e0e0e0; border-radius:4px; animation: pulse 1s infinite;"></div>
+            </div>
+        </div>
+      `;
       
       if (res.ok) {
           container.innerHTML = '';
@@ -458,7 +472,7 @@
       }
 
       if(pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(pollUpdates, 3000); 
+      pollInterval = setInterval(pollUpdates, 7000); // افزایش به 7 ثانیه برای کاهش فشار روی سرور 
     }
 
     function closeChat() {
@@ -747,7 +761,11 @@
         let jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
         return [jy, jm, jd];
     }
-
+    @keyframes pulse {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log(err)); }); }
   </script>
 </body>
