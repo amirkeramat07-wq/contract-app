@@ -84,7 +84,9 @@
     .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 18px; }
     .mic-btn { background: var(--white); color: var(--text-light); }
     .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; }
-    @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+    
+    /* انیمیشن اسکلتون لودینگ */
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
     .modal-content { background: var(--white); width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
@@ -125,9 +127,7 @@
         <button class="text-btn" onclick="handleLogout()">خروج</button>
       </div>
     </div>
-    <div class="contact-list" id="contacts-container">
-      <p style="text-align:center; margin-top:20px; color:gray;">در حال دریافت مخاطبین...</p>
-    </div>
+    <div class="contact-list" id="contacts-container"></div>
   </div>
 
   <div id="profile-view" class="hidden">
@@ -153,7 +153,6 @@
     </div>
     <div class="chat-task-info">
       <div id="chat-task-details"></div>
-      <!-- دکمه‌های وضعیت حذف شدند -->
     </div>
     <div class="messages-area" id="messages-area"></div>
     <div class="chat-input-area">
@@ -173,6 +172,7 @@
     <div class="admin-list" id="users-list-container"></div>
   </div>
 
+  <!-- Modals -->
   <div id="create-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>ثبت دستور جدید</h3>
@@ -279,14 +279,13 @@
         const savedUser = localStorage.getItem('currentUser');
         if (savedToken && savedUser) {
             appToken = savedToken; currentUser = JSON.parse(savedUser);
-            startHeartbeat(); // شروع تایمر آنلاین بودن
+            startHeartbeat();
             showContactsView();
         }
     });
 
     function startHeartbeat() {
         if (heartbeatInterval) clearInterval(heartbeatInterval);
-        // هر ۱ دقیقه به سرور می‌گوید من آنلاین هستم
         callBackend('heartbeat', {}, appToken);
         heartbeatInterval = setInterval(() => {
             if (appToken) callBackend('heartbeat', {}, appToken);
@@ -308,7 +307,9 @@
       const pass = document.getElementById('login-password').value.trim();
       if (!user || !pass) return alert('نام کاربری و رمز را وارد کنید');
       const btn = document.getElementById('login-btn'); btn.disabled = true; btn.innerText = 'در حال ورود...';
+      
       const res = await callBackend('login', { username: user, password: pass });
+      
       if (res.ok) {
           appToken = res.token; currentUser = res.user;
           localStorage.setItem('appToken', appToken); localStorage.setItem('currentUser', JSON.stringify(currentUser));
@@ -342,26 +343,22 @@
         
         let interval = Math.floor(seconds / 31536000);
         if (interval > 1) return interval + " سال پیش";
-        
         interval = Math.floor(seconds / 2592000);
         if (interval > 1) return interval + " ماه پیش";
-        
         interval = Math.floor(seconds / 86400);
         if (interval > 1) return interval + " روز پیش";
-        
         interval = Math.floor(seconds / 3600);
         if (interval > 1) return interval + " ساعت پیش";
-        
         interval = Math.floor(seconds / 60);
         if (interval > 1) return interval + " دقیقه پیش";
-        
         return "لحظاتی پیش";
     }
 
     // ================= لیست مخاطبین =================
     async function loadContacts() {
       const container = document.getElementById('contacts-container');
-            container.innerHTML = `
+      // اسکلتون لودینگ زیبا
+      container.innerHTML = `
         <div style="padding: 15px; display: flex; align-items: center; gap: 15px;">
             <div style="width:50px; height:50px; border-radius:50%; background:#e0e0e0; animation: pulse 1s infinite;"></div>
             <div style="flex:1;">
@@ -377,6 +374,8 @@
             </div>
         </div>
       `;
+      
+      const res = await callBackend('getContacts', {}, appToken);
       
       if (res.ok) {
           container.innerHTML = '';
@@ -472,7 +471,8 @@
       }
 
       if(pollInterval) clearInterval(pollInterval);
-      pollInterval = setInterval(pollUpdates, 7000); // افزایش به 7 ثانیه برای کاهش فشار روی سرور 
+      // افزایش زمان به ۷ ثانیه برای کاهش فشار روی سرور
+      pollInterval = setInterval(pollUpdates, 7000); 
     }
 
     function closeChat() {
@@ -512,7 +512,6 @@
       let displayDate = formatJalali(task.due_date);
       let lastSeenText = timeAgo(lastSeen);
       
-      // دکمه‌های وضعیت حذف شدند و بجای آن آخرین بازدید نمایش داده می‌شود
       document.getElementById('chat-task-details').innerHTML = `
         <p>${task.description || 'بدون توضیحات'}</p>
         <span class="status">مهلت: ${displayDate} | آخرین بازدید: ${lastSeenText}</span>
@@ -571,7 +570,7 @@
       } else { alert(res.error); }
     }
 
-    // ================= صدا و ادمین (بدون تغییر) =================
+    // ================= صدا و ادمین =================
     async function toggleRecording() {
       const micBtn = document.getElementById('mic-btn');
       if (!isRecording) {
@@ -761,11 +760,7 @@
         let jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
         return [jy, jm, jd];
     }
-    @keyframes pulse {
-      0% { opacity: 1; }
-      50% { opacity: 0.5; }
-      100% { opacity: 1; }
-    }
+
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log(err)); }); }
   </script>
 </body>
