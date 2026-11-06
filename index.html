@@ -85,7 +85,6 @@
     .mic-btn { background: var(--white); color: var(--text-light); }
     .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; }
     
-    /* انیمیشن اسکلتون لودینگ */
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 100; }
@@ -172,7 +171,6 @@
     <div class="admin-list" id="users-list-container"></div>
   </div>
 
-  <!-- Modals -->
   <div id="create-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <h3>ثبت دستور جدید</h3>
@@ -264,21 +262,25 @@
     let currentPlayBtn = null; 
     let cachedUsers = [];
 
-    async function callBackend(action, data = {}, token = '') {
+    async function callBackend(action, data, token) {
       try {
         const response = await fetch(API_URL, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: action, token: token, data: data })
+          method: 'POST', 
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: action, token: token || '', data: data || {} })
         });
         return await response.json();
-      } catch (error) { return { ok: false, error: 'خطا در ارتباط با شبکه' }; }
+      } catch (error) { 
+        return { ok: false, error: 'network_error' }; 
+      }
     }
 
-    window.addEventListener('load', () => {
+    window.addEventListener('load', function() {
         const savedToken = localStorage.getItem('appToken');
         const savedUser = localStorage.getItem('currentUser');
         if (savedToken && savedUser) {
-            appToken = savedToken; currentUser = JSON.parse(savedUser);
+            appToken = savedToken; 
+            currentUser = JSON.parse(savedUser);
             startHeartbeat();
             showContactsView();
         }
@@ -287,10 +289,25 @@
     function startHeartbeat() {
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         callBackend('heartbeat', {}, appToken);
-        heartbeatInterval = setInterval(() => {
-            if (appToken) callBackend('heartbeat', {}, appToken);
+        heartbeatInterval = setInterval(function() {
+            if (appToken && document.visibilityState === 'visible') {
+                callBackend('heartbeat', {}, appToken);
+            }
         }, 60000);
     }
+
+    // ================= مدیریت وضعیت تب (Smart Polling) =================
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible') {
+            // وقتی کاربر برگشت به برنامه، فوراً آپدیت کن
+            if (currentTaskId) pollUpdates();
+            if (pollInterval) clearInterval(pollInterval);
+            if (currentTaskId) pollInterval = setInterval(pollUpdates, 7000);
+        } else {
+            // وقتی کاربر از برنامه خارج شد یا گوشی را خاموش کرد، درخواست‌ها را متوقف کن
+            if (pollInterval) clearInterval(pollInterval);
+        }
+    });
 
     function showContactsView() {
         document.getElementById('login-view').classList.add('hidden');
@@ -306,16 +323,16 @@
       const user = document.getElementById('login-username').value.trim();
       const pass = document.getElementById('login-password').value.trim();
       if (!user || !pass) return alert('نام کاربری و رمز را وارد کنید');
-      const btn = document.getElementById('login-btn'); btn.disabled = true; btn.innerText = 'در حال ورود...';
+      const btn = document.getElementById('login-btn'); 
+      btn.disabled = true; btn.innerText = 'در حال ورود...';
       
-      const res = await callBackend('login', { username: user, password: pass });
+      const res = await callBackend('login', { username: user, password: pass }, '');
       
       if (res.ok) {
           appToken = res.token; currentUser = res.user;
           localStorage.setItem('appToken', appToken); localStorage.setItem('currentUser', JSON.stringify(currentUser));
-          startHeartbeat();
-          showContactsView();
-      } else { alert(res.error || 'نام کاربری اشتباه است'); }
+          startHeartbeat(); showContactsView();
+      } else { alert(res.error || 'نام کاربری یا رمز اشتباه است'); }
       btn.disabled = false; btn.innerText = 'ورود به سیستم';
     }
 
@@ -325,14 +342,13 @@
       localStorage.clear(); location.reload();
     }
 
-    // ================= توابع کمکی زمان و تاریخ =================
     function formatJalali(dateStr) {
         if(!dateStr) return '';
         let d = dateStr.split('T')[0];
         let parts = d.split('-');
         if(parts.length !== 3) return d;
         let j = gregorian_to_jalali(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
-        return `${j[0]}/${j[1] < 10 ? '0' + j[1] : j[1]}/${j[2] < 10 ? '0' + j[2] : j[2]}`;
+        return j[0] + '/' + (j[1] < 10 ? '0' + j[1] : j[1]) + '/' + (j[2] < 10 ? '0' + j[2] : j[2]);
     }
 
     function timeAgo(dateString) {
@@ -340,7 +356,6 @@
         const date = new Date(dateString);
         const now = new Date();
         const seconds = Math.floor((now - date) / 1000);
-        
         let interval = Math.floor(seconds / 31536000);
         if (interval > 1) return interval + " سال پیش";
         interval = Math.floor(seconds / 2592000);
@@ -354,24 +369,16 @@
         return "لحظاتی پیش";
     }
 
-    // ================= لیست مخاطبین =================
     async function loadContacts() {
       const container = document.getElementById('contacts-container');
-      // اسکلتون لودینگ زیبا
       container.innerHTML = `
         <div style="padding: 15px; display: flex; align-items: center; gap: 15px;">
             <div style="width:50px; height:50px; border-radius:50%; background:#e0e0e0; animation: pulse 1s infinite;"></div>
-            <div style="flex:1;">
-                <div style="width:40%; height:15px; background:#e0e0e0; margin-bottom:8px; border-radius:4px; animation: pulse 1s infinite;"></div>
-                <div style="width:70%; height:12px; background:#e0e0e0; border-radius:4px; animation: pulse 1s infinite;"></div>
-            </div>
+            <div style="flex:1;"><div style="width:40%; height:15px; background:#e0e0e0; margin-bottom:8px; border-radius:4px; animation: pulse 1s infinite;"></div><div style="width:70%; height:12px; background:#e0e0e0; border-radius:4px; animation: pulse 1s infinite;"></div></div>
         </div>
         <div style="padding: 15px; display: flex; align-items: center; gap: 15px;">
             <div style="width:50px; height:50px; border-radius:50%; background:#e0e0e0; animation: pulse 1s infinite;"></div>
-            <div style="flex:1;">
-                <div style="width:40%; height:15px; background:#e0e0e0; margin-bottom:8px; border-radius:4px; animation: pulse 1s infinite;"></div>
-                <div style="width:70%; height:12px; background:#e0e0e0; border-radius:4px; animation: pulse 1s infinite;"></div>
-            </div>
+            <div style="flex:1;"><div style="width:40%; height:15px; background:#e0e0e0; margin-bottom:8px; border-radius:4px; animation: pulse 1s infinite;"></div><div style="width:70%; height:12px; background:#e0e0e0; border-radius:4px; animation: pulse 1s infinite;"></div></div>
         </div>
       `;
       
@@ -383,7 +390,7 @@
             container.innerHTML = '<p style="text-align:center; margin-top:20px; color:gray;">مخاطبی یافت نشد.</p>';
             return;
           }
-          res.contacts.forEach(c => {
+          res.contacts.forEach(function(c) {
             let lastMsg = 'هنوز دستوری رد و بدل نشده است.';
             let dateStr = '';
             if (c.lastTask) {
@@ -394,21 +401,13 @@
             const initial = c.name.trim().charAt(0) || 'U';
             const item = document.createElement('div');
             item.className = 'contact-item';
-            item.onclick = () => openProfile(c.id, c.name, c.role);
-            
-            item.innerHTML = `
-              <div class="avatar">${initial}</div>
-              <div class="contact-info">
-                <div class="contact-name"><span>${c.name} <span class="contact-role">(${c.role})</span></span><span style="font-size:11px; color:#999;">${dateStr}</span></div>
-                <div class="contact-last-msg">${lastMsg}</div>
-              </div>
-            `;
+            item.onclick = function() { openProfile(c.id, c.name, c.role); };
+            item.innerHTML = '<div class="avatar">' + initial + '</div><div class="contact-info"><div class="contact-name"><span>' + c.name + ' <span class="contact-role">(' + c.role + ')</span></span><span style="font-size:11px; color:#999;">' + dateStr + '</span></div><div class="contact-last-msg">' + lastMsg + '</div></div>';
             container.appendChild(item);
           });
       } else { container.innerHTML = '<p style="text-align:center; color:red;">خطا در دریافت اطلاعات</p>'; }
     }
 
-    // ================= پروفایل مخاطب =================
     async function openProfile(contactId, name, role) {
         currentContactId = contactId;
         document.getElementById('contacts-view').classList.add('hidden');
@@ -427,14 +426,14 @@
                 tasksContainer.innerHTML = '<p style="text-align:center; color:gray; font-size:14px; margin-top:20px;">هیچ دستوری وجود ندارد.</p>';
                 return;
             }
-            res.tasks.forEach(task => {
+            res.tasks.forEach(function(task) {
                 let badgeColor = task.status === 'در حال انجام' ? 'var(--primary)' : (task.status === 'انجام شد' ? 'var(--success)' : (task.status === 'گذشته از مهلت' ? 'var(--danger)' : '#718093'));
                 const isSender = task.from_user_id === currentUser.id;
                 const prefix = isSender ? 'شما فرستادید: ' : 'دریافتی: ';
                 const card = document.createElement('div');
                 card.className = 'task-card';
-                card.onclick = () => openChat(task.id);
-                card.innerHTML = `<div class="task-card-header"><span class="task-title" style="font-size:14px;">${prefix}${task.title}</span><span class="badge" style="background:${badgeColor}">${task.status}</span></div>`;
+                card.onclick = function() { openChat(task.id); };
+                card.innerHTML = '<div class="task-card-header"><span class="task-title" style="font-size:14px;">' + prefix + task.title + '</span><span class="badge" style="background:' + badgeColor + '">' + task.status + '</span></div>';
                 tasksContainer.appendChild(card);
             });
         } else { tasksContainer.innerHTML = '<p style="text-align:center; color:red;">خطا</p>'; }
@@ -447,7 +446,6 @@
         loadContacts();
     }
 
-    // ================= چت =================
     async function openChat(taskId) {
       currentTaskId = taskId;
       lastMessageId = null;
@@ -455,7 +453,7 @@
       document.getElementById('chat-view').classList.remove('hidden');
       document.getElementById('messages-area').innerHTML = '<p style="text-align:center;color:gray">در حال دریافت پیام‌ها...</p>';
       
-      const res = await callBackend('getTaskDetail', { taskId }, appToken);
+      const res = await callBackend('getTaskDetail', { taskId: taskId }, appToken);
       if (res.ok) {
           currentTaskData = res.task;
           updateTaskInfoUI(res.task, res.otherUserLastSeen);
@@ -463,7 +461,7 @@
           area.innerHTML = '';
           if(res.messages.length > 0) {
             lastMessageId = res.messages[res.messages.length - 1].id;
-            res.messages.forEach(msg => appendMessage(msg));
+            res.messages.forEach(function(msg) { appendMessage(msg); });
           } else {
             area.innerHTML = '<p style="text-align:center;color:gray;font-size:12px;">پیامی وجود ندارد.</p>';
           }
@@ -471,8 +469,9 @@
       }
 
       if(pollInterval) clearInterval(pollInterval);
-      // افزایش زمان به ۷ ثانیه برای کاهش فشار روی سرور
-      pollInterval = setInterval(pollUpdates, 7000); 
+      if (document.visibilityState === 'visible') {
+          pollInterval = setInterval(pollUpdates, 7000); 
+      }
     }
 
     function closeChat() {
@@ -489,7 +488,7 @@
     }
 
     async function pollUpdates() {
-      if (!currentTaskId || isPolling) return; 
+      if (!currentTaskId || isPolling || document.visibilityState !== 'visible') return; 
       isPolling = true;
       const res = await callBackend('getUpdates', { taskId: currentTaskId, lastMessageId: lastMessageId }, appToken);
       if (res.ok) {
@@ -500,7 +499,7 @@
             const area = document.getElementById('messages-area');
             if (area.innerHTML.includes('پیامی وجود ندارد')) area.innerHTML = '';
             const isScrolledToBottom = area.scrollHeight - area.scrollTop <= area.clientHeight + 50;
-            res.newMessages.forEach(msg => { appendMessage(msg); lastMessageId = msg.id; });
+            res.newMessages.forEach(function(msg) { appendMessage(msg); lastMessageId = msg.id; });
             if (isScrolledToBottom) area.scrollTop = area.scrollHeight;
           }
       }
@@ -511,12 +510,7 @@
       document.getElementById('chat-title').innerText = task.title;
       let displayDate = formatJalali(task.due_date);
       let lastSeenText = timeAgo(lastSeen);
-      
-      document.getElementById('chat-task-details').innerHTML = `
-        <p>${task.description || 'بدون توضیحات'}</p>
-        <span class="status">مهلت: ${displayDate} | آخرین بازدید: ${lastSeenText}</span>
-      `;
-      
+      document.getElementById('chat-task-details').innerHTML = '<p>' + (task.description || 'بدون توضیحات') + '</p><span class="status">مهلت: ' + displayDate + ' | آخرین بازدید: ' + lastSeenText + '</span>';
       const cancelBtn = document.getElementById('cancel-task-btn');
       if (currentUser.id === task.from_user_id && task.status !== 'انجام شد' && task.status !== 'لغو شد') {
           cancelBtn.style.display = 'block';
@@ -526,42 +520,44 @@
     function appendMessage(msg) {
       const isMe = msg.from_user_id === currentUser.id;
       const div = document.createElement('div');
-      div.className = `message ${isMe ? 'me' : 'other'}`;
+      div.className = 'message ' + (isMe ? 'me' : 'other');
       if (msg.type === 'voice') {
         const fileId = msg.content.split('id=')[1];
         if(fileId) {
-          div.innerHTML = `<div class="audio-player" id="player-${msg.id}"><button class="play-btn" onclick="playAudio('${fileId}', '${msg.id}', this)">▶</button><div class="progress-container" onclick="seekAudio(event, '${msg.id}')"><div class="progress-bar" id="progress-${msg.id}"></div></div><div class="time-display" id="time-${msg.id}">0:00</div></div>`;
+          div.innerHTML = '<div class="audio-player" id="player-' + msg.id + '"><button class="play-btn" onclick="playAudio(\'' + fileId + '\', \'' + msg.id + '\', this)">▶</button><div class="progress-container" onclick="seekAudio(event, \'' + msg.id + '\')"><div class="progress-bar" id="progress-' + msg.id + '"></div></div><div class="time-display" id="time-' + msg.id + '">0:00</div></div>';
         } else { div.innerText = "فایل صوتی نامعتبر"; }
       } else { div.innerText = msg.content; }
       document.getElementById('messages-area').appendChild(div);
     }
 
-    // ================= ثبت دستور جدید =================
     async function openCreateModalFromProfile() {
         document.getElementById('create-modal').classList.remove('hidden');
         initCalendar();
-        const select = document.getElementById('task-receiver'); select.innerHTML = '<option value="">در حال دریافت...</option>';
+        const select = document.getElementById('task-receiver'); 
+        select.innerHTML = '<option value="">در حال دریافت...</option>';
         const res = await callBackend('listUsers', {}, appToken);
         if (res.ok) {
             cachedUsers = res.users; select.innerHTML = '';
-            res.users.forEach(u => {
+            res.users.forEach(function(u) {
                 if(u.id !== currentUser.id && u.active) {
                     const selected = (u.id === currentContactId) ? 'selected' : '';
-                    select.innerHTML += `<option value="${u.id}" ${selected}>${u.name} (${u.role})</option>`;
+                    select.innerHTML += '<option value="' + u.id + '" ' + selected + '>' + u.name + ' (' + u.role + ')</option>';
                 }
             });
         }
     }
     function closeCreateModal() { document.getElementById('create-modal').classList.add('hidden'); }
+    
     async function submitNewTask() {
       const to_user_id = document.getElementById('task-receiver').value;
       const title = document.getElementById('task-title').value;
       const description = document.getElementById('task-desc').value;
       const due_time = document.getElementById('task-time').value;
       const jy = parseInt(document.getElementById('jYear').value); const jm = parseInt(document.getElementById('jMonth').value); const jd = parseInt(document.getElementById('jDay').value);
-      const g = jalali_to_gregorian(jy, jm, jd); const due_date = `${g[0]}-${g[1] < 10 ? '0' + g[1] : g[1]}-${g[2] < 10 ? '0' + g[2] : g[2]}`;
+      const g = jalali_to_gregorian(jy, jm, jd); const due_date = g[0] + '-' + (g[1] < 10 ? '0' + g[1] : g[1]) + '-' + (g[2] < 10 ? '0' + g[2] : g[2]);
       if (!to_user_id || !title) return alert('گیرنده و عنوان الزامی است');
-      const res = await callBackend('createTask', { title, description, to_user_id, due_date, due_time }, appToken);
+      
+      const res = await callBackend('createTask', { title: title, description: description, to_user_id: to_user_id, due_date: due_date, due_time: due_time }, appToken);
       if (res.ok) {
           closeCreateModal(); 
           document.getElementById('task-title').value = ''; document.getElementById('task-desc').value = '';
@@ -570,7 +566,6 @@
       } else { alert(res.error); }
     }
 
-    // ================= صدا و ادمین =================
     async function toggleRecording() {
       const micBtn = document.getElementById('mic-btn');
       if (!isRecording) {
@@ -578,11 +573,11 @@
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
           let options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : { mimeType: 'audio/mp4' };
           mediaRecorder = new MediaRecorder(stream, options);
-          mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
-          mediaRecorder.onstop = async () => {
+          mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) audioChunks.push(e.data); };
+          mediaRecorder.onstop = async function() {
             const mimeType = mediaRecorder.mimeType || 'audio/webm';
             const audioBlob = new Blob(audioChunks, { type: mimeType }); audioChunks = [];
-            await uploadVoiceBlob(audioBlob, mimeType); stream.getTracks().forEach(track => track.stop());
+            await uploadVoiceBlob(audioBlob, mimeType); stream.getTracks().forEach(function(track) { track.stop(); });
           };
           audioChunks = []; mediaRecorder.start(); isRecording = true;
           micBtn.classList.add('recording'); micBtn.innerText = '⏹';
@@ -591,27 +586,30 @@
         mediaRecorder.stop(); isRecording = false; micBtn.classList.remove('recording'); micBtn.innerText = '🎤';
       }
     }
+    
     async function uploadVoiceBlob(blob, mimeType) {
       if (isSending) return; isSending = true; const micBtn = document.getElementById('mic-btn'); micBtn.innerText = '⏳';
       const reader = new FileReader(); reader.readAsDataURL(blob);
-      reader.onloadend = async () => {
+      reader.onloadend = async function() {
         const base64data = reader.result.split(',')[1];
         const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, base64Audio: base64data, mimeType: mimeType }, appToken);
         if (res.ok) setTimeout(pollUpdates, 500); else alert('خطا: ' + res.error);
         micBtn.innerText = '🎤'; isSending = false;
       };
     }
+    
     function handleAudioUpload(event) {
       const file = event.target.files[0]; if (!file) return;
       if (file.size > 5 * 1024 * 1024) return alert('حجم زیاد است.');
       const reader = new FileReader();
-      reader.onload = async (e) => {
+      reader.onload = async function(e) {
         const base64data = e.target.result.split(',')[1]; let mimeType = file.type || 'audio/mp4'; 
         const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, base64Audio: base64data, mimeType: mimeType }, appToken);
         if (res.ok) setTimeout(pollUpdates, 500); else alert('خطا: ' + res.error);
       };
       reader.readAsDataURL(file); event.target.value = ''; 
     }
+    
     async function playAudio(fileId, msgId, btnElement) {
       if (currentAudio && currentAudio.msgId === msgId) {
         if(currentAudio.audio.paused) { currentAudio.audio.play(); btnElement.innerText = '⏸'; btnElement.classList.add('playing'); }
@@ -628,19 +626,22 @@
           const audioUrl = URL.createObjectURL(blob); audioCache[msgId] = audioUrl; playBlob(audioUrl, msgId, btnElement);
       } else { alert('خطا: ' + res.error); btnElement.innerText = '▶'; }
     }
+    
     function playBlob(audioUrl, msgId, btnElement) {
       const audio = new Audio(audioUrl); currentAudio = { audio: audio, msgId: msgId }; currentPlayBtn = btnElement;
       audio.play(); btnElement.innerText = '⏸'; btnElement.classList.add('playing');
-      const progressBar = document.getElementById(`progress-${msgId}`); const timeDisplay = document.getElementById(`time-${msgId}`);
-      audio.ontimeupdate = () => { if (audio.duration) { progressBar.style.width = (audio.currentTime / audio.duration) * 100 + '%'; timeDisplay.innerText = formatTime(audio.currentTime); } };
-      audio.onended = () => { btnElement.innerText = '▶'; btnElement.classList.remove('playing'); progressBar.style.width = '0%'; timeDisplay.innerText = '0:00'; currentAudio = null; currentPlayBtn = null; };
+      const progressBar = document.getElementById('progress-' + msgId); const timeDisplay = document.getElementById('time-' + msgId);
+      audio.ontimeupdate = function() { if (audio.duration) { progressBar.style.width = (audio.currentTime / audio.duration) * 100 + '%'; timeDisplay.innerText = formatTime(audio.currentTime); } };
+      audio.onended = function() { btnElement.innerText = '▶'; btnElement.classList.remove('playing'); progressBar.style.width = '0%'; timeDisplay.innerText = '0:00'; currentAudio = null; currentPlayBtn = null; };
     }
+    
     function seekAudio(event, msgId) {
       if (!currentAudio || currentAudio.msgId !== msgId) return;
       const rect = event.currentTarget.getBoundingClientRect(); const clickX = rect.right - event.clientX;
       currentAudio.audio.currentTime = currentAudio.audio.duration * (clickX / rect.width);
     }
-    function formatTime(seconds) { if(isNaN(seconds)) return '0:00'; const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return `${m}:${s < 10 ? '0' : ''}${s}`; }
+    
+    function formatTime(seconds) { if(isNaN(seconds)) return '0:00'; const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return m + ':' + (s < 10 ? '0' : '') + s; }
     
     async function sendTextMessage() {
       if (isSending) return; 
@@ -660,9 +661,9 @@
         const res = await callBackend('listUsers', {}, appToken);
         if (res.ok) {
             cachedUsers = res.users; container.innerHTML = '';
-            res.users.forEach(u => {
+            res.users.forEach(function(u) {
                 let roleColor = u.role === 'مدیر' ? '#e84118' : (u.role === 'رئیس' ? '#fbc531' : (u.role === 'سرپرست' ? '#00a8ff' : '#718093'));
-                container.innerHTML += `<div class="user-card"><div class="user-info"><span class="user-name">${u.name} <span style="font-size:10px; color:${roleColor}">(${u.role})</span></span><span class="user-role">کاربری: ${u.username} | ${u.active ? '<span style="color:green">فعال</span>' : '<span style="color:red">غیرفعال</span>'}</span></div><div class="user-actions"><button class="user-btn btn-edit" onclick="openEditUserModal('${u.id}')">ویرایش</button><button class="user-btn btn-pass" onclick="openAdminResetPassModal('${u.id}', '${u.name}')">رمز</button>${u.username !== 'admin' ? `<button class="user-btn btn-toggle ${u.active ? 'active' : ''}" onclick="toggleUser('${u.id}')">${u.active ? 'فعال' : 'غیرفعال'}</button>` : ''}</div></div>`;
+                container.innerHTML += '<div class="user-card"><div class="user-info"><span class="user-name">' + u.name + ' <span style="font-size:10px; color:' + roleColor + '">(' + u.role + ')</span></span><span class="user-role">کاربری: ' + u.username + ' | ' + (u.active ? '<span style="color:green">فعال</span>' : '<span style="color:red">غیرفعال</span>') + '</span></div><div class="user-actions"><button class="user-btn btn-edit" onclick="openEditUserModal(\'' + u.id + '\')">ویرایش</button><button class="user-btn btn-pass" onclick="openAdminResetPassModal(\'' + u.id + '\', \'' + u.name + '\')">رمز</button>' + (u.username !== 'admin' ? '<button class="user-btn btn-toggle ' + (u.active ? 'active' : '') + '" onclick="toggleUser(\'' + u.id + '\')">' + (u.active ? 'فعال' : 'غیرفعال') + '</button>' : '') + '</div></div>';
             });
         } else { container.innerHTML = '<p style="text-align:center; color:red;">خطا در دریافت لیست</p>'; }
     }
@@ -674,28 +675,35 @@
         populateManagersCheckboxes([]); document.getElementById('user-modal').classList.remove('hidden');
     }
     function openEditUserModal(userId) {
-        const user = cachedUsers.find(u => u.id === userId); if (!user) return;
+        const user = cachedUsers.find(function(u) { return u.id === userId; }); if (!user) return;
         document.getElementById('user-modal-title').innerText = 'ویرایش کاربر'; document.getElementById('edit-user-id').value = user.id;
         document.getElementById('u-name').value = user.name; document.getElementById('u-username').value = user.username; document.getElementById('u-role').value = user.role;
         document.getElementById('username-group').style.display = 'none'; document.getElementById('password-group').style.display = 'none';
         populateManagersCheckboxes(user.manager_id ? String(user.manager_id).split(',') : []); document.getElementById('user-modal').classList.remove('hidden');
     }
     function closeUserModal() { document.getElementById('user-modal').classList.add('hidden'); }
-    function populateManagersCheckboxes(selectedIds = []) {
+    function populateManagersCheckboxes(selectedIds) {
         const container = document.getElementById('u-manager-container'); container.innerHTML = '';
-        cachedUsers.forEach(u => { if (u.active && u.username !== 'admin') container.innerHTML += `<label><input type="checkbox" value="${u.id}" ${selectedIds.includes(u.id) ? 'checked' : ''}> <span>${u.name} (${u.role})</span></label>`; });
+        cachedUsers.forEach(function(u) { 
+            if (u.active && u.username !== 'admin') {
+                const checked = selectedIds.includes(u.id) ? 'checked' : '';
+                container.innerHTML += '<label><input type="checkbox" value="' + u.id + '" ' + checked + '> <span>' + u.name + ' (' + u.role + ')</span></label>'; 
+            }
+        });
     }
     async function submitUserForm() {
         const editId = document.getElementById('edit-user-id').value;
         const name = document.getElementById('u-name').value; const username = document.getElementById('u-username').value; const password = document.getElementById('u-password').value; const role = document.getElementById('u-role').value;
-        const manager_ids = Array.from(document.querySelectorAll('#u-manager-container input[type="checkbox"]:checked')).map(cb => cb.value).join(',');
+        const checkboxes = document.querySelectorAll('#u-manager-container input[type="checkbox"]:checked');
+        let manager_ids = []; checkboxes.forEach(function(cb) { manager_ids.push(cb.value); }); const manager_ids_str = manager_ids.join(',');
+        
         if (!name || !role) return alert('نام و نقش الزامی است');
         if (editId) {
-            const res = await callBackend('updateUser', { userId: editId, updates: { name, role, manager_id: manager_ids } }, appToken);
+            const res = await callBackend('updateUser', { userId: editId, updates: { name: name, role: role, manager_id: manager_ids_str } }, appToken);
             if (res.ok) { closeUserModal(); loadAdminUsers(); } else alert(res.error);
         } else {
             if (!username || !password) return alert('نام کاربری و رمز الزامی است');
-            const res = await callBackend('createUser', { name, username, password, role, manager_id: manager_ids }, appToken);
+            const res = await callBackend('createUser', { name: name, username: username, password: password, role: role, manager_id: manager_ids_str }, appToken);
             if (res.ok) { closeUserModal(); loadAdminUsers(); } else alert(res.error);
         }
     }
@@ -721,22 +729,21 @@
         if (res.ok) { alert('تغییر کرد'); closePasswordModal(); } else alert(res.error);
     }
 
-    // --- Date ---
     const jMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     function initCalendar() {
         const ySelect = document.getElementById('jYear'); const mSelect = document.getElementById('jMonth');
         const now = new Date(); const jNow = gregorian_to_jalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-        ySelect.innerHTML = ''; for (let i = jNow[0] - 1; i <= jNow[0] + 2; i++) ySelect.innerHTML += `<option value="${i}" ${i === jNow[0] ? 'selected' : ''}>${i}</option>`;
-        mSelect.innerHTML = ''; for (let i = 0; i < 12; i++) mSelect.innerHTML += `<option value="${i+1}" ${i+1 === jNow[1] ? 'selected' : ''}>${jMonths[i]}</option>`;
+        ySelect.innerHTML = ''; for (let i = jNow[0] - 1; i <= jNow[0] + 2; i++) ySelect.innerHTML += '<option value="' + i + '" ' + (i === jNow[0] ? 'selected' : '') + '>' + i + '</option>';
+        mSelect.innerHTML = ''; for (let i = 0; i < 12; i++) mSelect.innerHTML += '<option value="' + (i+1) + '" ' + (i+1 === jNow[1] ? 'selected' : '') + '>' + jMonths[i] + '</option>';
         updateDays(); mSelect.onchange = updateDays; ySelect.onchange = updateDays;
     }
     function updateDays() {
         const y = parseInt(document.getElementById('jYear').value); const m = parseInt(document.getElementById('jMonth').value); const dSelect = document.getElementById('jDay');
         let days = 31; if (m >= 7 && m <= 11) days = 30; if (m === 12) { if (isLeapJalali(y)) days = 30; else days = 29; }
         const currentDay = parseInt(dSelect.value) || 1; dSelect.innerHTML = '';
-        for (let i = 1; i <= days; i++) dSelect.innerHTML += `<option value="${i}" ${i === currentDay ? 'selected' : ''}>${i}</option>`;
+        for (let i = 1; i <= days; i++) dSelect.innerHTML += '<option value="' + i + '" ' + (i === currentDay ? 'selected' : '') + '>' + i + '</option>';
     }
-    function isLeapJalali(jy) { return [1, 5, 9, 13, 17, 22, 26, 30].includes(jy % 33); }
+    function isLeapJalali(jy) { return [1, 5, 9, 13, 17, 22, 26, 30].indexOf(jy % 33) !== -1; }
     function jalali_to_gregorian(jy, jm, jd) {
         let gy = (jy <= 979) ? 621 : 1600; jy -= (jy <= 979) ? 0 : 979;
         let days = (365 * jy) + (parseInt(jy / 33) * 8) + parseInt(((jy % 33) + 3) / 4) + 78 + jd + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
@@ -761,7 +768,7 @@
         return [jy, jm, jd];
     }
 
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(err => console.log(err)); }); }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', function() { navigator.serviceWorker.register('./sw.js').catch(function(err) { console.log(err); }); }); }
   </script>
 </body>
 </html>
