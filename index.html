@@ -62,7 +62,7 @@
     .chat-header { background: var(--primary); color: white; padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
     .chat-header-right { display: flex; align-items: center; gap: 15px; }
     .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: white; padding: 0 10px; }
-    .cancel-btn { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; }
+    .delete-btn { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; }
     .chat-task-info { padding: 10px 15px; background: var(--white); border-bottom: 1px solid var(--border); }
     .chat-task-info p { font-size: 13px; margin-bottom: 5px; }
     .chat-task-info .status { color: var(--primary-dark); font-weight: bold; font-size: 12px; }
@@ -148,7 +148,7 @@
         <button class="back-btn" onclick="closeChat()">→</button>
         <h3 id="chat-title" style="font-size: 16px;">عنوان دستور</h3>
       </div>
-      <button class="cancel-btn" id="cancel-task-btn" onclick="handleCancelTask()">لغو دستور</button>
+      <button class="delete-btn" id="delete-task-btn" onclick="handleDeleteTask()">حذف دستور</button>
     </div>
     <div class="chat-task-info">
       <div id="chat-task-details"></div>
@@ -270,19 +270,15 @@
           body: JSON.stringify({ action: action, token: token || '', data: data || {} })
         });
         return await response.json();
-      } catch (error) { 
-        return { ok: false, error: 'network_error' }; 
-      }
+      } catch (error) { return { ok: false, error: 'network_error' }; }
     }
 
     window.addEventListener('load', function() {
         const savedToken = localStorage.getItem('appToken');
         const savedUser = localStorage.getItem('currentUser');
         if (savedToken && savedUser) {
-            appToken = savedToken; 
-            currentUser = JSON.parse(savedUser);
-            startHeartbeat();
-            showContactsView();
+            appToken = savedToken; currentUser = JSON.parse(savedUser);
+            startHeartbeat(); showContactsView();
         }
     });
 
@@ -290,21 +286,16 @@
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         callBackend('heartbeat', {}, appToken);
         heartbeatInterval = setInterval(function() {
-            if (appToken && document.visibilityState === 'visible') {
-                callBackend('heartbeat', {}, appToken);
-            }
+            if (appToken && document.visibilityState === 'visible') callBackend('heartbeat', {}, appToken);
         }, 60000);
     }
 
-    // ================= مدیریت وضعیت تب (Smart Polling) =================
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible') {
-            // وقتی کاربر برگشت به برنامه، فوراً آپدیت کن
             if (currentTaskId) pollUpdates();
             if (pollInterval) clearInterval(pollInterval);
             if (currentTaskId) pollInterval = setInterval(pollUpdates, 7000);
         } else {
-            // وقتی کاربر از برنامه خارج شد یا گوشی را خاموش کرد، درخواست‌ها را متوقف کن
             if (pollInterval) clearInterval(pollInterval);
         }
     });
@@ -323,8 +314,7 @@
       const user = document.getElementById('login-username').value.trim();
       const pass = document.getElementById('login-password').value.trim();
       if (!user || !pass) return alert('نام کاربری و رمز را وارد کنید');
-      const btn = document.getElementById('login-btn'); 
-      btn.disabled = true; btn.innerText = 'در حال ورود...';
+      const btn = document.getElementById('login-btn'); btn.disabled = true; btn.innerText = 'در حال ورود...';
       
       const res = await callBackend('login', { username: user, password: pass }, '');
       
@@ -456,7 +446,7 @@
       const res = await callBackend('getTaskDetail', { taskId: taskId }, appToken);
       if (res.ok) {
           currentTaskData = res.task;
-          updateTaskInfoUI(res.task, res.otherUserLastSeen);
+          updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
           const area = document.getElementById('messages-area');
           area.innerHTML = '';
           if(res.messages.length > 0) {
@@ -481,10 +471,14 @@
       document.getElementById('profile-view').classList.remove('hidden');
     }
 
-    async function handleCancelTask() {
-        if (!confirm('آیا مطمئن هستید؟')) return;
-        const res = await callBackend('cancelTask', { taskId: currentTaskId }, appToken);
-        if (res.ok) { alert('لغو شد.'); pollUpdates(); } else { alert(res.error); }
+    async function handleDeleteTask() {
+        if (!confirm('آیا مطمئن هستید که می‌خواهید این دستور را برای همیشه حذف کنید؟ (تمام پیام‌ها پاک می‌شوند)')) return;
+        const res = await callBackend('deleteTask', { taskId: currentTaskId }, appToken);
+        if (res.ok) { 
+            alert('دستور با موفقیت حذف شد.'); 
+            closeChat(); 
+            openProfile(currentContactId, document.getElementById('profile-name').innerText, document.getElementById('profile-role').innerText);
+        } else { alert(res.error); }
     }
 
     async function pollUpdates() {
@@ -493,7 +487,7 @@
       const res = await callBackend('getUpdates', { taskId: currentTaskId, lastMessageId: lastMessageId }, appToken);
       if (res.ok) {
           currentTaskData = res.task;
-          updateTaskInfoUI(res.task, res.otherUserLastSeen);
+          updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
           
           if (res.newMessages && res.newMessages.length > 0) {
             const area = document.getElementById('messages-area');
@@ -506,15 +500,16 @@
       isPolling = false; 
     }
 
-    function updateTaskInfoUI(task, lastSeen) {
+    function updateTaskInfoUI(task, lastSeen, canDelete) {
       document.getElementById('chat-title').innerText = task.title;
       let displayDate = formatJalali(task.due_date);
       let lastSeenText = timeAgo(lastSeen);
       document.getElementById('chat-task-details').innerHTML = '<p>' + (task.description || 'بدون توضیحات') + '</p><span class="status">مهلت: ' + displayDate + ' | آخرین بازدید: ' + lastSeenText + '</span>';
-      const cancelBtn = document.getElementById('cancel-task-btn');
-      if (currentUser.id === task.from_user_id && task.status !== 'انجام شد' && task.status !== 'لغو شد') {
-          cancelBtn.style.display = 'block';
-      } else { cancelBtn.style.display = 'none'; }
+      
+      const deleteBtn = document.getElementById('delete-task-btn');
+      if (canDelete) {
+          deleteBtn.style.display = 'block';
+      } else { deleteBtn.style.display = 'none'; }
     }
 
     function appendMessage(msg) {
