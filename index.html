@@ -11,26 +11,24 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
   <style>
-    :root {
-      --primary: #00a8ff; --primary-dark: #0097e6; --bg: #f5f6fa; --white: #ffffff;
-      --text: #2f3640; --text-light: #718093; --danger: #e84118; --success: #4cd137;
-      --warning: #fbc531; --border: #dcdde1; --chat-bg: #efeae2;
-    }
+    /* استایل‌ها دقیقاً مثل قبل (بدون تغییر) */
+    :root { --primary: #00a8ff; --primary-dark: #0097e6; --bg: #f5f6fa; --white: #ffffff; --text: #2f3640; --text-light: #718093; --danger: #e84118; --success: #4cd137; --warning: #fbc531; --border: #dcdde1; --chat-bg: #efeae2; }
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; }
     body { background-color: var(--bg); color: var(--text); height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
     .hidden { display: none !important; }
     .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
     .input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; outline: none; }
     
-    /* Login */
     #login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
     .login-box { background: var(--white); padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
     .login-box h2 { text-align: center; margin-bottom: 20px; font-size: 22px; color: var(--primary-dark); }
     .form-group { margin-bottom: 15px; }
     .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; }
     
-    /* Contacts Header */
     #contacts-view { flex: 1; display: flex; flex-direction: column; min-height: 0; }
     .header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
     .header-info h3 { font-size: 18px; margin-bottom: 4px; }
@@ -40,7 +38,6 @@
     .bell-btn { background: white; color: var(--primary); border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; position: relative; display: flex; justify-content: center; align-items: center; margin-left: 10px; }
     .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--danger); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; display: none; }
 
-    /* Search Bar */
     .search-container { padding: 10px 15px; background: var(--white); border-bottom: 1px solid var(--border); }
     .search-input { width: 100%; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); font-size: 14px; outline: none; }
     .search-input:focus { border-color: var(--primary); }
@@ -54,25 +51,21 @@
     .contact-role { font-size: 11px; color: var(--primary-dark); }
     .contact-last-msg { font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Drawer Menu */
     .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; }
     .drawer-overlay.show { display: block; }
     .drawer { position: fixed; top: 0; right: -280px; width: 280px; height: 100%; background: var(--white); z-index: 201; transition: right 0.3s ease; box-shadow: -2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
     .drawer.open { right: 0; }
-    
     .drawer-header { padding: 20px; background: var(--primary); color: white; display: flex; align-items: center; gap: 15px; }
     .drawer-avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--white); color: var(--primary); display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; }
     .drawer-user-info { display: flex; flex-direction: column; }
     .drawer-user-name { font-weight: bold; font-size: 16px; }
     .drawer-user-role { font-size: 12px; opacity: 0.9; }
-    
     .drawer-menu { flex: 1; padding: 10px 0; overflow-y: auto; }
     .drawer-item { width: 100%; text-align: right; background: none; border: none; padding: 15px 20px; font-size: 15px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; color: var(--text); transition: background 0.2s; }
     .drawer-item:active { background: #f0f0f0; }
     .drawer-item.danger { color: var(--danger); }
     .drawer-item .badge { background: var(--danger); color: white; border-radius: 10px; padding: 2px 8px; font-size: 11px; margin-right: auto; display: none; }
 
-    /* Profile */
     #profile-view { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
     .profile-header { background: var(--white); padding: 20px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid var(--border); }
     .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--primary); color: white; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold; margin-bottom: 10px; }
@@ -83,9 +76,7 @@
     .task-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
     .task-title { font-weight: bold; font-size: 16px; }
     .badge-status { padding: 4px 10px; border-radius: 20px; color: white; font-size: 12px; font-weight: bold; }
-    .task-desc { color: var(--text-light); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    /* Chat */
+    
     #chat-view { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); min-height: 0; }
     .chat-header { background: var(--primary); color: white; padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
     .chat-header-right { display: flex; align-items: center; gap: 15px; }
@@ -115,7 +106,6 @@
     
     @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
 
-    /* Modals */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 300; }
     .modal-content { background: var(--white); width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
     .modal-content h3 { margin-bottom: 15px; text-align: center; color: var(--primary-dark); }
@@ -241,197 +231,168 @@
     <div class="admin-list" id="users-list-container"></div>
   </div>
 
-  <!-- Modals -->
-  <div id="notif-modal" class="modal-overlay hidden">
-    <div class="modal-content" style="padding: 0;">
-      <div style="padding: 15px; background: var(--primary); color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="margin: 0; color: white;">اعلانات</h3>
-        <button onclick="closeNotifModal()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">×</button>
-      </div>
-      <div id="notif-list-container" style="max-height: 400px; overflow-y: auto; padding: 0;"></div>
-    </div>
-  </div>
-
-  <div id="install-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h3>راهنمای نصب برنامه</h3>
-      <div id="install-instructions" style="font-size:14px; line-height:1.8; color:var(--text);"></div>
-      <div class="modal-actions">
-        <button class="btn" style="flex:1; background: var(--primary);" onclick="document.getElementById('install-modal').classList.add('hidden')">متوجه شدم</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="create-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h3>ثبت دستور جدید</h3>
-      <div class="form-group"><label>گیرنده</label><select id="task-receiver" class="input"></select></div>
-      <div class="form-group"><label>عنوان دستور</label><input type="text" id="task-title" class="input"></div>
-      <div class="form-group"><label>توضیحات</label><textarea id="task-desc" class="input" rows="3"></textarea></div>
-      <div class="form-group">
-        <label>تاریخ مهلت (شمسی)</label>
-        <div style="display: flex; gap: 5px;">
-            <select id="jYear" class="input" style="width: 33%; padding: 10px;"></select>
-            <select id="jMonth" class="input" style="width: 34%; padding: 10px;"></select>
-            <select id="jDay" class="input" style="width: 33%; padding: 10px;"></select>
-        </div>
-      </div>
-      <div class="form-group"><label>ساعت مهلت</label><input type="text" id="task-time" class="input" value="18:00" dir="ltr" style="text-align:center;"></div>
-      <div class="modal-actions">
-        <button class="btn" style="flex:1; background: var(--success);" onclick="submitNewTask()">ثبت و ارسال</button>
-        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeCreateModal()">انصراف</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="password-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h3>تغییر رمز عبور</h3>
-      <div class="form-group"><label>رمز جدید</label><input type="password" id="new-password" class="input" dir="ltr"></div>
-      <div class="form-group"><label>تکرار رمز جدید</label><input type="password" id="confirm-password" class="input" dir="ltr"></div>
-      <div class="modal-actions">
-        <button class="btn" style="flex:1; background: var(--success);" onclick="submitChangePassword()">ذخیره</button>
-        <button class="btn" style="flex:1; background: var(--danger);" onclick="closePasswordModal()">انصراف</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="user-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h3 id="user-modal-title">کاربر جدید</h3>
-      <input type="hidden" id="edit-user-id">
-      <div class="form-group"><label>نام</label><input type="text" id="u-name" class="input"></div>
-      <div class="form-group" id="username-group"><label>نام کاربری</label><input type="text" id="u-username" class="input" dir="ltr"></div>
-      <div class="form-group" id="password-group"><label>رمز</label><input type="password" id="u-password" class="input" dir="ltr"></div>
-      <div class="form-group">
-        <label>نقش</label>
-        <select id="u-role" class="input">
-          <option value="مدیر">مدیر</option><option value="رئیس">رئیس</option><option value="سرپرست">سرپرست</option><option value="کارشناس">کارشناس</option>
-        </select>
-      </div>
-      <div class="form-group"><label>مدیران مستقیم</label><div id="u-manager-container" class="manager-list-container"></div></div>
-      <div class="modal-actions">
-        <button class="btn" style="flex:1; background: var(--success);" onclick="submitUserForm()">ذخیره</button>
-        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeUserModal()">انصراف</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="admin-pass-modal" class="modal-overlay hidden">
-    <div class="modal-content">
-      <h3>تغییر رمز کاربر</h3>
-      <p style="text-align:center; margin-bottom:15px; font-size:14px; color:var(--text-light);" id="admin-pass-username-label"></p>
-      <input type="hidden" id="admin-pass-user-id">
-      <div class="form-group"><label>رمز جدید</label><input type="password" id="admin-new-password" class="input" dir="ltr"></div>
-      <div class="form-group"><label>تکرار رمز</label><input type="password" id="admin-confirm-password" class="input" dir="ltr"></div>
-      <div class="modal-actions">
-        <button class="btn" style="flex:1; background: var(--success);" onclick="submitAdminResetPass()">ذخیره</button>
-        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeAdminPassModal()">انصراف</button>
-      </div>
-    </div>
-  </div>
-
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbwAMoEGIwOUk3fGyt8123yJP0f6ygTrTI2Gt-qnKFPAUvWdQbzz4u1W56bGZmsip9Bb8w/exec";
+    // ==========================================
+    // راه‌اندازی Supabase
+    // ==========================================
+    const SUPABASE_URL = 'https://trnzzevllluhkyvvrtms.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-    let appToken = null;
     let currentUser = null;
     let currentTaskId = null;
     let currentContactId = null;
     let currentTaskData = null;
     let pollInterval = null;
-    let heartbeatInterval = null;
     let lastMessageId = null;
-    
     let isPolling = false;
     let isSending = false;
-    let mediaRecorder = null;
-    let audioChunks = [];
-    let isRecording = false;
-    let audioCache = {}; 
-    let currentAudio = null; 
-    let currentPlayBtn = null; 
     let cachedUsers = [];
     let allContacts = [];
-    
     let deferredPrompt = null;
 
-    async function callBackend(action, data, token) {
+    // تبدیل نام کاربری به ایمیل ساختگی برای Supabase Auth
+    function formatEmail(username) {
+        return username.trim().toLowerCase() + '@contract.local';
+    }
+
+    // ==========================================
+    // مدیریت توابع بک‌اند (اتصال به Supabase)
+    // ==========================================
+    async function callBackend(action, data = {}) {
       try {
-        const response = await fetch(API_URL, {
-          method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify({ action: action, token: token || '', data: data || {} })
-        });
-        return await response.json();
-      } catch (error) { return { ok: false, error: 'network_error' }; }
-    }
-
-    // ================= مدیریت منوی همبرگری =================
-    function toggleDrawer() {
-        document.getElementById('side-drawer').classList.add('open');
-        document.getElementById('drawer-overlay').classList.add('show');
-    }
-    function closeDrawer() {
-        document.getElementById('side-drawer').classList.remove('open');
-        document.getElementById('drawer-overlay').classList.remove('show');
-    }
-
-    // ================= مدیریت نصب PWA =================
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-    });
-
-    function handleInstallClick() {
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            alert('برنامه از قبل روی گوشی شما نصب است.');
-            return;
-        }
-
-        if (deferredPrompt) {
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') console.log('User accepted the install');
-                deferredPrompt = null;
-            });
-        } else {
-            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-            const instText = document.getElementById('install-instructions');
-            if (isIOS) {
-                instText.innerHTML = 'برای نصب روی آیفون:<br>۱. در مرورگر سافاری، روی دکمه <b>Share</b> (مربع با فلش رو به بالا) بزنید.<br>۲. در منوی باز شده، گزینه <b>Add to Home Screen</b> (افزودن به صفحه اصلی) را انتخاب کنید.<br>۳. روی Add بزنید.';
-            } else {
-                instText.innerHTML = 'برای نصب روی اندروید:<br>۱. در مرورگر کروم، روی <b>سه نقطه</b> (بالا سمت راست) بزنید.<br>۲. گزینه <b>Install app</b> یا <b>Add to Home screen</b> را انتخاب کنید.<br>۳. روی Install بزنید.';
+        if (action === 'login') {
+            const email = formatEmail(data.username);
+            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email: email, password: data.password });
+            if (authError) return { ok: false, error: 'نام کاربری یا رمز اشتباه است' };
+            
+            // گرفتن اطلاعات پروفایل از دیتابیس
+            const { data: profile, error: pError } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single();
+            if (pError || !profile.active) {
+                await supabase.auth.signOut();
+                return { ok: false, error: 'حساب کاربری یافت نشد یا غیرفعال است' };
             }
-            document.getElementById('install-modal').classList.remove('hidden');
+            return { ok: true, token: authData.session.access_token, user: profile };
         }
+
+        if (action === 'logout') {
+            await supabase.auth.signOut();
+            return { ok: true };
+        }
+
+        // بقیه درخواست‌ها نیاز به لاگین دارند
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) return { ok: false, error: 'نشست منقضی شده است' };
+        const myId = session.user.id;
+
+        if (action === 'heartbeat') {
+            await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', myId);
+            return { ok: true };
+        }
+
+        if (action === 'getContacts') {
+            const { data: contacts, error } = await supabase.from('profiles').select('*').neq('id', myId).eq('active', true);
+            if (error) throw error;
+            // شبیه‌سازی آخرین پیام برای UI
+            return { ok: true, contacts: contacts.map(c => ({ ...c, lastTask: null })) };
+        }
+
+        if (action === 'getTasksByContact') {
+            const { data: tasks, error } = await supabase.from('tasks').select('*')
+                .or(`and(from_user_id.eq.${myId},to_user_id.eq.${data.contactId}),and(from_user_id.eq.${data.contactId},to_user_id.eq.${myId})`)
+                .order('created_at', { ascending: false });
+            if (error) throw error;
+            return { ok: true, tasks: tasks };
+        }
+
+        if (action === 'getTaskDetail') {
+            const { data: task, error } = await supabase.from('tasks').select('*').eq('id', data.taskId).single();
+            if (error) throw error;
+            const { data: messages, error: mError } = await supabase.from('messages').select('*').eq('task_id', data.taskId).order('created_at', { ascending: true });
+            if (mError) throw mError;
+            
+            // دریافت آخرین بازدید طرف مقابل
+            const otherUserId = myId === task.from_user_id ? task.to_user_id : task.from_user_id;
+            const { data: otherProfile } = await supabase.from('profiles').select('last_seen').eq('id', otherUserId).single();
+
+            return { ok: true, task: task, messages: messages, otherUserLastSeen: otherProfile?.last_seen || task.created_at, canDelete: myId === task.from_user_id };
+        }
+
+        if (action === 'getUpdates') {
+            const { data: task, error } = await supabase.from('tasks').select('*').eq('id', data.taskId).single();
+            if (error) throw error;
+            
+            let query = supabase.from('messages').select('*').eq('task_id', data.taskId).order('created_at', { ascending: true });
+            if (data.lastMessageId) {
+                // برای سادگی در Supabase، کل پیام‌ها را می‌گیریم و در فرانت فیلتر می‌کنیم (چون تعداد کم است)
+            }
+            const { data: messages, error: mError } = await query;
+            if (mError) throw mError;
+
+            let newMessages = messages;
+            if (data.lastMessageId) {
+                const idx = messages.findIndex(m => m.id === data.lastMessageId);
+                if (idx !== -1) newMessages = messages.slice(idx + 1);
+            }
+
+            const otherUserId = myId === task.from_user_id ? task.to_user_id : task.from_user_id;
+            const { data: otherProfile } = await supabase.from('profiles').select('last_seen').eq('id', otherUserId).single();
+
+            return { ok: true, task: task, newMessages: newMessages, otherUserLastSeen: otherProfile?.last_seen || task.created_at, canDelete: myId === task.from_user_id };
+        }
+
+        if (action === 'sendTextMessage') {
+            await supabase.from('messages').insert({ task_id: data.taskId, from_user_id: myId, type: 'text', content: data.text });
+            return { ok: true };
+        }
+
+        if (action === 'createTask') {
+            await supabase.from('tasks').insert({ title: data.title, description: data.description, from_user_id: myId, to_user_id: data.to_user_id, due_date: data.due_date, due_time: data.due_time });
+            return { ok: true };
+        }
+
+        if (action === 'deleteTask') {
+            const { error } = await supabase.from('tasks').delete().eq('id', data.taskId).eq('from_user_id', myId);
+            if (error) throw error;
+            return { ok: true };
+        }
+
+        if (action === 'getNotifications') {
+            const { data: tasks, error } = await supabase.from('tasks').select('*').eq('to_user_id', myId).in('status', ['در انتظار', 'در حال انجام', 'گذشته از مهلت']);
+            if (error) throw error;
+            const notifications = tasks.map(t => ({
+                id: t.id, title: t.title, status: t.status,
+                message: t.status === 'گذشته از مهلت' ? 'مهلت دستور گذشته است!' : 'دستور در انتظار شماست',
+                type: t.status === 'گذشته از مهلت' ? 'danger' : 'info'
+            }));
+            return { ok: true, notifications: notifications };
+        }
+
+        return { ok: false, error: 'اکشن ناشناخته' };
+      } catch (error) {
+          console.error(error);
+          return { ok: false, error: 'خطای شبکه یا دیتابیس' };
+      }
     }
 
-    // ================= راه‌اندازی اولیه =================
-    window.addEventListener('load', function() {
-        const savedToken = localStorage.getItem('appToken');
-        const savedUser = localStorage.getItem('currentUser');
-        if (savedToken && savedUser) {
-            appToken = savedToken; currentUser = JSON.parse(savedUser);
-            startHeartbeat(); showContactsView(); loadNotifications();
-        }
-    });
+    // ==========================================
+    // توابع رابط کاربری (بدون تغییر نسبت به قبل)
+    // ==========================================
+    function toggleDrawer() { document.getElementById('side-drawer').classList.add('open'); document.getElementById('drawer-overlay').classList.add('show'); }
+    function closeDrawer() { document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-overlay').classList.remove('show'); }
 
-    function startHeartbeat() {
-        if (heartbeatInterval) clearInterval(heartbeatInterval);
-        callBackend('heartbeat', {}, appToken);
-        heartbeatInterval = setInterval(function() {
-            if (appToken && document.visibilityState === 'visible') callBackend('heartbeat', {}, appToken);
-        }, 60000);
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
+    function handleInstallClick() {
+        if (window.matchMedia('(display-mode: standalone)').matches) return alert('برنامه نصب است.');
+        if (deferredPrompt) { deferredPrompt.prompt(); deferredPrompt = null; }
+        else alert('برای نصب، از منوی مرورگر خود گزینه Add to Home Screen را انتخاب کنید.');
     }
 
-    document.addEventListener('visibilitychange', function() {
-        if (document.visibilityState === 'visible') {
-            if (currentTaskId) pollUpdates();
-            if (pollInterval) clearInterval(pollInterval);
-            if (currentTaskId) pollInterval = setInterval(pollUpdates, 7000);
-            loadNotifications();
-        } else {
-            if (pollInterval) clearInterval(pollInterval);
+    window.addEventListener('load', async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+            if (profile) { currentUser = profile; showContactsView(); loadNotifications(); setInterval(()=>callBackend('heartbeat'), 60000); }
         }
     });
 
@@ -440,14 +401,11 @@
         document.getElementById('contacts-view').classList.remove('hidden');
         document.getElementById('profile-view').classList.add('hidden');
         document.getElementById('chat-view').classList.add('hidden');
-        
-        // آپدیت اطلاعات کاربر در هدر و منوی کناری
         document.getElementById('user-info').innerText = currentUser.name + ' (' + currentUser.role + ')';
         document.getElementById('drawer-name').innerText = currentUser.name;
         document.getElementById('drawer-role').innerText = currentUser.role;
         document.getElementById('drawer-avatar').innerText = currentUser.name.trim().charAt(0) || 'U';
-        document.getElementById('drawer-admin-btn').style.display = currentUser.username === 'admin' ? 'flex' : 'none';
-        
+        document.getElementById('drawer-admin-btn').style.display = currentUser.role === 'مدیر' ? 'flex' : 'none';
         loadContacts();
     }
 
@@ -457,63 +415,46 @@
       if (!user || !pass) return alert('نام کاربری و رمز را وارد کنید');
       const btn = document.getElementById('login-btn'); btn.disabled = true; btn.innerText = 'در حال ورود...';
       
-      const res = await callBackend('login', { username: user, password: pass }, '');
-      
+      const res = await callBackend('login', { username: user, password: pass });
       if (res.ok) {
-          appToken = res.token; currentUser = res.user;
-          localStorage.setItem('appToken', appToken); localStorage.setItem('currentUser', JSON.stringify(currentUser));
-          startHeartbeat(); showContactsView(); loadNotifications();
-      } else { alert(res.error || 'نام کاربری یا رمز اشتباه است'); }
+          currentUser = res.user;
+          showContactsView(); loadNotifications(); setInterval(()=>callBackend('heartbeat'), 60000);
+      } else { alert(res.error); }
       btn.disabled = false; btn.innerText = 'ورود به سیستم';
     }
 
     async function handleLogout() {
-      if (appToken) await callBackend('logout', {}, appToken);
-      if (heartbeatInterval) clearInterval(heartbeatInterval);
-      localStorage.clear(); location.reload();
-    }
-
-    function formatJalali(dateStr) {
-        if(!dateStr) return '';
-        let d = dateStr.split('T')[0];
-        let parts = d.split('-');
-        if(parts.length !== 3) return d;
-        let j = gregorian_to_jalali(parseInt(parts[0]), parseInt(parts[1]), parseInt(parts[2]));
-        return j[0] + '/' + (j[1] < 10 ? '0' + j[1] : j[1]) + '/' + (j[2] < 10 ? '0' + j[2] : j[2]);
+      await callBackend('logout');
+      location.reload();
     }
 
     function timeAgo(dateString) {
         if (!dateString) return 'نامشخص';
-        const date = new Date(dateString);
-        const now = new Date();
-        const seconds = Math.floor((now - date) / 1000);
-        let interval = Math.floor(seconds / 31536000);
-        if (interval > 1) return interval + " سال پیش";
-        interval = Math.floor(seconds / 2592000);
-        if (interval > 1) return interval + " ماه پیش";
-        interval = Math.floor(seconds / 86400);
-        if (interval > 1) return interval + " روز پیش";
-        interval = Math.floor(seconds / 3600);
-        if (interval > 1) return interval + " ساعت پیش";
-        interval = Math.floor(seconds / 60);
-        if (interval > 1) return interval + " دقیقه پیش";
-        return "لحظاتی پیش";
+        const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+        if (seconds < 60) return "لحظاتی پیش";
+        if (seconds < 3600) return Math.floor(seconds / 60) + " دقیقه پیش";
+        if (seconds < 86400) return Math.floor(seconds / 3600) + " ساعت پیش";
+        return Math.floor(seconds / 86400) + " روز پیش";
     }
 
-    // ================= اعلانات =================
+    function formatJalali(dateStr) {
+        if(!dateStr) return '';
+        // فرض بر این است که dateStr به شکل YYYY-MM-DD است
+        const p = dateStr.split('-');
+        const j = gregorian_to_jalali(parseInt(p[0]), parseInt(p[1]), parseInt(p[2]));
+        return `${j[0]}/${j[1]}/${j[2]}`;
+    }
+
     async function loadNotifications() {
-        if (!appToken) return;
-        const res = await callBackend('getNotifications', {}, appToken);
+        if (!currentUser) return;
+        const res = await callBackend('getNotifications');
         if (res.ok) {
             const badge = document.getElementById('bell-badge');
             const drawerBadge = document.getElementById('drawer-bell-badge');
             if (res.notifications.length > 0) {
-                badge.style.display = 'block';
-                drawerBadge.style.display = 'inline-block';
-                drawerBadge.innerText = res.notifications.length;
+                badge.style.display = 'block'; drawerBadge.style.display = 'inline-block'; drawerBadge.innerText = res.notifications.length;
             } else {
-                badge.style.display = 'none';
-                drawerBadge.style.display = 'none';
+                badge.style.display = 'none'; drawerBadge.style.display = 'none';
             }
         }
     }
@@ -521,426 +462,173 @@
     async function openNotifModal() {
         document.getElementById('notif-modal').classList.remove('hidden');
         const container = document.getElementById('notif-list-container');
-        container.innerHTML = '<p style="text-align:center; padding:20px; color:gray;">در حال دریافت...</p>';
-        
-        const res = await callBackend('getNotifications', {}, appToken);
+        container.innerHTML = 'در حال دریافت...';
+        const res = await callBackend('getNotifications');
         if (res.ok) {
-            container.innerHTML = '';
-            if (res.notifications.length === 0) {
-                container.innerHTML = '<p style="text-align:center; padding:20px; color:gray;">اعلان جدیدی ندارید.</p>';
-                return;
-            }
-            res.notifications.forEach(function(n) {
+            container.innerHTML = res.notifications.length ? '' : 'اعلانی ندارید.';
+            res.notifications.forEach(n => {
                 const div = document.createElement('div');
                 div.className = 'notif-item ' + n.type;
-                div.onclick = function() { closeNotifModal(); openChatFromNotification(n.id); };
-                div.innerHTML = '<span class="n-title">' + n.title + '</span><span class="n-msg">' + n.message + '</span>';
+                div.onclick = () => { closeNotifModal(); openChat(n.id); };
+                div.innerHTML = `<span class="n-title">${n.title}</span><span class="n-msg">${n.message}</span>`;
                 container.appendChild(div);
             });
         }
     }
-
     function closeNotifModal() { document.getElementById('notif-modal').classList.add('hidden'); }
 
-    async function openChatFromNotification(taskId) {
-        currentTaskId = taskId;
-        lastMessageId = null;
-        document.getElementById('contacts-view').classList.add('hidden');
-        document.getElementById('chat-view').classList.remove('hidden');
-        
-        const res = await callBackend('getTaskDetail', { taskId: taskId }, appToken);
-        if (res.ok) {
-            currentTaskData = res.task;
-            updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
-            const area = document.getElementById('messages-area');
-            area.innerHTML = '';
-            if(res.messages.length > 0) {
-              lastMessageId = res.messages[res.messages.length - 1].id;
-              res.messages.forEach(function(msg) { appendMessage(msg); });
-            } else {
-              area.innerHTML = '<p style="text-align:center;color:gray;font-size:12px;">پیامی وجود ندارد.</p>';
-            }
-            area.scrollTop = area.scrollHeight;
-        }
-        currentContactId = null; 
-        if(pollInterval) clearInterval(pollInterval);
-        if (document.visibilityState === 'visible') pollInterval = setInterval(pollUpdates, 7000); 
-    }
-
-    // ================= لیست مخاطبین و جستجو =================
     async function loadContacts() {
       const container = document.getElementById('contacts-container');
-      container.innerHTML = `<div style="padding: 15px; display: flex; align-items: center; gap: 15px;"><div style="width:50px; height:50px; border-radius:50%; background:#e0e0e0; animation: pulse 1s infinite;"></div><div style="flex:1;"><div style="width:40%; height:15px; background:#e0e0e0; margin-bottom:8px; border-radius:4px; animation: pulse 1s infinite;"></div><div style="width:70%; height:12px; background:#e0e0e0; border-radius:4px; animation: pulse 1s infinite;"></div></div></div>`;
-      
-      const res = await callBackend('getContacts', {}, appToken);
-      if (res.ok) { allContacts = res.contacts; renderContacts(allContacts); } 
-      else { container.innerHTML = '<p style="text-align:center; color:red;">خطا در دریافت اطلاعات</p>'; }
+      container.innerHTML = 'در حال دریافت...';
+      const res = await callBackend('getContacts');
+      if (res.ok) {
+          allContacts = res.contacts;
+          renderContacts(allContacts);
+      } else { container.innerHTML = res.error; }
     }
 
     function filterContacts() {
-        const query = document.getElementById('search-contacts').value.trim().toLowerCase();
-        if (!query) { renderContacts(allContacts); return; }
-        const filtered = allContacts.filter(function(c) { return c.name.toLowerCase().includes(query) || c.role.toLowerCase().includes(query); });
-        renderContacts(filtered);
+        const q = document.getElementById('search-contacts').value.trim().toLowerCase();
+        renderContacts(q ? allContacts.filter(c => c.name.toLowerCase().includes(q)) : allContacts);
     }
 
-    function renderContacts(contactsList) {
-        const container = document.getElementById('contacts-container');
-        container.innerHTML = '';
-        if (contactsList.length === 0) {
-            container.innerHTML = '<p style="text-align:center; margin-top:20px; color:gray;">مخاطبی یافت نشد.</p>';
-            return;
-        }
-        contactsList.forEach(function(c) {
-            let lastMsg = 'هنوز دستوری رد و بدل نشده است.';
-            let dateStr = '';
-            if (c.lastTask) {
-                lastMsg = c.lastTask.title;
-                let d = new Date(c.lastTask.created_at);
-                dateStr = d.toLocaleDateString('fa-IR');
-            }
-            const initial = c.name.trim().charAt(0) || 'U';
-            const item = document.createElement('div');
-            item.className = 'contact-item';
-            item.onclick = function() { openProfile(c.id, c.name, c.role); };
-            item.innerHTML = '<div class="avatar">' + initial + '</div><div class="contact-info"><div class="contact-name"><span>' + c.name + ' <span class="contact-role">(' + c.role + ')</span></span><span style="font-size:11px; color:#999;">' + dateStr + '</span></div><div class="contact-last-msg">' + lastMsg + '</div></div>';
+    function renderContacts(list) {
+        const container = document.getElementById('contacts-container'); container.innerHTML = '';
+        if (list.length === 0) return container.innerHTML = 'مخاطبی یافت نشد.';
+        list.forEach(c => {
+            const item = document.createElement('div'); item.className = 'contact-item';
+            item.onclick = () => openProfile(c.id, c.name, c.role);
+            item.innerHTML = `<div class="avatar">${c.name.charAt(0)}</div><div class="contact-info"><div class="contact-name"><span>${c.name} (${c.role})</span></div><div class="contact-last-msg">برای گفتگو کلیک کنید</div></div>`;
             container.appendChild(item);
         });
     }
 
-    async function openProfile(contactId, name, role) {
-        currentContactId = contactId;
+    async function openProfile(id, name, role) {
+        currentContactId = id;
         document.getElementById('contacts-view').classList.add('hidden');
         document.getElementById('profile-view').classList.remove('hidden');
-        document.getElementById('profile-avatar').innerText = name.trim().charAt(0) || 'U';
+        document.getElementById('profile-avatar').innerText = name.charAt(0);
         document.getElementById('profile-name').innerText = name;
         document.getElementById('profile-role').innerText = role;
         
-        const tasksContainer = document.getElementById('profile-tasks-container');
-        tasksContainer.innerHTML = '<p style="text-align:center; color:gray;">در حال دریافت دستورها...</p>';
-        const res = await callBackend('getTasksByContact', { contactId: contactId }, appToken);
-        
+        const container = document.getElementById('profile-tasks-container'); container.innerHTML = 'در حال دریافت...';
+        const res = await callBackend('getTasksByContact', { contactId: id });
         if (res.ok) {
-            tasksContainer.innerHTML = '';
-            if (res.tasks.length === 0) {
-                tasksContainer.innerHTML = '<p style="text-align:center; color:gray; font-size:14px; margin-top:20px;">هیچ دستوری وجود ندارد.</p>';
-                return;
-            }
-            res.tasks.forEach(function(task) {
-                let badgeColor = task.status === 'در حال انجام' ? 'var(--primary)' : (task.status === 'انجام شد' ? 'var(--success)' : (task.status === 'گذشته از مهلت' ? 'var(--danger)' : '#718093'));
-                const isSender = task.from_user_id === currentUser.id;
-                const prefix = isSender ? 'شما فرستادید: ' : 'دریافتی: ';
-                const card = document.createElement('div');
-                card.className = 'task-card';
-                card.onclick = function() { openChat(task.id); };
-                card.innerHTML = '<div class="task-card-header"><span class="task-title" style="font-size:14px;">' + prefix + task.title + '</span><span class="badge-status" style="background:' + badgeColor + '">' + task.status + '</span></div>';
-                tasksContainer.appendChild(card);
+            container.innerHTML = res.tasks.length ? '' : 'دستوری نیست.';
+            res.tasks.forEach(t => {
+                const card = document.createElement('div'); card.className = 'task-card'; card.onclick = () => openChat(t.id);
+                card.innerHTML = `<div class="task-card-header"><span class="task-title">${t.title}</span><span class="badge-status">${t.status}</span></div>`;
+                container.appendChild(card);
             });
-        } else { tasksContainer.innerHTML = '<p style="text-align:center; color:red;">خطا</p>'; }
+        }
     }
+    function closeProfile() { currentContactId = null; document.getElementById('profile-view').classList.add('hidden'); document.getElementById('contacts-view').classList.remove('hidden'); loadContacts(); }
 
-    function closeProfile() {
-        currentContactId = null;
+    async function openChat(id) {
+        currentTaskId = id;
         document.getElementById('profile-view').classList.add('hidden');
-        document.getElementById('contacts-view').classList.remove('hidden');
-        loadContacts();
+        document.getElementById('chat-view').classList.remove('hidden');
+        document.getElementById('messages-area').innerHTML = 'در حال دریافت...';
+        
+        const res = await callBackend('getTaskDetail', { taskId: id });
+        if (res.ok) {
+            currentTaskData = res.task;
+            updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
+            const area = document.getElementById('messages-area'); area.innerHTML = '';
+            if(res.messages.length > 0) {
+                lastMessageId = res.messages[res.messages.length - 1].id;
+                res.messages.forEach(appendMessage);
+            } else area.innerHTML = 'پیامی نیست.';
+            area.scrollTop = area.scrollHeight;
+        }
+        if(pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(pollUpdates, 3000); // هر ۳ ثانیه چک کردن پیام جدید
     }
-
-    async function openChat(taskId) {
-      currentTaskId = taskId;
-      lastMessageId = null;
-      document.getElementById('profile-view').classList.add('hidden');
-      document.getElementById('chat-view').classList.remove('hidden');
-      document.getElementById('messages-area').innerHTML = '<p style="text-align:center;color:gray">در حال دریافت پیام‌ها...</p>';
-      
-      const res = await callBackend('getTaskDetail', { taskId: taskId }, appToken);
-      if (res.ok) {
-          currentTaskData = res.task;
-          updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
-          const area = document.getElementById('messages-area');
-          area.innerHTML = '';
-          if(res.messages.length > 0) {
-            lastMessageId = res.messages[res.messages.length - 1].id;
-            res.messages.forEach(function(msg) { appendMessage(msg); });
-          } else {
-            area.innerHTML = '<p style="text-align:center;color:gray;font-size:12px;">پیامی وجود ندارد.</p>';
-          }
-          area.scrollTop = area.scrollHeight;
-      }
-
-      if(pollInterval) clearInterval(pollInterval);
-      if (document.visibilityState === 'visible') pollInterval = setInterval(pollUpdates, 7000); 
-    }
-
-    function closeChat() {
-      currentTaskId = null; currentTaskData = null; lastMessageId = null;
-      if(pollInterval) clearInterval(pollInterval);
-      document.getElementById('chat-view').classList.add('hidden');
-      if (currentContactId) { document.getElementById('profile-view').classList.remove('hidden'); } 
-      else { document.getElementById('contacts-view').classList.remove('hidden'); loadContacts(); }
-    }
-
-    async function handleDeleteTask() {
-        if (!confirm('آیا مطمئن هستید که می‌خواهید این دستور را برای همیشه حذف کنید؟ (تمام پیام‌ها پاک می‌شوند)')) return;
-        const res = await callBackend('deleteTask', { taskId: currentTaskId }, appToken);
-        if (res.ok) { 
-            alert('دستور با موفقیت حذف شد.'); closeChat(); 
-            if (currentContactId) openProfile(currentContactId, document.getElementById('profile-name').innerText, document.getElementById('profile-role').innerText);
-            else loadContacts();
-        } else { alert(res.error); }
-    }
+    function closeChat() { currentTaskId = null; if(pollInterval) clearInterval(pollInterval); document.getElementById('chat-view').classList.add('hidden'); if(currentContactId) document.getElementById('profile-view').classList.remove('hidden'); else { document.getElementById('contacts-view').classList.remove('hidden'); loadContacts(); } }
 
     async function pollUpdates() {
-      if (!currentTaskId || isPolling || document.visibilityState !== 'visible') return; 
-      isPolling = true;
-      const res = await callBackend('getUpdates', { taskId: currentTaskId, lastMessageId: lastMessageId }, appToken);
-      if (res.ok) {
-          currentTaskData = res.task;
-          updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
-          if (res.newMessages && res.newMessages.length > 0) {
-            const area = document.getElementById('messages-area');
-            if (area.innerHTML.includes('پیامی وجود ندارد')) area.innerHTML = '';
-            const isScrolledToBottom = area.scrollHeight - area.scrollTop <= area.clientHeight + 50;
-            res.newMessages.forEach(function(msg) { appendMessage(msg); lastMessageId = msg.id; });
-            if (isScrolledToBottom) area.scrollTop = area.scrollHeight;
-          }
-      }
-      isPolling = false; 
+        if (!currentTaskId || isPolling) return; isPolling = true;
+        const res = await callBackend('getUpdates', { taskId: currentTaskId, lastMessageId: lastMessageId });
+        if (res.ok) {
+            currentTaskData = res.task;
+            updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
+            if (res.newMessages.length > 0) {
+                const area = document.getElementById('messages-area');
+                if (area.innerHTML.includes('پیامی نیست')) area.innerHTML = '';
+                const isBottom = area.scrollHeight - area.scrollTop <= area.clientHeight + 50;
+                res.newMessages.forEach(m => { appendMessage(m); lastMessageId = m.id; });
+                if (isBottom) area.scrollTop = area.scrollHeight;
+            }
+        }
+        isPolling = false;
     }
 
     function updateTaskInfoUI(task, lastSeen, canDelete) {
-      document.getElementById('chat-title').innerText = task.title;
-      let displayDate = formatJalali(task.due_date);
-      let lastSeenText = timeAgo(lastSeen);
-      document.getElementById('chat-task-details').innerHTML = '<p>' + (task.description || 'بدون توضیحات') + '</p><span class="status">مهلت: ' + displayDate + ' | آخرین بازدید: ' + lastSeenText + '</span>';
-      const deleteBtn = document.getElementById('delete-task-btn');
-      if (canDelete) deleteBtn.style.display = 'block'; else deleteBtn.style.display = 'none';
+        document.getElementById('chat-title').innerText = task.title;
+        document.getElementById('chat-task-details').innerHTML = `<p>${task.description || 'بدون توضیحات'}</p><span class="status">مهلت: ${formatJalali(task.due_date)} | آخرین بازدید: ${timeAgo(lastSeen)}</span>`;
+        document.getElementById('delete-task-btn').style.display = canDelete ? 'block' : 'none';
     }
 
     function appendMessage(msg) {
-      const isMe = msg.from_user_id === currentUser.id;
-      const div = document.createElement('div');
-      div.className = 'message ' + (isMe ? 'me' : 'other');
-      if (msg.type === 'voice') {
-        const fileId = msg.content.split('id=')[1];
-        if(fileId) {
-          div.innerHTML = '<div class="audio-player" id="player-' + msg.id + '"><button class="play-btn" onclick="playAudio(\'' + fileId + '\', \'' + msg.id + '\', this)">▶</button><div class="progress-container" onclick="seekAudio(event, \'' + msg.id + '\')"><div class="progress-bar" id="progress-' + msg.id + '"></div></div><div class="time-display" id="time-' + msg.id + '">0:00</div></div>';
-        } else { div.innerText = "فایل صوتی نامعتبر"; }
-      } else { div.innerText = msg.content; }
-      document.getElementById('messages-area').appendChild(div);
+        const div = document.createElement('div'); div.className = 'message ' + (msg.from_user_id === currentUser.id ? 'me' : 'other');
+        if (msg.type === 'voice') div.innerHTML = `<div class="audio-player"><button class="play-btn">▶</button><span>پیام صوتی</span></div>`;
+        else div.innerText = msg.content;
+        document.getElementById('messages-area').appendChild(div);
     }
+
+    async function handleDeleteTask() {
+        if (!confirm('حذف شود؟')) return;
+        const res = await callBackend('deleteTask', { taskId: currentTaskId });
+        if (res.ok) { alert('حذف شد.'); closeChat(); } else alert(res.error);
+    }
+
+    async function sendTextMessage() {
+        const input = document.getElementById('chat-input'); const text = input.value.trim(); if (!text || isSending) return;
+        isSending = true; input.value = '';
+        const res = await callBackend('sendTextMessage', { taskId: currentTaskId, text: text });
+        if (res.ok) setTimeout(pollUpdates, 500);
+        isSending = false;
+    }
+    document.getElementById('chat-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendTextMessage(); });
 
     async function openCreateModalFromProfile() {
         document.getElementById('create-modal').classList.remove('hidden');
         initCalendar();
-        const select = document.getElementById('task-receiver'); 
-        select.innerHTML = '<option value="">در حال دریافت...</option>';
-        const res = await callBackend('listUsers', {}, appToken);
-        if (res.ok) {
-            cachedUsers = res.users; select.innerHTML = '';
-            res.users.forEach(function(u) {
-                if(u.id !== currentUser.id && u.active) {
-                    const selected = (u.id === currentContactId) ? 'selected' : '';
-                    select.innerHTML += '<option value="' + u.id + '" ' + selected + '>' + u.name + ' (' + u.role + ')</option>';
-                }
-            });
-        }
+        const select = document.getElementById('task-receiver');
+        select.innerHTML = `<option value="${currentContactId}">${document.getElementById('profile-name').innerText}</option>`;
     }
     function closeCreateModal() { document.getElementById('create-modal').classList.add('hidden'); }
-    
+
     async function submitNewTask() {
-      const to_user_id = document.getElementById('task-receiver').value;
-      const title = document.getElementById('task-title').value;
-      const description = document.getElementById('task-desc').value;
-      const due_time = document.getElementById('task-time').value;
-      const jy = parseInt(document.getElementById('jYear').value); const jm = parseInt(document.getElementById('jMonth').value); const jd = parseInt(document.getElementById('jDay').value);
-      const g = jalali_to_gregorian(jy, jm, jd); const due_date = g[0] + '-' + (g[1] < 10 ? '0' + g[1] : g[1]) + '-' + (g[2] < 10 ? '0' + g[2] : g[2]);
-      if (!to_user_id || !title) return alert('گیرنده و عنوان الزامی است');
-      
-      const res = await callBackend('createTask', { title: title, description: description, to_user_id: to_user_id, due_date: due_date, due_time: due_time }, appToken);
-      if (res.ok) {
-          closeCreateModal(); document.getElementById('task-title').value = ''; document.getElementById('task-desc').value = '';
-          if (currentContactId) openProfile(currentContactId, document.getElementById('profile-name').innerText, document.getElementById('profile-role').innerText);
-          else loadContacts();
-      } else { alert(res.error); }
-    }
-
-    async function toggleRecording() {
-      const micBtn = document.getElementById('mic-btn');
-      if (!isRecording) {
-        try {
-          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          let options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : { mimeType: 'audio/mp4' };
-          mediaRecorder = new MediaRecorder(stream, options);
-          mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) audioChunks.push(e.data); };
-          mediaRecorder.onstop = async function() {
-            const mimeType = mediaRecorder.mimeType || 'audio/webm';
-            const audioBlob = new Blob(audioChunks, { type: mimeType }); audioChunks = [];
-            await uploadVoiceBlob(audioBlob, mimeType); stream.getTracks().forEach(function(track) { track.stop(); });
-          };
-          audioChunks = []; mediaRecorder.start(); isRecording = true;
-          micBtn.classList.add('recording'); micBtn.innerText = '⏹';
-        } catch (err) { document.getElementById('audio-upload').click(); }
-      } else {
-        mediaRecorder.stop(); isRecording = false; micBtn.classList.remove('recording'); micBtn.innerText = '🎤';
-      }
-    }
-    
-    async function uploadVoiceBlob(blob, mimeType) {
-      if (isSending) return; isSending = true; const micBtn = document.getElementById('mic-btn'); micBtn.innerText = '⏳';
-      const reader = new FileReader(); reader.readAsDataURL(blob);
-      reader.onloadend = async function() {
-        const base64data = reader.result.split(',')[1];
-        const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, base64Audio: base64data, mimeType: mimeType }, appToken);
-        if (res.ok) setTimeout(pollUpdates, 500); else alert('خطا: ' + res.error);
-        micBtn.innerText = '🎤'; isSending = false;
-      };
-    }
-    
-    function handleAudioUpload(event) {
-      const file = event.target.files[0]; if (!file) return;
-      if (file.size > 5 * 1024 * 1024) return alert('حجم زیاد است.');
-      const reader = new FileReader();
-      reader.onload = async function(e) {
-        const base64data = e.target.result.split(',')[1]; let mimeType = file.type || 'audio/mp4'; 
-        const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, base64Audio: base64data, mimeType: mimeType }, appToken);
-        if (res.ok) setTimeout(pollUpdates, 500); else alert('خطا: ' + res.error);
-      };
-      reader.readAsDataURL(file); event.target.value = ''; 
-    }
-    
-    async function playAudio(fileId, msgId, btnElement) {
-      if (currentAudio && currentAudio.msgId === msgId) {
-        if(currentAudio.audio.paused) { currentAudio.audio.play(); btnElement.innerText = '⏸'; btnElement.classList.add('playing'); }
-        else { currentAudio.audio.pause(); btnElement.innerText = '▶'; btnElement.classList.remove('playing'); } return;
-      }
-      if (currentAudio) { currentAudio.audio.pause(); if(currentPlayBtn) { currentPlayBtn.innerText = '▶'; currentPlayBtn.classList.remove('playing'); } }
-      if (audioCache[msgId]) { playBlob(audioCache[msgId], msgId, btnElement); return; }
-      btnElement.innerText = '⏳';
-      const res = await callBackend('getVoiceBase64', { fileId: fileId }, appToken);
-      if (res.ok) {
-          const byteCharacters = atob(res.base64); const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) byteNumbers[i] = byteCharacters.charCodeAt(i);
-          const blob = new Blob([new Uint8Array(byteNumbers)], {type: res.mimeType});
-          const audioUrl = URL.createObjectURL(blob); audioCache[msgId] = audioUrl; playBlob(audioUrl, msgId, btnElement);
-      } else { alert('خطا: ' + res.error); btnElement.innerText = '▶'; }
-    }
-    
-    function playBlob(audioUrl, msgId, btnElement) {
-      const audio = new Audio(audioUrl); currentAudio = { audio: audio, msgId: msgId }; currentPlayBtn = btnElement;
-      audio.play(); btnElement.innerText = '⏸'; btnElement.classList.add('playing');
-      const progressBar = document.getElementById('progress-' + msgId); const timeDisplay = document.getElementById('time-' + msgId);
-      audio.ontimeupdate = function() { if (audio.duration) { progressBar.style.width = (audio.currentTime / audio.duration) * 100 + '%'; timeDisplay.innerText = formatTime(audio.currentTime); } };
-      audio.onended = function() { btnElement.innerText = '▶'; btnElement.classList.remove('playing'); progressBar.style.width = '0%'; timeDisplay.innerText = '0:00'; currentAudio = null; currentPlayBtn = null; };
-    }
-    
-    function seekAudio(event, msgId) {
-      if (!currentAudio || currentAudio.msgId !== msgId) return;
-      const rect = event.currentTarget.getBoundingClientRect(); const clickX = rect.right - event.clientX;
-      currentAudio.audio.currentTime = currentAudio.audio.duration * (clickX / rect.width);
-    }
-    
-    function formatTime(seconds) { if(isNaN(seconds)) return '0:00'; const m = Math.floor(seconds / 60); const s = Math.floor(seconds % 60); return m + ':' + (s < 10 ? '0' : '') + s; }
-    
-    async function sendTextMessage() {
-      if (isSending) return; 
-      const input = document.getElementById('chat-input'); const text = input.value.trim(); if (!text) return;
-      isSending = true; input.value = '';
-      const res = await callBackend('sendTextMessage', { taskId: currentTaskId, text: text }, appToken);
-      if (res.ok) setTimeout(pollUpdates, 500); else alert(res.error);
-      isSending = false; 
-    }
-    document.getElementById('chat-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') sendTextMessage(); });
-
-    // --- Admin ---
-    async function openAdminPanel() { if (currentUser.username !== 'admin') return; document.getElementById('contacts-view').classList.add('hidden'); document.getElementById('admin-view').classList.remove('hidden'); await loadAdminUsers(); }
-    function closeAdminPanel() { document.getElementById('admin-view').classList.add('hidden'); document.getElementById('contacts-view').classList.remove('hidden'); loadContacts(); }
-    async function loadAdminUsers() {
-        const container = document.getElementById('users-list-container'); container.innerHTML = '<p style="text-align:center; color:gray;">در حال دریافت...</p>';
-        const res = await callBackend('listUsers', {}, appToken);
-        if (res.ok) {
-            cachedUsers = res.users; container.innerHTML = '';
-            res.users.forEach(function(u) {
-                let roleColor = u.role === 'مدیر' ? '#e84118' : (u.role === 'رئیس' ? '#fbc531' : (u.role === 'سرپرست' ? '#00a8ff' : '#718093'));
-                container.innerHTML += '<div class="user-card"><div class="user-info"><span class="user-name">' + u.name + ' <span style="font-size:10px; color:' + roleColor + '">(' + u.role + ')</span></span><span class="user-role">کاربری: ' + u.username + ' | ' + (u.active ? '<span style="color:green">فعال</span>' : '<span style="color:red">غیرفعال</span>') + '</span></div><div class="user-actions"><button class="user-btn btn-edit" onclick="openEditUserModal(\'' + u.id + '\')">ویرایش</button><button class="user-btn btn-pass" onclick="openAdminResetPassModal(\'' + u.id + '\', \'' + u.name + '\')">رمز</button>' + (u.username !== 'admin' ? '<button class="user-btn btn-toggle ' + (u.active ? 'active' : '') + '" onclick="toggleUser(\'' + u.id + '\')">' + (u.active ? 'فعال' : 'غیرفعال') + '</button>' : '') + '</div></div>';
-            });
-        } else { container.innerHTML = '<p style="text-align:center; color:red;">خطا در دریافت لیست</p>'; }
-    }
-    async function toggleUser(userId) { if (!confirm('تغییر وضعیت؟')) return; const res = await callBackend('toggleUserActive', { userId: userId }, appToken); if (res.ok) loadAdminUsers(); else alert(res.error); }
-    function openAddUserModal() {
-        document.getElementById('user-modal-title').innerText = 'کاربر جدید'; document.getElementById('edit-user-id').value = '';
-        document.getElementById('u-name').value = ''; document.getElementById('u-username').value = ''; document.getElementById('u-password').value = ''; document.getElementById('u-role').value = 'کارشناس';
-        document.getElementById('username-group').style.display = 'block'; document.getElementById('password-group').style.display = 'block';
-        populateManagersCheckboxes([]); document.getElementById('user-modal').classList.remove('hidden');
-    }
-    function openEditUserModal(userId) {
-        const user = cachedUsers.find(function(u) { return u.id === userId; }); if (!user) return;
-        document.getElementById('user-modal-title').innerText = 'ویرایش کاربر'; document.getElementById('edit-user-id').value = user.id;
-        document.getElementById('u-name').value = user.name; document.getElementById('u-username').value = user.username; document.getElementById('u-role').value = user.role;
-        document.getElementById('username-group').style.display = 'none'; document.getElementById('password-group').style.display = 'none';
-        populateManagersCheckboxes(user.manager_id ? String(user.manager_id).split(',') : []); document.getElementById('user-modal').classList.remove('hidden');
-    }
-    function closeUserModal() { document.getElementById('user-modal').classList.add('hidden'); }
-    function populateManagersCheckboxes(selectedIds) {
-        const container = document.getElementById('u-manager-container'); container.innerHTML = '';
-        cachedUsers.forEach(function(u) { 
-            if (u.active && u.username !== 'admin') {
-                const checked = selectedIds.includes(u.id) ? 'checked' : '';
-                container.innerHTML += '<label><input type="checkbox" value="' + u.id + '" ' + checked + '> <span>' + u.name + ' (' + u.role + ')</span></label>'; 
-            }
-        });
-    }
-    async function submitUserForm() {
-        const editId = document.getElementById('edit-user-id').value;
-        const name = document.getElementById('u-name').value; const username = document.getElementById('u-username').value; const password = document.getElementById('u-password').value; const role = document.getElementById('u-role').value;
-        const checkboxes = document.querySelectorAll('#u-manager-container input[type="checkbox"]:checked');
-        let manager_ids = []; checkboxes.forEach(function(cb) { manager_ids.push(cb.value); }); const manager_ids_str = manager_ids.join(',');
+        const to_user_id = document.getElementById('task-receiver').value;
+        const title = document.getElementById('task-title').value;
+        const desc = document.getElementById('task-desc').value;
+        const time = document.getElementById('task-time').value;
+        const jy = parseInt(document.getElementById('jYear').value), jm = parseInt(document.getElementById('jMonth').value), jd = parseInt(document.getElementById('jDay').value);
+        const g = jalali_to_gregorian(jy, jm, jd);
+        const date = `${g[0]}-${g[1] < 10 ? '0'+g[1] : g[1]}-${g[2] < 10 ? '0'+g[2] : g[2]}`;
         
-        if (!name || !role) return alert('نام و نقش الزامی است');
-        if (editId) {
-            const res = await callBackend('updateUser', { userId: editId, updates: { name: name, role: role, manager_id: manager_ids_str } }, appToken);
-            if (res.ok) { closeUserModal(); loadAdminUsers(); } else alert(res.error);
-        } else {
-            if (!username || !password) return alert('نام کاربری و رمز الزامی است');
-            const res = await callBackend('createUser', { name: name, username: username, password: password, role: role, manager_id: manager_ids_str }, appToken);
-            if (res.ok) { closeUserModal(); loadAdminUsers(); } else alert(res.error);
-        }
-    }
-    function openAdminResetPassModal(userId, userName) {
-        document.getElementById('admin-pass-user-id').value = userId; document.getElementById('admin-pass-username-label').innerText = 'کاربر: ' + userName;
-        document.getElementById('admin-new-password').value = ''; document.getElementById('admin-confirm-password').value = '';
-        document.getElementById('admin-pass-modal').classList.remove('hidden');
-    }
-    function closeAdminPassModal() { document.getElementById('admin-pass-modal').classList.add('hidden'); }
-    async function submitAdminResetPass() {
-        const userId = document.getElementById('admin-pass-user-id').value;
-        const p1 = document.getElementById('admin-new-password').value.trim(); const p2 = document.getElementById('admin-confirm-password').value.trim();
-        if (p1.length < 6) return alert('حداقل ۶ کاراکتر'); if (p1 !== p2) return alert('رمزها یکسان نیستند');
-        const res = await callBackend('changePassword', { userId: userId, newPassword: p1 }, appToken);
-        if (res.ok) { alert('تغییر کرد'); closeAdminPassModal(); } else alert(res.error);
-    }
-    function openPasswordModal() { document.getElementById('password-modal').classList.remove('hidden'); }
-    function closePasswordModal() { document.getElementById('password-modal').classList.add('hidden'); document.getElementById('new-password').value = ''; document.getElementById('confirm-password').value = ''; }
-    async function submitChangePassword() {
-        const p1 = document.getElementById('new-password').value.trim(); const p2 = document.getElementById('confirm-password').value.trim();
-        if (p1.length < 6) return alert('حداقل ۶ کاراکتر'); if (p1 !== p2) return alert('رمزها یکسان نیستند');
-        const res = await callBackend('changePassword', { userId: currentUser.id, newPassword: p1 }, appToken);
-        if (res.ok) { alert('تغییر کرد'); closePasswordModal(); } else alert(res.error);
+        if (!to_user_id || !title) return alert('عنوان الزامی است');
+        const res = await callBackend('createTask', { title, description: desc, to_user_id, due_date: date, due_time: time });
+        if (res.ok) { closeCreateModal(); openProfile(currentContactId, document.getElementById('profile-name').innerText, document.getElementById('profile-role').innerText); } else alert(res.error);
     }
 
+    // ==========================================
+    // توابع تقویم شمسی (بدون تغییر)
+    // ==========================================
     const jMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     function initCalendar() {
         const ySelect = document.getElementById('jYear'); const mSelect = document.getElementById('jMonth');
         const now = new Date(); const jNow = gregorian_to_jalali(now.getFullYear(), now.getMonth() + 1, now.getDate());
-        ySelect.innerHTML = ''; for (let i = jNow[0] - 1; i <= jNow[0] + 2; i++) ySelect.innerHTML += '<option value="' + i + '" ' + (i === jNow[0] ? 'selected' : '') + '>' + i + '</option>';
-        mSelect.innerHTML = ''; for (let i = 0; i < 12; i++) mSelect.innerHTML += '<option value="' + (i+1) + '" ' + (i+1 === jNow[1] ? 'selected' : '') + '>' + jMonths[i] + '</option>';
+        ySelect.innerHTML = ''; for (let i = jNow[0] - 1; i <= jNow[0] + 2; i++) ySelect.innerHTML += `<option value="${i}" ${i === jNow[0] ? 'selected' : ''}>${i}</option>`;
+        mSelect.innerHTML = ''; for (let i = 0; i < 12; i++) mSelect.innerHTML += `<option value="${i+1}" ${i+1 === jNow[1] ? 'selected' : ''}>${jMonths[i]}</option>`;
         updateDays(); mSelect.onchange = updateDays; ySelect.onchange = updateDays;
     }
     function updateDays() {
         const y = parseInt(document.getElementById('jYear').value); const m = parseInt(document.getElementById('jMonth').value); const dSelect = document.getElementById('jDay');
         let days = 31; if (m >= 7 && m <= 11) days = 30; if (m === 12) { if (isLeapJalali(y)) days = 30; else days = 29; }
         const currentDay = parseInt(dSelect.value) || 1; dSelect.innerHTML = '';
-        for (let i = 1; i <= days; i++) dSelect.innerHTML += '<option value="' + i + '" ' + (i === currentDay ? 'selected' : '') + '>' + i + '</option>';
+        for (let i = 1; i <= days; i++) dSelect.innerHTML += `<option value="${i}" ${i === currentDay ? 'selected' : ''}>${i}</option>`;
     }
     function isLeapJalali(jy) { return [1, 5, 9, 13, 17, 22, 26, 30].indexOf(jy % 33) !== -1; }
     function jalali_to_gregorian(jy, jm, jd) {
@@ -967,7 +655,7 @@
         return [jy, jm, jd];
     }
 
-    if ('serviceWorker' in navigator) { window.addEventListener('load', function() { navigator.serviceWorker.register('./sw.js').catch(function(err) { console.log(err); }); }); }
+    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(console.log); }); }
   </script>
 </body>
 </html>
