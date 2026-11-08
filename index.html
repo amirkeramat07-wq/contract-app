@@ -23,6 +23,7 @@
     .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
     .input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; outline: none; }
     
+    /* Login */
     #login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
     .login-box { background: var(--white); padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
     .login-box h2 { text-align: center; margin-bottom: 20px; font-size: 22px; color: var(--primary-dark); }
@@ -43,8 +44,8 @@
     .search-input { width: 100%; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); font-size: 14px; outline: none; }
     .search-input:focus { border-color: var(--primary); }
 
-    /* Notification Bell */
-    .bell-btn { background: white; color: var(--primary); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 16px; cursor: pointer; position: relative; display: flex; justify-content: center; align-items: center; }
+    /* Notification & Install Bell */
+    .bell-btn, .install-btn-header { background: white; color: var(--primary); border: none; border-radius: 50%; width: 32px; height: 32px; font-size: 16px; cursor: pointer; position: relative; display: flex; justify-content: center; align-items: center; }
     .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--danger); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; display: none; }
     
     .contact-list { flex: 1; overflow-y: auto; background: var(--white); }
@@ -141,6 +142,8 @@
     <div class="header">
       <div class="header-info"><h3>پیام‌رسان</h3><span id="user-info"></span></div>
       <div class="header-actions">
+        <!-- دکمه نصب دائمی -->
+        <button class="install-btn-header" id="install-btn" onclick="handleInstallClick()" title="نصب برنامه">⬇️</button>
         <button class="bell-btn" onclick="openNotifModal()">🔔<div class="bell-badge" id="bell-badge"></div></button>
         <button class="pass-btn" id="admin-btn" onclick="openAdminPanel()" style="display:none;">کاربران</button>
         <button class="pass-btn" onclick="openPasswordModal()">رمز</button>
@@ -148,7 +151,6 @@
       </div>
     </div>
     
-    <!-- نوار جستجو -->
     <div class="search-container">
         <input type="text" id="search-contacts" class="search-input" placeholder="جستجوی نام مخاطب..." oninput="filterContacts()">
     </div>
@@ -206,6 +208,18 @@
         <button onclick="closeNotifModal()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">×</button>
       </div>
       <div id="notif-list-container" style="max-height: 400px; overflow-y: auto; padding: 0;"></div>
+    </div>
+  </div>
+
+  <div id="install-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>راهنمای نصب برنامه</h3>
+      <div id="install-instructions" style="font-size:14px; line-height:1.8; color:var(--text);">
+         <!-- متن راهنما توسط جاوااسکریپت پر می‌شود -->
+      </div>
+      <div class="modal-actions">
+        <button class="btn" style="flex:1; background: var(--primary);" onclick="document.getElementById('install-modal').classList.add('hidden')">متوجه شدم</button>
+      </div>
     </div>
   </div>
 
@@ -300,6 +314,8 @@
     let currentPlayBtn = null; 
     let cachedUsers = [];
     let allContacts = [];
+    
+    let deferredPrompt = null;
 
     async function callBackend(action, data, token) {
       try {
@@ -309,6 +325,41 @@
         });
         return await response.json();
       } catch (error) { return { ok: false, error: 'network_error' }; }
+    }
+
+    // ================= مدیریت نصب PWA =================
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+    });
+
+    function handleInstallClick() {
+        // اگر کاربر قبلاً نصب کرده باشد، در حالت Standalone باز شده باشد
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            alert('برنامه از قبل روی گوشی شما نصب است.');
+            return;
+        }
+
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') {
+                    console.log('User accepted the install');
+                }
+                deferredPrompt = null;
+            });
+        } else {
+            // اگر مرورگر دکمه نصب خودکار را نشان نمی‌دهد
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+            const instText = document.getElementById('install-instructions');
+            
+            if (isIOS) {
+                instText.innerHTML = 'برای نصب روی آیفون:<br>۱. در مرورگر سافاری، روی دکمه <b>Share</b> (مربع با فلش رو به بالا) بزنید.<br>۲. در منوی باز شده، گزینه <b>Add to Home Screen</b> (افزودن به صفحه اصلی) را انتخاب کنید.<br>۳. روی Add بزنید.';
+            } else {
+                instText.innerHTML = 'برای نصب روی اندروید:<br>۱. در مرورگر کروم، روی <b>سه نقطه</b> (بالا سمت راست) بزنید.<br>۲. گزینه <b>Install app</b> یا <b>Add to Home screen</b> را انتخاب کنید.<br>۳. روی Install بزنید.';
+            }
+            document.getElementById('install-modal').classList.remove('hidden');
+        }
     }
 
     window.addEventListener('load', function() {
