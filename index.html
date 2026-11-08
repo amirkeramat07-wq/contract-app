@@ -11,7 +11,6 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -93,7 +92,6 @@
     .chat-input-area { background: #f0f0f0; padding: 10px 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); }
     .chat-input { flex: 1; border-radius: 20px; padding: 10px 15px; border: none; }
     .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 18px; }
-    .mic-btn { background: var(--white); color: var(--text-light); }
     
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 300; }
     .modal-content { background: var(--white); width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
@@ -127,7 +125,7 @@
   <div id="login-view">
     <div class="login-box">
       <h2>پیام‌رسان مدیریت قراردادها</h2>
-      <div class="form-group"><label>نام کاربری</label><input type="text" id="login-username" class="input" dir="ltr" style="text-align:left;"></div>
+      <div class="form-group"><label>نام کاربری</label><input type="text" id="login-username" class="input" dir="ltr" style="text-align:left;" value="admin" readonly></div>
       <div class="form-group"><label>رمز عبور</label><input type="password" id="login-password" class="input" dir="ltr" style="text-align:left;"></div>
       <button class="btn" style="width: 100%;" id="login-btn" onclick="handleLogin()">ورود به سیستم</button>
     </div>
@@ -261,12 +259,11 @@
   </div>
 
   <script>
-    // ==========================================
-    // تنظیمات Supabase
-    // ==========================================
     const SUPABASE_URL = 'https://trnzzevllluhkyvvrtms.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    
+    // تغییر نام متغیر از supabase به db برای جلوگیری از تداخل
+    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
     let currentTaskId = null;
@@ -279,52 +276,57 @@
     let cachedUsers = [];
     let allContacts = [];
 
-    function formatEmail(username) { return username.trim().toLowerCase() + '@contract.local'; }
+    function formatEmail(username) { 
+        // چون کاربر را در Supabase با ایمیل admin@example.com ساختید
+        if(username.trim().toLowerCase() === 'admin') return 'admin@example.com';
+        return username.trim().toLowerCase() + '@example.com'; 
+    }
 
-    // ==========================================
-    // توابع اتصال به دیتابیس
-    // ==========================================
     async function callBackend(action, data = {}) {
       try {
         if (action === 'login') {
             const email = formatEmail(data.username);
-            const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email: email, password: data.password });
-            if (authError) return { ok: false, error: 'نام کاربری یا رمز اشتباه است' };
+            const { data: authData, error: authError } = await db.auth.signInWithPassword({ email: email, password: data.password });
+            if (authError) return { ok: false, error: 'نام کاربری یا رمز اشتباه است (' + authError.message + ')' };
             
-            const { data: profile, error: pError } = await supabase.from('profiles').select('*').eq('id', authData.user.id).single();
-            if (pError || !profile.active) {
-                await supabase.auth.signOut();
-                return { ok: false, error: 'حساب کاربری غیرفعال است' };
+            const { data: profile, error: pError } = await db.from('profiles').select('*').eq('id', authData.user.id).single();
+            if (pError) {
+                await db.auth.signOut();
+                return { ok: false, error: 'پروفایل در دیتابیس یافت نشد' };
+            }
+            if (!profile.active) {
+                await db.auth.signOut();
+                return { ok: false, error: 'حساب شما غیرفعال است' };
             }
             return { ok: true, user: profile };
         }
 
-        if (action === 'logout') { await supabase.auth.signOut(); return { ok: true }; }
+        if (action === 'logout') { await db.auth.signOut(); return { ok: true }; }
 
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await db.auth.getSession();
         if (!session) return { ok: false, error: 'نشست منقضی شده' };
         const myId = session.user.id;
 
         if (action === 'heartbeat') {
-            await supabase.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', myId);
+            await db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', myId);
             return { ok: true };
         }
 
         if (action === 'getContacts') {
-            const { data: contacts } = await supabase.from('profiles').select('*').neq('id', myId).eq('active', true);
+            const { data: contacts } = await db.from('profiles').select('*').neq('id', myId).eq('active', true);
             return { ok: true, contacts: contacts.map(c => ({ ...c, lastTask: null })) };
         }
 
         if (action === 'getTasksByContact') {
-            const { data: tasks } = await supabase.from('tasks').select('*')
+            const { data: tasks } = await db.from('tasks').select('*')
                 .or(`and(from_user_id.eq.${myId},to_user_id.eq.${data.contactId}),and(from_user_id.eq.${data.contactId},to_user_id.eq.${myId})`)
                 .order('created_at', { ascending: false });
             return { ok: true, tasks: tasks };
         }
 
         if (action === 'getTaskDetail' || action === 'getUpdates') {
-            const { data: task } = await supabase.from('tasks').select('*').eq('id', data.taskId).single();
-            let query = supabase.from('messages').select('*').eq('task_id', data.taskId).order('created_at', { ascending: true });
+            const { data: task } = await db.from('tasks').select('*').eq('id', data.taskId).single();
+            let query = db.from('messages').select('*').eq('task_id', data.taskId).order('created_at', { ascending: true });
             const { data: messages } = await query;
 
             let newMessages = messages || [];
@@ -334,46 +336,44 @@
             }
 
             const otherUserId = myId === task.from_user_id ? task.to_user_id : task.from_user_id;
-            const { data: otherProfile } = await supabase.from('profiles').select('last_seen').eq('id', otherUserId).single();
+            const { data: otherProfile } = await db.from('profiles').select('last_seen').eq('id', otherUserId).single();
 
             return { ok: true, task: task, messages: action === 'getTaskDetail' ? newMessages : undefined, newMessages: action === 'getUpdates' ? newMessages : undefined, otherUserLastSeen: otherProfile?.last_seen || task.created_at, canDelete: myId === task.from_user_id };
         }
 
         if (action === 'sendTextMessage') {
-            await supabase.from('messages').insert({ task_id: data.taskId, from_user_id: myId, type: 'text', content: data.text });
+            await db.from('messages').insert({ task_id: data.taskId, from_user_id: myId, type: 'text', content: data.text });
             return { ok: true };
         }
 
         if (action === 'createTask') {
-            await supabase.from('tasks').insert({ title: data.title, description: data.description, from_user_id: myId, to_user_id: data.to_user_id, due_date: data.due_date, due_time: data.due_time });
+            await db.from('tasks').insert({ title: data.title, description: data.description, from_user_id: myId, to_user_id: data.to_user_id, due_date: data.due_date, due_time: data.due_time });
             return { ok: true };
         }
 
         if (action === 'deleteTask') {
-            await supabase.from('tasks').delete().eq('id', data.taskId).eq('from_user_id', myId);
+            await db.from('tasks').delete().eq('id', data.taskId).eq('from_user_id', myId);
             return { ok: true };
         }
 
         if (action === 'getNotifications') {
-            const { data: tasks } = await supabase.from('tasks').select('*').eq('to_user_id', myId).in('status', ['در انتظار', 'در حال انجام', 'گذشته از مهلت']);
+            const { data: tasks } = await db.from('tasks').select('*').eq('to_user_id', myId).in('status', ['در انتظار', 'در حال انجام', 'گذشته از مهلت']);
             const notifs = (tasks || []).map(t => ({ id: t.id, title: t.title, status: t.status, message: t.status === 'گذشته از مهلت' ? 'مهلت گذشته!' : 'در انتظار شما', type: t.status === 'گذشته از مهلت' ? 'danger' : 'info' }));
             return { ok: true, notifications: notifs };
         }
 
         return { ok: false, error: 'اکشن نامشخص' };
-      } catch (error) { return { ok: false, error: error.message }; }
+      } catch (error) { return { ok: false, error: 'خطای شبکه: ' + error.message }; }
     }
 
-    // ==========================================
-    // توابع رابط کاربری
-    // ==========================================
     function toggleDrawer() { document.getElementById('side-drawer').classList.add('open'); document.getElementById('drawer-overlay').classList.add('show'); }
     function closeDrawer() { document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-overlay').classList.remove('show'); }
+    function handleInstallClick() { alert('برای نصب، از منوی مرورگر خود گزینه Add to Home Screen را انتخاب کنید.'); }
 
     window.addEventListener('load', async () => {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session } } = await db.auth.getSession();
         if (session) {
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
+            const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
             if (profile) { currentUser = profile; showContactsView(); loadNotifications(); setInterval(()=>callBackend('heartbeat'), 60000); }
         }
     });
@@ -394,12 +394,25 @@
     async function handleLogin() {
       const user = document.getElementById('login-username').value.trim();
       const pass = document.getElementById('login-password').value.trim();
-      if (!user || !pass) return alert('نام کاربری و رمز را وارد کنید');
-      const btn = document.getElementById('login-btn'); btn.disabled = true; btn.innerText = 'در حال ورود...';
+      if (!user || !pass) return alert('رمز عبور را وارد کنید');
+      
+      const btn = document.getElementById('login-btn'); 
+      btn.disabled = true; 
+      btn.innerText = 'در حال ورود...';
+      
       const res = await callBackend('login', { username: user, password: pass });
-      if (res.ok) { currentUser = res.user; showContactsView(); loadNotifications(); setInterval(()=>callBackend('heartbeat'), 60000); } 
-      else { alert(res.error); }
-      btn.disabled = false; btn.innerText = 'ورود به سیستم';
+      
+      if (res.ok) { 
+          currentUser = res.user; 
+          showContactsView(); 
+          loadNotifications(); 
+          setInterval(()=>callBackend('heartbeat'), 60000); 
+      } else { 
+          alert(res.error); 
+      }
+      
+      btn.disabled = false; 
+      btn.innerText = 'ورود به سیستم';
     }
 
     async function handleLogout() { await callBackend('logout'); location.reload(); }
@@ -411,9 +424,9 @@
         if (!currentUser) return;
         const res = await callBackend('getNotifications');
         if (res.ok) {
-            const b = document.getElementById('bell-badge'); const db = document.getElementById('drawer-bell-badge');
-            if (res.notifications.length > 0) { b.style.display = 'block'; db.style.display = 'inline-block'; db.innerText = res.notifications.length; } 
-            else { b.style.display = 'none'; db.style.display = 'none'; }
+            const b = document.getElementById('bell-badge'); const dbadge = document.getElementById('drawer-bell-badge');
+            if (res.notifications.length > 0) { b.style.display = 'block'; dbadge.style.display = 'inline-block'; dbadge.innerText = res.notifications.length; } 
+            else { b.style.display = 'none'; dbadge.style.display = 'none'; }
         }
     }
 
@@ -515,9 +528,6 @@
     async function sendTextMessage() { const i = document.getElementById('chat-input'); const t = i.value.trim(); if (!t || isSending) return; isSending = true; i.value = ''; await callBackend('sendTextMessage', { taskId: currentTaskId, text: t }); setTimeout(pollUpdates, 500); isSending = false; }
     document.getElementById('chat-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendTextMessage(); });
 
-    // ==========================================
-    // پنل مدیریت (Supabase)
-    // ==========================================
     async function openAdminPanel() { 
         if (currentUser.role !== 'مدیر') return alert('دسترسی غیرمجاز');
         document.getElementById('contacts-view').classList.add('hidden'); 
@@ -534,7 +544,7 @@
     async function loadAdminUsers() {
         const container = document.getElementById('users-list-container'); 
         container.innerHTML = '<p style="text-align:center; color:gray;">در حال دریافت...</p>';
-        const { data: users, error } = await supabase.from('profiles').select('*');
+        const { data: users, error } = await db.from('profiles').select('*');
         
         if (error) { container.innerHTML = '<p style="text-align:center; color:red;">خطا در دریافت لیست</p>'; return; }
         
@@ -557,7 +567,7 @@
     }
 
     async function toggleUserStatus(id, currentStatus) {
-        await supabase.from('profiles').update({ active: !currentStatus }).eq('id', id);
+        await db.from('profiles').update({ active: !currentStatus }).eq('id', id);
         loadAdminUsers();
     }
 
@@ -588,13 +598,10 @@
         const manager_ids = Array.from(document.querySelectorAll('#u-manager-container input:checked')).map(cb => cb.value).join(',');
         
         if (!name || !role) return alert('نام و نقش الزامی است');
-        const { error } = await supabase.from('profiles').update({ name: name, role: role, manager_id: manager_ids }).eq('id', editId);
+        const { error } = await db.from('profiles').update({ name: name, role: role, manager_id: manager_ids }).eq('id', editId);
         if (!error) { closeUserModal(); loadAdminUsers(); } else { alert('خطا در ویرایش'); }
     }
 
-    // ==========================================
-    // تقویم شمسی
-    // ==========================================
     const jMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     function initCalendar() {
         const y = document.getElementById('jYear'); const m = document.getElementById('jMonth');
