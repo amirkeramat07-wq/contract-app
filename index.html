@@ -262,7 +262,7 @@
     const SUPABASE_URL = 'https://trnzzevllluhkyvvrtms.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc';
     
-    // تغییر نام متغیر از supabase به db برای جلوگیری از تداخل
+    // تغییر نام متغیر از supabase به db برای جلوگیری از تداخل با کتابخانه
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
@@ -277,7 +277,6 @@
     let allContacts = [];
 
     function formatEmail(username) { 
-        // چون کاربر را در Supabase با ایمیل admin@example.com ساختید
         if(username.trim().toLowerCase() === 'admin') return 'admin@example.com';
         return username.trim().toLowerCase() + '@example.com'; 
     }
