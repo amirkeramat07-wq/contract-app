@@ -654,7 +654,113 @@
         let jd = 1 + ((days < 186) ? (days % 31) : ((days - 186) % 30));
         return [jy, jm, jd];
     }
+    // ==========================================
+    // توابع پنل ادمین (نسخه Supabase)
+    // ==========================================
+    
+    async function openAdminPanel() { 
+        if (currentUser.role !== 'مدیر') return alert('دسترسی غیرمجاز');
+        document.getElementById('contacts-view').classList.add('hidden'); 
+        document.getElementById('admin-view').classList.remove('hidden'); 
+        await loadAdminUsers(); 
+    }
+    
+    function closeAdminPanel() { 
+        document.getElementById('admin-view').classList.add('hidden'); 
+        document.getElementById('contacts-view').classList.remove('hidden'); 
+        loadContacts(); 
+    }
 
+    async function loadAdminUsers() {
+        const container = document.getElementById('users-list-container'); 
+        container.innerHTML = '<p style="text-align:center; color:gray;">در حال دریافت...</p>';
+        
+        const { data: users, error } = await supabase.from('profiles').select('*');
+        
+        if (error) { 
+            container.innerHTML = '<p style="text-align:center; color:red;">خطا در دریافت لیست</p>'; 
+            return; 
+        }
+        
+        cachedUsers = users; 
+        container.innerHTML = '';
+        
+        users.forEach(u => {
+            let roleColor = u.role === 'مدیر' ? '#e84118' : (u.role === 'رئیس' ? '#fbc531' : (u.role === 'سرپرست' ? '#00a8ff' : '#718093'));
+            container.innerHTML += `
+            <div class="user-card">
+                <div class="user-info">
+                    <span class="user-name">${u.name} <span style="font-size:10px; color:${roleColor}">(${u.role})</span></span>
+                    <span class="user-role">کاربری: ${u.username} | ${u.active ? '<span style="color:green">فعال</span>' : '<span style="color:red">غیرفعال</span>'}</span>
+                </div>
+                <div class="user-actions">
+                    <button class="user-btn btn-edit" onclick="openEditUserModal('${u.id}')">ویرایش</button>
+                </div>
+            </div>`;
+        });
+    }
+
+    // ویرایش کاربر (تغییر نقش و نام)
+    function openEditUserModal(userId) {
+        const user = cachedUsers.find(u => u.id === userId); 
+        if (!user) return;
+        
+        document.getElementById('user-modal-title').innerText = 'ویرایش کاربر'; 
+        document.getElementById('edit-user-id').value = user.id;
+        document.getElementById('u-name').value = user.name; 
+        document.getElementById('u-username').value = user.username; 
+        document.getElementById('u-role').value = user.role;
+        
+        // در Supabase ساخت کاربر از فرانت‌اند امن نیست، پس فیلدهای نام کاربری و رمز را مخفی می‌کنیم
+        document.getElementById('username-group').style.display = 'none'; 
+        document.getElementById('password-group').style.display = 'none';
+        
+        populateManagersCheckboxes(user.manager_id ? String(user.manager_id).split(',') : []); 
+        document.getElementById('user-modal').classList.remove('hidden');
+    }
+
+    function closeUserModal() { document.getElementById('user-modal').classList.add('hidden'); }
+
+    function populateManagersCheckboxes(selectedIds) {
+        const container = document.getElementById('u-manager-container'); 
+        container.innerHTML = '';
+        cachedUsers.forEach(u => { 
+            if (u.active && u.id !== currentUser.id) {
+                const checked = selectedIds.includes(u.id) ? 'checked' : '';
+                container.innerHTML += `<label><input type="checkbox" value="${u.id}" ${checked}> <span>${u.name} (${u.role})</span></label>`; 
+            }
+        });
+    }
+
+    async function submitUserForm() {
+        const editId = document.getElementById('edit-user-id').value;
+        const name = document.getElementById('u-name').value; 
+        const role = document.getElementById('u-role').value;
+        
+        const checkboxes = document.querySelectorAll('#u-manager-container input[type="checkbox"]:checked');
+        let manager_ids = []; 
+        checkboxes.forEach(cb => manager_ids.push(cb.value)); 
+        const manager_ids_str = manager_ids.join(',');
+        
+        if (!name || !role) return alert('نام و نقش الزامی است');
+        
+        if (editId) {
+            // آپدیت در دیتابیس Supabase
+            const { error } = await supabase.from('profiles').update({ 
+                name: name, 
+                role: role, 
+                manager_id: manager_ids_str 
+            }).eq('id', editId);
+            
+            if (!error) { 
+                alert('اطلاعات کاربر با موفقیت ویرایش شد.');
+                closeUserModal(); 
+                loadAdminUsers(); 
+            } else { 
+                alert('خطا در ویرایش: ' + error.message); 
+            }
+        }
+    }
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(console.log); }); }
   </script>
 </body>
