@@ -1,4 +1,4 @@
-const CACHE_NAME = 'contract-app-v17';
+const CACHE_NAME = 'contract-app-v21';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
