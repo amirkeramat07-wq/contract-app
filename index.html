@@ -11,8 +11,18 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- Supabase SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- لود کتابخانه Supabase با 3 سرور جایگزین (Fallback) برای دور زدن تحریم -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.8/supabase.min.js"></script>
+  <script>
+    if (!window.supabase) {
+        document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
+    }
+  </script>
+  <script>
+    if (!window.supabase) {
+        document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+    }
+  </script>
 
   <style>
     :root { --primary: #00a8ff; --primary-dark: #0097e6; --bg: #f5f6fa; --white: #ffffff; --text: #2f3640; --text-light: #718093; --danger: #e84118; --success: #4cd137; --warning: #fbc531; --border: #dcdde1; --chat-bg: #efeae2; }
@@ -312,7 +322,7 @@
 
     async function callBackend(action, data = {}) {
       try {
-        if (!db) return { ok: false, error: 'در حال اتصال به سرور... لطفاً یک لحظه صبر کنید.' };
+        if (!db) return { ok: false, error: 'کتابخانه Supabase لود نشد. لطفاً اینترنت خود را بررسی کنید یا صفحه را رفرش کنید.' };
 
         if (action === 'login') {
             const email = formatEmail(data.username);
