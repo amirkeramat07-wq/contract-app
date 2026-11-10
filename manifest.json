@@ -3,8 +3,9 @@
   "short_name": "قراردادها",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f5f6fa",
-  "theme_color": "#00a8ff",
+  "background_color": "#c0392b",
+  "theme_color": "#c0392b",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "icon-192.png",
