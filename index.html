@@ -7,149 +7,189 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="مدیریت قراردادها">
-  <meta name="theme-color" content="#00a8ff">
+  <meta name="theme-color" content="#c0392b">
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- لود کتابخانه Supabase با 3 سرور جایگزین (Fallback) برای دور زدن تحریم -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.8/supabase.min.js"></script>
   <script>
-    if (!window.supabase) {
-        document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
-    }
-  </script>
-  <script>
-    if (!window.supabase) {
-        document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
-    }
+    if (!window.supabase) document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
   </script>
 
   <style>
-    :root { --primary: #00a8ff; --primary-dark: #0097e6; --bg: #f5f6fa; --white: #ffffff; --text: #2f3640; --text-light: #718093; --danger: #e84118; --success: #4cd137; --warning: #fbc531; --border: #dcdde1; --chat-bg: #efeae2; }
+    /* رنگ‌بندی بر اساس لوگو: قرمز و خاکستری */
+    :root { 
+        --primary: #c0392b; /* قرمز اصلی */
+        --primary-dark: #8e2a20; /* قرمز تیره */
+        --bg: #f0f2f5; /* خاکستری روشن */
+        --white: #ffffff;
+        --text: #2f3640; /* خاکستری تیره */
+        --text-light: #718093;
+        --danger: #e74c3c; 
+        --success: #27ae60; 
+        --warning: #f39c12; 
+        --border: #dcdde1;
+        --chat-bg: #e4e6eb;
+    }
+    
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; }
     body { background-color: var(--bg); color: var(--text); height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
     .hidden { display: none !important; }
-    .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
-    .input { width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; outline: none; }
     
-    #login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .login-box { background: var(--white); padding: 30px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; max-width: 400px; }
-    .login-box h2 { text-align: center; margin-bottom: 20px; font-size: 22px; color: var(--primary-dark); }
-    .form-group { margin-bottom: 15px; }
-    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; }
-    
-    #contacts-view { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-    .header { background: var(--primary); color: white; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
-    .header-info h3 { font-size: 18px; margin-bottom: 4px; }
-    .header-info span { font-size: 12px; opacity: 0.8; }
-    
-    .menu-btn { background: none; border: none; color: white; font-size: 26px; cursor: pointer; padding: 0 5px; display: flex; align-items: center; }
-    .bell-btn { background: white; color: var(--primary); border: none; border-radius: 50%; width: 36px; height: 36px; font-size: 18px; cursor: pointer; position: relative; display: flex; justify-content: center; align-items: center; margin-left: 10px; }
-    .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--danger); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; display: none; }
+    /* انیمیشن‌های شیک (Motion) */
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
 
-    .search-container { padding: 10px 15px; background: var(--white); border-bottom: 1px solid var(--border); }
-    .search-input { width: 100%; padding: 10px 15px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg); font-size: 14px; outline: none; }
-    .search-input:focus { border-color: var(--primary); }
+    .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(192, 57, 43, 0.2); }
+    .btn:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 6px 8px rgba(192, 57, 43, 0.3); }
+    .btn:active { transform: translateY(0); }
     
-    .contact-list { flex: 1; overflow-y: auto; background: var(--white); }
-    .contact-item { display: flex; align-items: center; padding: 15px; border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.2s; }
-    .contact-item:active { background: #f0f0f0; }
-    .avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--primary); color: white; display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; margin-left: 15px; flex-shrink: 0; }
+    .input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.3s; background: var(--bg); }
+    .input:focus { border-color: var(--primary); background: var(--white); box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.1); }
+    
+    /* Login */
+    #login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); }
+    .login-box { background: var(--white); padding: 40px 30px; border-radius: 24px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); width: 100%; max-width: 400px; animation: slideUp 0.6s ease; }
+    .login-box h2 { text-align: center; margin-bottom: 30px; font-size: 24px; color: var(--primary); font-weight: 800; }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: var(--text); }
+    
+    /* Contacts */
+    #contacts-view { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
+    .header { background: var(--white); color: var(--text); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10; border-bottom: 1px solid var(--border); }
+    .header-info h3 { font-size: 20px; margin-bottom: 4px; color: var(--primary-dark); }
+    .header-info span { font-size: 13px; color: var(--text-light); }
+    
+    .menu-btn { background: none; border: none; color: var(--primary); font-size: 28px; cursor: pointer; padding: 0 5px; display: flex; align-items: center; transition: transform 0.2s; }
+    .menu-btn:active { transform: scale(0.9); }
+    
+    .bell-btn { background: var(--bg); color: var(--primary); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; position: relative; display: flex; justify-content: center; align-items: center; margin-left: 12px; transition: all 0.2s; }
+    .bell-btn:active { background: #e1e4e8; }
+    .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--danger); width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--white); display: none; animation: fadeIn 0.3s; }
+
+    .search-container { padding: 15px 20px; background: var(--bg); }
+    .search-input { width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--white); font-size: 15px; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: box-shadow 0.3s; }
+    .search-input:focus { box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-color: var(--primary); }
+    
+    .contact-list { flex: 1; overflow-y: auto; padding: 10px 20px; }
+    .contact-item { background: var(--white); display: flex; align-items: center; padding: 15px; margin-bottom: 12px; border-radius: 16px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); animation: slideUp 0.4s ease; }
+    .contact-item:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.08); }
+    .avatar { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; display: flex; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; margin-left: 15px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(192, 57, 43, 0.2); }
     .contact-info { flex: 1; overflow: hidden; }
-    .contact-name { font-weight: bold; font-size: 16px; margin-bottom: 4px; display: flex; justify-content: space-between; }
-    .contact-role { font-size: 11px; color: var(--primary-dark); }
+    .contact-name { font-weight: bold; font-size: 17px; margin-bottom: 4px; display: flex; justify-content: space-between; color: var(--text); }
+    .contact-role { font-size: 12px; color: var(--primary); font-weight: bold; }
     .contact-last-msg { font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; }
+    /* Drawer (Side Menu) */
+    .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; animation: fadeIn 0.3s; }
     .drawer-overlay.show { display: block; }
-    .drawer { position: fixed; top: 0; right: -280px; width: 280px; height: 100%; background: var(--white); z-index: 201; transition: right 0.3s ease; box-shadow: -2px 0 10px rgba(0,0,0,0.1); display: flex; flex-direction: column; }
+    .drawer { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: var(--white); z-index: 201; transition: right 0.3s cubic-bezier(0.82, 0.085, 0.395, 0.895); box-shadow: -5px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; border-top-left-radius: 24px; border-bottom-left-radius: 24px; }
     .drawer.open { right: 0; }
-    .drawer-header { padding: 20px; background: var(--primary); color: white; display: flex; align-items: center; gap: 15px; }
-    .drawer-avatar { width: 50px; height: 50px; border-radius: 50%; background: var(--white); color: var(--primary); display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; }
+    .drawer-header { padding: 25px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; display: flex; align-items: center; gap: 15px; border-top-left-radius: 24px; }
+    .drawer-avatar { width: 55px; height: 55px; border-radius: 50%; background: var(--white); color: var(--primary); display: flex; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; }
     .drawer-user-info { display: flex; flex-direction: column; }
-    .drawer-user-name { font-weight: bold; font-size: 16px; }
-    .drawer-user-role { font-size: 12px; opacity: 0.9; }
-    .drawer-menu { flex: 1; padding: 10px 0; overflow-y: auto; }
-    .drawer-item { width: 100%; text-align: right; background: none; border: none; padding: 15px 20px; font-size: 15px; cursor: pointer; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; color: var(--text); transition: background 0.2s; }
-    .drawer-item:active { background: #f0f0f0; }
+    .drawer-user-name { font-weight: bold; font-size: 17px; }
+    .drawer-user-role { font-size: 13px; opacity: 0.9; }
+    .drawer-menu { flex: 1; padding: 15px 10px; overflow-y: auto; }
+    .drawer-item { width: 100%; text-align: right; background: none; border: none; padding: 16px 20px; font-size: 16px; cursor: pointer; border-radius: 12px; display: flex; align-items: center; gap: 15px; color: var(--text); transition: all 0.2s; margin-bottom: 5px; }
+    .drawer-item:hover { background: var(--bg); }
     .drawer-item.danger { color: var(--danger); }
-    .drawer-item .badge { background: var(--danger); color: white; border-radius: 10px; padding: 2px 8px; font-size: 11px; margin-right: auto; display: none; }
+    .drawer-item .badge { background: var(--danger); color: white; border-radius: 12px; padding: 2px 10px; font-size: 12px; margin-right: auto; display: none; }
 
-    #profile-view { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
-    .profile-header { background: var(--white); padding: 20px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid var(--border); }
-    .profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--primary); color: white; display: flex; justify-content: center; align-items: center; font-size: 32px; font-weight: bold; margin-bottom: 10px; }
-    .profile-name { font-size: 20px; font-weight: bold; }
-    .profile-role { font-size: 14px; color: var(--text-light); margin-bottom: 15px; }
-    .profile-tasks { flex: 1; overflow-y: auto; padding: 15px; }
-    .task-card { background: var(--white); border-radius: 12px; padding: 15px; margin-bottom: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); cursor: pointer; border-right: 4px solid var(--primary); }
-    .task-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-    .task-title { font-weight: bold; font-size: 16px; }
-    .badge-status { padding: 4px 10px; border-radius: 20px; color: white; font-size: 12px; font-weight: bold; }
+    /* Profile */
+    #profile-view { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--bg); animation: slideInRight 0.3s ease; }
+    .profile-header { background: var(--white); padding: 30px 20px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid var(--border); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+    .profile-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; display: flex; justify-content: center; align-items: center; font-size: 36px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 6px 12px rgba(192, 57, 43, 0.3); }
+    .profile-name { font-size: 22px; font-weight: bold; color: var(--text); }
+    .profile-role { font-size: 15px; color: var(--primary); font-weight: bold; margin-bottom: 20px; }
+    .profile-tasks { flex: 1; overflow-y: auto; padding: 20px; }
+    .task-card { background: var(--white); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.3s; border-right: 5px solid var(--primary); animation: slideUp 0.4s ease; }
+    .task-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
+    .task-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+    .task-title { font-weight: bold; font-size: 16px; color: var(--text); }
+    .badge-status { padding: 5px 12px; border-radius: 20px; color: white; font-size: 12px; font-weight: bold; }
     
-    #chat-view { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); min-height: 0; }
-    .chat-header { background: var(--primary); color: white; padding: 15px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 5px rgba(0,0,0,0.1); z-index: 10; }
+    /* Chat */
+    #chat-view { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); min-height: 0; animation: slideInRight 0.3s ease; }
+    .chat-header { background: var(--white); color: var(--text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10; }
     .chat-header-right { display: flex; align-items: center; gap: 15px; }
-    .back-btn { background: none; border: none; font-size: 24px; cursor: pointer; color: white; padding: 0 10px; }
-    .delete-btn { background: var(--danger); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: none; }
-    .chat-task-info { padding: 10px 15px; background: var(--white); border-bottom: 1px solid var(--border); }
-    .chat-task-info p { font-size: 13px; margin-bottom: 5px; }
-    .chat-task-info .status { color: var(--primary-dark); font-weight: bold; font-size: 12px; }
+    .back-btn { background: none; border: none; font-size: 26px; cursor: pointer; color: var(--primary); padding: 0 10px; transition: transform 0.2s; }
+    .back-btn:active { transform: scale(0.9); }
+    .delete-btn { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 10px; font-size: 13px; font-weight: bold; cursor: pointer; display: none; transition: background 0.2s; }
+    .delete-btn:hover { background: #c0392b; }
+    .chat-task-info { padding: 15px 20px; background: var(--white); border-bottom: 1px solid var(--border); }
+    .chat-task-info p { font-size: 14px; margin-bottom: 8px; color: var(--text); }
+    .chat-task-info .status { color: var(--primary); font-weight: bold; font-size: 13px; }
     
-    .messages-area { flex: 1; overflow-y: auto; padding: 15px; display: flex; flex-direction: column; gap: 8px; }
-    .message { max-width: 85%; padding: 8px 12px; border-radius: 12px; font-size: 14px; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-    .message.me { background: #dcf8c6; color: var(--text); align-self: flex-start; border-top-right-radius: 2px; }
-    .message.other { background: var(--white); color: var(--text); align-self: flex-end; border-top-left-radius: 2px; }
+    .messages-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .message { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 15px; word-wrap: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.1); animation: slideUp 0.3s ease; }
+    .message.me { background: var(--primary); color: white; align-self: flex-start; border-top-right-radius: 4px; }
+    .message.other { background: var(--white); color: var(--text); align-self: flex-end; border-top-left-radius: 4px; }
     
-    .audio-player { display: flex; align-items: center; gap: 8px; min-width: 200px; padding: 5px 0; }
-    .play-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
-    .download-btn { background: var(--white); color: var(--primary-dark); border: 1px solid var(--border); width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; text-decoration: none; font-size: 16px; }
-    .transcription-box { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); font-size: 12px; color: var(--text-light); font-style: italic; }
+    .audio-player { display: flex; align-items: center; gap: 10px; min-width: 220px; padding: 5px 0; }
+    .play-btn { background: var(--white); color: var(--primary); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.2s; }
+    .play-btn:active { transform: scale(0.9); }
+    .download-btn { background: rgba(255,255,255,0.2); color: var(--white); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; text-decoration: none; font-size: 18px; transition: background 0.2s; }
+    .download-btn:hover { background: rgba(255,255,255,0.4); }
+    .message.other .download-btn { background: var(--bg); color: var(--primary); }
+    .message.other .download-btn:hover { background: #e1e4e8; }
+    .transcription-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.3); font-size: 13px; color: rgba(255,255,255,0.9); font-style: italic; }
+    .message.other .transcription-box { border-top-color: var(--border); color: var(--text-light); }
     
-    .chat-input-area { background: #f0f0f0; padding: 10px 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); width: 100%; }
-    .chat-input { flex: 1; min-width: 0; border-radius: 20px; padding: 10px 15px; border: none; }
-    .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 18px; }
-    .mic-btn { background: var(--white); color: var(--primary-dark); border: 1px solid var(--border); }
-    .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; }
+    .chat-input-area { background: var(--white); padding: 15px 20px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); width: 100%; }
+    .chat-input { flex: 1; min-width: 0; border-radius: 24px; padding: 12px 20px; border: 1px solid var(--border); background: var(--bg); outline: none; font-size: 15px; transition: border-color 0.3s; }
+    .chat-input:focus { border-color: var(--primary); background: var(--white); }
+    .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 48px; height: 48px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 20px; box-shadow: 0 4px 8px rgba(192, 57, 43, 0.2); transition: all 0.2s; }
+    .action-btn:active { transform: scale(0.9); }
+    .mic-btn { background: var(--bg); color: var(--primary); box-shadow: none; border: 1px solid var(--border); }
+    .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; border: none; }
     
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
 
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 300; }
-    .modal-content { background: var(--white); width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
-    .modal-content h3 { margin-bottom: 15px; text-align: center; color: var(--primary-dark); }
-    .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+    /* Modals */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 300; animation: fadeIn 0.3s; }
+    .modal-content { background: var(--white); width: 90%; max-width: 420px; padding: 25px; border-radius: 20px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    .modal-content h3 { margin-bottom: 20px; text-align: center; color: var(--primary-dark); font-size: 20px; }
+    .modal-actions { display: flex; gap: 12px; margin-top: 25px; }
 
-    .notif-item { padding: 12px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; flex-direction: column; gap: 4px; }
-    .notif-item:active { background: #f0f0f0; }
-    .notif-item.danger { border-right: 4px solid var(--danger); }
-    .notif-item.info { border-right: 4px solid var(--primary); }
-    .notif-item .n-title { font-weight: bold; font-size: 14px; }
-    .notif-item .n-msg { font-size: 12px; color: var(--text-light); }
+    .notif-item { padding: 15px 20px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: background 0.2s; }
+    .notif-item:hover { background: var(--bg); }
+    .notif-item.danger { border-right: 5px solid var(--danger); }
+    .notif-item.info { border-right: 5px solid var(--primary); }
+    .notif-item .n-title { font-weight: bold; font-size: 15px; color: var(--text); }
+    .notif-item .n-msg { font-size: 13px; color: var(--text-light); }
     
-    #admin-view { flex: 1; display: flex; flex-direction: column; background: var(--bg); min-height: 0; }
-    .admin-header { background: var(--primary-dark); color: white; padding: 15px; display: flex; align-items: center; gap: 15px; }
-    .admin-list { flex: 1; overflow-y: auto; padding: 15px; }
-    .user-card { background: var(--white); border-radius: 12px; padding: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
-    .user-actions { display: flex; gap: 5px; flex-wrap: wrap; }
-    .user-btn { border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; color: white; }
+    /* Admin Panel */
+    #admin-view { flex: 1; display: flex; flex-direction: column; background: var(--bg); min-height: 0; animation: slideInRight 0.3s ease; }
+    .admin-header { background: var(--primary-dark); color: white; padding: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+    .admin-list { flex: 1; overflow-y: auto; padding: 20px; }
+    .user-card { background: var(--white); border-radius: 16px; padding: 18px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.2s; }
+    .user-card:hover { transform: translateY(-2px); }
+    .user-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+    .user-btn { border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: bold; color: white; transition: opacity 0.2s; }
+    .user-btn:hover { opacity: 0.8; }
     .btn-edit { background: var(--warning); color: #333; }
     .btn-pass { background: var(--primary); }
     .btn-toggle { background: var(--danger); }
     .btn-toggle.active { background: var(--success); }
-    .manager-list-container { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 8px; background: #f9f9f9; }
-    .manager-list-container label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 14px; cursor: pointer; }
+    .manager-list-container { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); padding: 15px; border-radius: 12px; background: var(--bg); }
+    .manager-list-container label { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 15px; cursor: pointer; }
   </style>
 </head>
 <body>
 
+  <!-- Login -->
   <div id="login-view">
     <div class="login-box">
       <h2>پیام‌رسان مدیریت قراردادها</h2>
-      <div class="form-group"><label>نام کاربری</label><input type="text" id="login-username" class="input" dir="ltr" style="text-align:left;" placeholder="admin یا chief"></div>
-      <div class="form-group"><label>رمز عبور</label><input type="password" id="login-password" class="input" dir="ltr" style="text-align:left;"></div>
+      <div class="form-group"><label>نام کاربری</label><input type="text" id="login-username" class="input" dir="ltr" style="text-align:left;" placeholder="نام کاربری خود را وارد کنید"></div>
+      <div class="form-group"><label>رمز عبور</label><input type="password" id="login-password" class="input" dir="ltr" style="text-align:left;" placeholder="رمز عبور خود را وارد کنید"></div>
       <button class="btn" style="width: 100%;" id="login-btn" onclick="handleLogin()">ورود به سیستم</button>
     </div>
   </div>
 
+  <!-- Drawer -->
   <div id="drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <div id="side-drawer" class="drawer">
       <div class="drawer-header">
@@ -168,7 +208,7 @@
               <span>👥 مدیریت کاربران</span>
           </button>
           <button class="drawer-item" onclick="handleInstallClick(); closeDrawer();">
-              <span>⬇️ نصب برنامه</span>
+              <span>⬇️ نصب برنامه روی گوشی</span>
           </button>
           <button class="drawer-item danger" onclick="handleLogout();">
               <span>🚪 خروج از حساب</span>
@@ -176,6 +216,7 @@
       </div>
   </div>
 
+  <!-- Contacts -->
   <div id="contacts-view" class="hidden">
     <div class="header">
       <div class="header-info"><h3>پیام‌رسان</h3><span id="user-info"></span></div>
@@ -185,29 +226,31 @@
       </div>
     </div>
     <div class="search-container">
-        <input type="text" id="search-contacts" class="search-input" placeholder="جستجوی نام مخاطب..." oninput="filterContacts()">
+        <input type="text" id="search-contacts" class="search-input" placeholder="جستجوی نام همکار..." oninput="filterContacts()">
     </div>
     <div class="contact-list" id="contacts-container"></div>
   </div>
 
+  <!-- Profile -->
   <div id="profile-view" class="hidden">
     <div class="chat-header">
-      <div class="chat-header-right"><button class="back-btn" onclick="closeProfile()">→</button><h3 style="font-size: 16px;">پروفایل مخاطب</h3></div>
+      <div class="chat-header-right"><button class="back-btn" onclick="closeProfile()">→</button><h3 style="font-size: 18px; font-weight: bold; color: var(--primary);">پروفایل همکار</h3></div>
     </div>
     <div class="profile-header">
       <div class="profile-avatar" id="profile-avatar">U</div>
       <div class="profile-name" id="profile-name">نام مخاطب</div>
       <div class="profile-role" id="profile-role">نقش</div>
-      <button class="btn" style="width: 100%; background: var(--success);" onclick="openCreateModalFromProfile()">+ ارسال دستور جدید</button>
+      <button class="btn" style="width: 100%; background: var(--primary);" onclick="openCreateModalFromProfile()">+ ارسال موضوع جدید</button>
     </div>
     <div class="profile-tasks" id="profile-tasks-container"></div>
   </div>
 
+  <!-- Chat -->
   <div id="chat-view" class="hidden">
     <div class="chat-header">
       <div class="chat-header-right">
         <button class="back-btn" onclick="closeChat()">→</button>
-        <h3 id="chat-title" style="font-size: 16px;">عنوان دستور</h3>
+        <h3 id="chat-title" style="font-size: 18px; font-weight: bold; color: var(--primary);">عنوان موضوع</h3>
       </div>
       <button class="delete-btn" id="delete-task-btn" onclick="handleDeleteTask()">حذف</button>
     </div>
@@ -216,26 +259,27 @@
     <div class="chat-input-area">
       <button class="action-btn mic-btn" id="mic-btn" onclick="toggleRecording()">🎤</button>
       <input type="file" id="audio-upload" accept="audio/*" capture style="display:none;" onchange="handleAudioUpload(event)">
-      <input type="text" id="chat-input" class="chat-input" placeholder="پیام...">
+      <input type="text" id="chat-input" class="chat-input" placeholder="پیام خود را بنویسید...">
       <button class="action-btn" onclick="sendTextMessage()">➤</button>
     </div>
   </div>
 
+  <!-- Admin Panel -->
   <div id="admin-view" class="hidden">
     <div class="admin-header">
-      <button class="back-btn" onclick="closeAdminPanel()">→</button>
-      <h3 style="font-size: 16px;">مدیریت کاربران</h3>
-      <button class="pass-btn" style="margin-right: auto; background: white; color: var(--primary);" onclick="openAddUserModal()">+ کاربر جدید</button>
+      <button class="back-btn" onclick="closeAdminPanel()" style="color: white;">→</button>
+      <h3 style="font-size: 18px; font-weight: bold;">مدیریت کاربران</h3>
+      <button class="user-btn btn-edit" id="add-user-btn" style="margin-right: auto; background: white; color: var(--primary-dark); font-size: 14px; padding: 10px 15px;" onclick="openAddUserModal()">+ کاربر جدید</button>
     </div>
     <div class="admin-list" id="users-list-container"></div>
   </div>
 
   <!-- Modals -->
   <div id="notif-modal" class="modal-overlay hidden">
-    <div class="modal-content" style="padding: 0;">
-      <div style="padding: 15px; background: var(--primary); color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; display: flex; justify-content: space-between; align-items: center;">
+    <div class="modal-content" style="padding: 0; overflow: hidden;">
+      <div style="padding: 20px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center;">
         <h3 style="margin: 0; color: white;">اعلانات</h3>
-        <button onclick="closeNotifModal()" style="background:none; border:none; color:white; font-size:20px; cursor:pointer;">×</button>
+        <button onclick="closeNotifModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">×</button>
       </div>
       <div id="notif-list-container" style="max-height: 400px; overflow-y: auto; padding: 0;"></div>
     </div>
@@ -243,21 +287,21 @@
 
   <div id="create-modal" class="modal-overlay hidden">
     <div class="modal-content">
-      <h3>ثبت دستور جدید</h3>
-      <div class="form-group"><label>عنوان</label><input type="text" id="task-title" class="input"></div>
+      <h3>ثبت موضوع جدید</h3>
+      <div class="form-group"><label>عنوان موضوع</label><input type="text" id="task-title" class="input"></div>
       <div class="form-group"><label>توضیحات</label><textarea id="task-desc" class="input" rows="3"></textarea></div>
       <div class="form-group">
         <label>مهلت (شمسی)</label>
-        <div style="display: flex; gap: 5px;">
-            <select id="jYear" class="input" style="width: 33%;"></select>
-            <select id="jMonth" class="input" style="width: 34%;"></select>
-            <select id="jDay" class="input" style="width: 33%;"></select>
+        <div style="display: flex; gap: 8px;">
+            <select id="jYear" class="input" style="width: 33%; padding: 10px;"></select>
+            <select id="jMonth" class="input" style="width: 34%; padding: 10px;"></select>
+            <select id="jDay" class="input" style="width: 33%; padding: 10px;"></select>
         </div>
       </div>
       <div class="form-group"><label>ساعت</label><input type="time" id="task-time" class="input" value="18:00"></div>
       <div class="modal-actions">
-        <button class="btn" style="flex:1; background: var(--success);" onclick="submitNewTask()">ثبت</button>
-        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeCreateModal()">انصراف</button>
+        <button class="btn" style="flex:1; background: var(--success);" onclick="submitNewTask()">ثبت و ارسال</button>
+        <button class="btn" style="flex:1; background: var(--bg); color: var(--text);" onclick="closeCreateModal()">انصراف</button>
       </div>
     </div>
   </div>
@@ -266,9 +310,9 @@
     <div class="modal-content">
       <h3 id="user-modal-title">کاربر جدید</h3>
       <input type="hidden" id="edit-user-id">
-      <div class="form-group"><label>نام</label><input type="text" id="u-name" class="input"></div>
-      <div class="form-group" id="username-group"><label>نام کاربری</label><input type="text" id="u-username" class="input" dir="ltr"></div>
-      <div class="form-group" id="password-group"><label>رمز</label><input type="password" id="u-password" class="input" dir="ltr"></div>
+      <div class="form-group"><label>نام و نام خانوادگی</label><input type="text" id="u-name" class="input"></div>
+      <div class="form-group" id="username-group"><label>نام کاربری</label><input type="text" id="u-username" class="input" dir="ltr" style="text-align:left;"></div>
+      <div class="form-group" id="password-group"><label>رمز عبور</label><input type="password" id="u-password" class="input" dir="ltr" style="text-align:left;"></div>
       <div class="form-group">
         <label>نقش</label>
         <select id="u-role" class="input">
@@ -278,28 +322,27 @@
       <div class="form-group"><label>مدیران مستقیم</label><div id="u-manager-container" class="manager-list-container"></div></div>
       <div class="modal-actions">
         <button class="btn" id="save-user-btn" style="flex:1; background: var(--success);" onclick="submitUserForm()">ذخیره</button>
-        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeUserModal()">انصراف</button>
+        <button class="btn" style="flex:1; background: var(--bg); color: var(--text);" onclick="closeUserModal()">انصراف</button>
       </div>
     </div>
   </div>
 
   <div id="admin-pass-modal" class="modal-overlay hidden">
     <div class="modal-content">
-      <h3>تغییر رمز کاربر</h3>
-      <p style="text-align:center; margin-bottom:15px; font-size:14px; color:var(--text-light);" id="admin-pass-username-label"></p>
+      <h3>تغییر رمز عبور</h3>
+      <p style="text-align:center; margin-bottom:20px; font-size:14px; color:var(--text-light);" id="admin-pass-username-label"></p>
       <input type="hidden" id="admin-pass-user-id">
-      <div class="form-group"><label>رمز جدید</label><input type="password" id="admin-new-password" class="input" dir="ltr"></div>
-      <div class="form-group"><label>تکرار رمز</label><input type="password" id="admin-confirm-password" class="input" dir="ltr"></div>
+      <div class="form-group"><label>رمز جدید</label><input type="password" id="admin-new-password" class="input" dir="ltr" style="text-align:left;"></div>
+      <div class="form-group"><label>تکرار رمز جدید</label><input type="password" id="admin-confirm-password" class="input" dir="ltr" style="text-align:left;"></div>
       <div class="modal-actions">
         <button class="btn" id="save-pass-btn" style="flex:1; background: var(--success);" onclick="submitAdminResetPass()">ذخیره</button>
-        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeAdminPassModal()">انصراف</button>
+        <button class="btn" style="flex:1; background: var(--bg); color: var(--text);" onclick="closeAdminPassModal()">انصراف</button>
       </div>
     </div>
   </div>
 
   <script>
     var db = null;
-
     let currentUser = null;
     let currentTaskId = null;
     let currentContactId = null;
@@ -310,10 +353,12 @@
     let isSending = false;
     let cachedUsers = [];
     let allContacts = [];
-    
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
+
+    // ذخیره اعلانات خوانده شده در حافظه مرورگر
+    let readNotifs = JSON.parse(localStorage.getItem('read_notifs') || '[]');
 
     function formatEmail(username) { 
         if(username.trim().toLowerCase() === 'admin') return 'admin@example.com';
@@ -322,7 +367,7 @@
 
     async function callBackend(action, data = {}) {
       try {
-        if (!db) return { ok: false, error: 'کتابخانه Supabase لود نشد. لطفاً اینترنت خود را بررسی کنید یا صفحه را رفرش کنید.' };
+        if (!db) return { ok: false, error: 'سیستم در حال بارگذاری است. لطفاً اینترنت را بررسی کنید.' };
 
         if (action === 'login') {
             const email = formatEmail(data.username);
@@ -347,7 +392,12 @@
         }
 
         if (action === 'getContacts') {
-            const { data: contacts } = await db.from('profiles').select('*').neq('id', myId).eq('active', true);
+            // فیلتر کردن کاربر admin تا برای هیچ‌کس نمایش داده نشود
+            const { data: contacts } = await db.from('profiles')
+                .select('*')
+                .neq('id', myId)
+                .neq('username', 'admin') 
+                .eq('active', true);
             return { ok: true, contacts: contacts.map(c => ({ ...c, lastTask: null })) };
         }
 
@@ -415,7 +465,17 @@
 
         if (action === 'getNotifications') {
             const { data: tasks } = await db.from('tasks').select('*').eq('to_user_id', myId).in('status', ['در انتظار', 'در حال انجام', 'گذشته از مهلت']);
-            const notifs = (tasks || []).map(t => ({ id: t.id, title: t.title, status: t.status, message: t.status === 'گذشته از مهلت' ? 'مهلت گذشته!' : 'در انتظار شما', type: t.status === 'گذشته از مهلت' ? 'danger' : 'info' }));
+            
+            // فیلتر کردن اعلاناتی که قبلا کلیک شده‌اند (در حافظه مرورگر)
+            const unreadTasks = (tasks || []).filter(t => !readNotifs.includes(t.id));
+            
+            const notifs = unreadTasks.map(t => ({ 
+                id: t.id, 
+                title: t.title, 
+                status: t.status, 
+                message: t.status === 'گذشته از مهلت' ? 'مهلت این موضوع گذشته است!' : 'در انتظار بررسی شما', 
+                type: t.status === 'گذشته از مهلت' ? 'danger' : 'info' 
+            }));
             return { ok: true, notifications: notifs };
         }
 
@@ -424,9 +484,12 @@
     }
 
     // ==========================================
-    // توابع مدیریت پنل ادمین (اتصال به Edge Function)
+    // توابع مدیریت پنل ادمین
     // ==========================================
     async function openAddUserModal() {
+        // فقط ادمین می‌تواند این را ببیند (اما دکمه در فرانت‌اند هم مخفی است)
+        if (currentUser.username !== 'admin') return alert('فقط مدیر سیستم دسترسی دارد');
+        
         document.getElementById('user-modal-title').innerText = 'کاربر جدید';
         document.getElementById('edit-user-id').value = '';
         document.getElementById('u-name').value = '';
@@ -446,7 +509,7 @@
     function populateManagersCheckboxes(selectedIds) {
         const c = document.getElementById('u-manager-container'); c.innerHTML = '';
         cachedUsers.forEach(u => { 
-            if (u.active && u.id !== currentUser.id) {
+            if (u.active && u.id !== currentUser.id && u.username !== 'admin') {
                 c.innerHTML += `<label><input type="checkbox" value="${u.id}" ${selectedIds.includes(u.id) ? 'checked' : ''}> <span>${u.name}</span></label>`; 
             }
         });
@@ -528,7 +591,7 @@
     }
 
     // ==========================================
-    // بقیه توابع رابط کاربری
+    // بقیه توابع
     // ==========================================
     function toggleDrawer() { document.getElementById('side-drawer').classList.add('open'); document.getElementById('drawer-overlay').classList.add('show'); }
     function closeDrawer() { document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-overlay').classList.remove('show'); }
@@ -550,8 +613,6 @@
                     });
                 }
             });
-        } else {
-            console.error("Supabase SDK failed to load.");
         }
     });
 
@@ -564,7 +625,10 @@
         document.getElementById('drawer-name').innerText = currentUser.name;
         document.getElementById('drawer-role').innerText = currentUser.role;
         document.getElementById('drawer-avatar').innerText = currentUser.name.trim().charAt(0) || 'U';
-        document.getElementById('drawer-admin-btn').style.display = currentUser.role === 'مدیر' ? 'flex' : 'none';
+        
+        // نمایش پنل ادمین فقط برای کاربر admin
+        document.getElementById('drawer-admin-btn').style.display = currentUser.username === 'admin' ? 'flex' : 'none';
+        
         loadContacts();
     }
 
@@ -610,10 +674,21 @@
         const c = document.getElementById('notif-list-container'); c.innerHTML = 'در حال دریافت...';
         const res = await callBackend('getNotifications');
         if (res.ok) {
-            c.innerHTML = res.notifications.length ? '' : 'اعلانی ندارید.';
+            c.innerHTML = res.notifications.length ? '' : '<p style="text-align:center; padding: 20px; color: var(--text-light);">اعلان جدیدی ندارید.</p>';
             res.notifications.forEach(n => {
                 const d = document.createElement('div'); d.className = 'notif-item ' + n.type;
-                d.onclick = () => { closeNotifModal(); openChat(n.id); };
+                d.onclick = () => { 
+                    closeNotifModal(); 
+                    
+                    // ثبت این اعلان به عنوان خوانده شده
+                    if(!readNotifs.includes(n.id)) {
+                        readNotifs.push(n.id);
+                        localStorage.setItem('read_notifs', JSON.stringify(readNotifs));
+                    }
+                    loadNotifications(); // آپدیت زنگوله
+
+                    openChat(n.id); 
+                };
                 d.innerHTML = `<span class="n-title">${n.title}</span><span class="n-msg">${n.message}</span>`; c.appendChild(d);
             });
         }
@@ -621,7 +696,7 @@
     function closeNotifModal() { document.getElementById('notif-modal').classList.add('hidden'); }
 
     async function loadContacts() {
-      const c = document.getElementById('contacts-container'); c.innerHTML = 'در حال دریافت...';
+      const c = document.getElementById('contacts-container'); c.innerHTML = '<p style="text-align:center; color: var(--text-light);">در حال دریافت...</p>';
       const res = await callBackend('getContacts');
       if (res.ok) { allContacts = res.contacts; renderContacts(allContacts); } else { c.innerHTML = res.error; }
     }
@@ -633,10 +708,10 @@
 
     function renderContacts(list) {
         const c = document.getElementById('contacts-container'); c.innerHTML = '';
-        if (list.length === 0) return c.innerHTML = 'مخاطبی یافت نشد.';
+        if (list.length === 0) return c.innerHTML = '<p style="text-align:center; margin-top:20px; color:var(--text-light);">مخاطبی یافت نشد.</p>';
         list.forEach(u => {
             const i = document.createElement('div'); i.className = 'contact-item'; i.onclick = () => openProfile(u.id, u.name, u.role);
-            i.innerHTML = `<div class="avatar">${u.name.charAt(0)}</div><div class="contact-info"><div class="contact-name"><span>${u.name} (${u.role})</span></div><div class="contact-last-msg">برای گفتگو کلیک کنید</div></div>`;
+            i.innerHTML = `<div class="avatar">${u.name.charAt(0)}</div><div class="contact-info"><div class="contact-name"><span>${u.name}</span> <span class="contact-role">${u.role}</span></div><div class="contact-last-msg">برای گفتگو کلیک کنید</div></div>`;
             c.appendChild(i);
         });
     }
@@ -645,10 +720,10 @@
         currentContactId = id;
         document.getElementById('contacts-view').classList.add('hidden'); document.getElementById('profile-view').classList.remove('hidden');
         document.getElementById('profile-avatar').innerText = name.charAt(0); document.getElementById('profile-name').innerText = name; document.getElementById('profile-role').innerText = role;
-        const c = document.getElementById('profile-tasks-container'); c.innerHTML = 'در حال دریافت...';
+        const c = document.getElementById('profile-tasks-container'); c.innerHTML = '<p style="text-align:center; color: var(--text-light);">در حال دریافت...</p>';
         const res = await callBackend('getTasksByContact', { contactId: id });
         if (res.ok) {
-            c.innerHTML = res.tasks.length ? '' : 'دستوری نیست.';
+            c.innerHTML = res.tasks.length ? '' : '<p style="text-align:center; color:var(--text-light); margin-top:20px;">هنوز موضوعی بین شما و این شخص ایجاد نشده است.</p>';
             res.tasks.forEach(t => {
                 const card = document.createElement('div'); card.className = 'task-card'; card.onclick = () => openChat(t.id);
                 card.innerHTML = `<div class="task-card-header"><span class="task-title">${t.title}</span><span class="badge-status" style="background:${t.status==='گذشته از مهلت'?'var(--danger)':'var(--primary)'}">${t.status}</span></div>`;
@@ -660,12 +735,12 @@
 
     async function openChat(id) {
         currentTaskId = id;
-        document.getElementById('profile-view').classList.add('hidden'); document.getElementById('chat-view').classList.remove('hidden'); document.getElementById('messages-area').innerHTML = 'در حال دریافت...';
+        document.getElementById('profile-view').classList.add('hidden'); document.getElementById('chat-view').classList.remove('hidden'); document.getElementById('messages-area').innerHTML = '<p style="text-align:center; color: var(--text-light);">در حال دریافت...</p>';
         const res = await callBackend('getTaskDetail', { taskId: id });
         if (res.ok) {
             currentTaskData = res.task; updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
             const area = document.getElementById('messages-area'); area.innerHTML = '';
-            if(res.messages.length > 0) { lastMessageId = res.messages[res.messages.length - 1].id; res.messages.forEach(appendMessage); } else area.innerHTML = 'پیامی نیست.';
+            if(res.messages.length > 0) { lastMessageId = res.messages[res.messages.length - 1].id; res.messages.forEach(appendMessage); } else area.innerHTML = '<p style="text-align:center;color:var(--text-light);font-size:14px; margin-top:20px;">پیامی وجود ندارد. اولین پیام را بفرستید!</p>';
             area.scrollTop = area.scrollHeight;
         }
         if(pollInterval) clearInterval(pollInterval); pollInterval = setInterval(pollUpdates, 3000);
@@ -679,7 +754,7 @@
         if (res.ok) {
             currentTaskData = res.task; updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
             if (res.newMessages.length > 0) {
-                const area = document.getElementById('messages-area'); if (area.innerHTML.includes('پیامی نیست')) area.innerHTML = '';
+                const area = document.getElementById('messages-area'); if (area.innerHTML.includes('پیامی وجود ندارد')) area.innerHTML = '';
                 const isB = area.scrollHeight - area.scrollTop <= area.clientHeight + 50;
                 res.newMessages.forEach(m => { appendMessage(m); lastMessageId = m.id; });
                 if (isB) area.scrollTop = area.scrollHeight;
@@ -817,7 +892,7 @@
     document.getElementById('chat-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendTextMessage(); });
 
     async function openAdminPanel() { 
-        if (currentUser.role !== 'مدیر') return alert('دسترسی غیرمجاز');
+        if (currentUser.username !== 'admin') return alert('دسترسی غیرمجاز');
         document.getElementById('contacts-view').classList.add('hidden'); 
         document.getElementById('admin-view').classList.remove('hidden'); 
         await loadAdminUsers(); 
@@ -838,12 +913,15 @@
         
         cachedUsers = users; container.innerHTML = '';
         
+        // مخفی کردن دکمه ساخت کاربر برای غیر ادمین (با اینکه پنل باز نمی‌شود، محکم کاری)
+        document.getElementById('add-user-btn').style.display = currentUser.username === 'admin' ? 'block' : 'none';
+
         users.forEach(u => {
             let roleColor = u.role === 'مدیر' ? '#e84118' : (u.role === 'رئیس' ? '#fbc531' : (u.role === 'سرپرست' ? '#00a8ff' : '#718093'));
             container.innerHTML += `
             <div class="user-card">
                 <div class="user-info">
-                    <span class="user-name">${u.name} <span style="font-size:10px; color:${roleColor}">(${u.role})</span></span>
+                    <span class="user-name">${u.name} <span style="font-size:12px; color:${roleColor}">(${u.role})</span></span>
                     <span class="user-role">کاربری: ${u.username}</span>
                 </div>
                 <div class="user-actions">
