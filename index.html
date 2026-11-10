@@ -89,7 +89,6 @@
     .message.me { background: #dcf8c6; color: var(--text); align-self: flex-start; border-top-right-radius: 2px; }
     .message.other { background: var(--white); color: var(--text); align-self: flex-end; border-top-left-radius: 2px; }
     
-    /* استایل‌های جدید پلیر صوتی */
     .audio-player { display: flex; align-items: center; gap: 8px; min-width: 200px; padding: 5px 0; }
     .play-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
     .download-btn { background: var(--white); color: var(--primary-dark); border: 1px solid var(--border); width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; text-decoration: none; font-size: 16px; }
@@ -269,10 +268,16 @@
   </div>
 
   <script>
-    const SUPABASE_URL = 'https://trnzzevllluhkyvvrtms.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc';
+    // تعریف ایمن db به صورتی که خطای TDZ رخ ندهد
+    var db = null;
     
-    const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    window.addEventListener('load', function() {
+        if (window.supabase) {
+            db = window.supabase.createClient('https://trnzzevllluhkyvvrtms.supabase.co', 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc');
+        } else {
+            console.error("کتابخانه Supabase لود نشد. احتمالاً اینترنت گوشی مشکل دارد.");
+        }
+    });
 
     let currentUser = null;
     let currentTaskId = null;
@@ -296,6 +301,8 @@
 
     async function callBackend(action, data = {}) {
       try {
+        if (!db) return { ok: false, error: 'در حال اتصال به سرور... لطفاً یک لحظه صبر کنید و دوباره تلاش کنید.' };
+
         if (action === 'login') {
             const email = formatEmail(data.username);
             const { data: authData, error: authError } = await db.auth.signInWithPassword({ email: email, password: data.password });
@@ -412,6 +419,7 @@
     function handleInstallClick() { alert('برای نصب، از منوی مرورگر خود گزینه Add to Home Screen را انتخاب کنید.'); }
 
     window.addEventListener('load', async () => {
+        if (!db) return;
         const { data: { session } } = await db.auth.getSession();
         if (session) {
             const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
@@ -578,31 +586,24 @@
         document.getElementById('messages-area').appendChild(d);
     }
 
-    // ==========================================
-    // مدیریت پخش و دانلود صدا (با حافظه کش)
-    // ==========================================
     async function playCachedAudio(msgId, url) {
         const audio = document.getElementById('audio-' + msgId);
         const btn = document.getElementById('play-btn-' + msgId);
         
         if (audio.paused) {
-            // اگر منبع صدا هنوز تنظیم نشده (یا از قبل پخش نشده)
             if (!audio.src || audio.src === window.location.href) {
                 btn.innerText = '⏳';
                 try {
-                    // باز کردن حافظه کش مرورگر
                     const cache = await caches.open('voice-cache-v1');
                     let response = await cache.match(url);
                     
                     if (!response) {
-                        // اگر در حافظه نبود، از سرور دانلود و در حافظه ذخیره کن
                         response = await fetch(url);
                         if (response.ok) await cache.put(url, response.clone());
                     }
                     
                     if (!response.ok) throw new Error('404');
                     
-                    // تبدیل به فایل قابل پخش
                     const blob = await response.blob();
                     audio.src = URL.createObjectURL(blob);
                 } catch (e) {
