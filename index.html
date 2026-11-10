@@ -11,19 +11,17 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/supabase-js/2.39.8/supabase.min.js"></script>
-  <script>
-    if (!window.supabase) document.write('<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"><\/script>');
-  </script>
+  <!-- 👇 لود کتابخانه Supabase از سرور خودمان (بدون نیاز به اینترنت خارجی) -->
+  <script src="./supabase.min.js"></script>
 
   <style>
-    /* رنگ‌بندی بر اساس لوگو: قرمز و خاکستری */
+    /* رنگ‌بندی: قرمز و خاکستری */
     :root { 
-        --primary: #c0392b; /* قرمز اصلی */
-        --primary-dark: #8e2a20; /* قرمز تیره */
-        --bg: #f0f2f5; /* خاکستری روشن */
+        --primary: #c0392b; 
+        --primary-dark: #8e2a20; 
+        --bg: #f0f2f5; 
         --white: #ffffff;
-        --text: #2f3640; /* خاکستری تیره */
+        --text: #2f3640; 
         --text-light: #718093;
         --danger: #e74c3c; 
         --success: #27ae60; 
@@ -36,10 +34,11 @@
     body { background-color: var(--bg); color: var(--text); height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
     .hidden { display: none !important; }
     
-    /* انیمیشن‌های شیک (Motion) */
+    /* انیمیشن‌ها */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
 
     .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(192, 57, 43, 0.2); }
     .btn:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 6px 8px rgba(192, 57, 43, 0.3); }
@@ -81,7 +80,7 @@
     .contact-role { font-size: 12px; color: var(--primary); font-weight: bold; }
     .contact-last-msg { font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Drawer (Side Menu) */
+    /* Drawer */
     .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; animation: fadeIn 0.3s; }
     .drawer-overlay.show { display: block; }
     .drawer { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: var(--white); z-index: 201; transition: right 0.3s cubic-bezier(0.82, 0.085, 0.395, 0.895); box-shadow: -5px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; border-top-left-radius: 24px; border-bottom-left-radius: 24px; }
@@ -145,8 +144,6 @@
     .mic-btn { background: var(--bg); color: var(--primary); box-shadow: none; border: 1px solid var(--border); }
     .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; border: none; }
     
-    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
-
     /* Modals */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 300; animation: fadeIn 0.3s; }
     .modal-content { background: var(--white); width: 90%; max-width: 420px; padding: 25px; border-radius: 20px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
@@ -487,7 +484,6 @@
     // توابع مدیریت پنل ادمین
     // ==========================================
     async function openAddUserModal() {
-        // فقط ادمین می‌تواند این را ببیند (اما دکمه در فرانت‌اند هم مخفی است)
         if (currentUser.username !== 'admin') return alert('فقط مدیر سیستم دسترسی دارد');
         
         document.getElementById('user-modal-title').innerText = 'کاربر جدید';
@@ -913,7 +909,7 @@
         
         cachedUsers = users; container.innerHTML = '';
         
-        // مخفی کردن دکمه ساخت کاربر برای غیر ادمین (با اینکه پنل باز نمی‌شود، محکم کاری)
+        // مخفی کردن دکمه ساخت کاربر برای غیر ادمین
         document.getElementById('add-user-btn').style.display = currentUser.username === 'admin' ? 'block' : 'none';
 
         users.forEach(u => {
