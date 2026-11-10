@@ -265,7 +265,8 @@
       </div>
       <div class="form-group"><label>مدیران مستقیم</label><div id="u-manager-container" class="manager-list-container"></div></div>
       <div class="modal-actions">
-        <button class="btn" style="flex:1; background: var(--success);" onclick="submitUserForm()">ذخیره</button>
+        <!-- شناسه save-user-btn اضافه شد -->
+        <button class="btn" id="save-user-btn" style="flex:1; background: var(--success);" onclick="submitUserForm()">ذخیره</button>
         <button class="btn" style="flex:1; background: var(--danger);" onclick="closeUserModal()">انصراف</button>
       </div>
     </div>
@@ -279,19 +280,16 @@
       <div class="form-group"><label>رمز جدید</label><input type="password" id="admin-new-password" class="input" dir="ltr"></div>
       <div class="form-group"><label>تکرار رمز</label><input type="password" id="admin-confirm-password" class="input" dir="ltr"></div>
       <div class="modal-actions">
-        <button class="btn" style="flex:1; background: var(--success);" onclick="submitAdminResetPass()">ذخیره</button>
+        <!-- شناسه save-pass-btn اضافه شد -->
+        <button class="btn" id="save-pass-btn" style="flex:1; background: var(--success);" onclick="submitAdminResetPass()">ذخیره</button>
         <button class="btn" style="flex:1; background: var(--danger);" onclick="closeAdminPassModal()">انصراف</button>
       </div>
     </div>
   </div>
 
   <script>
+    // تعریف ایمن db قبل از هر چیز
     var db = null;
-    window.addEventListener('load', function() {
-        if (window.supabase) {
-            db = window.supabase.createClient('https://trnzzevllluhkyvvrtms.supabase.co', 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc');
-        }
-    });
 
     let currentUser = null;
     let currentTaskId = null;
@@ -315,7 +313,7 @@
 
     async function callBackend(action, data = {}) {
       try {
-        if (!db) return { ok: false, error: 'در حال اتصال به سرور...' };
+        if (!db) return { ok: false, error: 'اتصال به دیتابیس برقرار نشده است. صفحه را رفرش کنید.' };
 
         if (action === 'login') {
             const email = formatEmail(data.username);
@@ -413,7 +411,7 @@
         }
 
         return { ok: false, error: 'اکشن نامشخص' };
-      } catch (error) { return { ok: false, error: error.message }; }
+      } catch (error) { return { ok: false, error: 'خطای شبکه: ' + error.message }; }
     }
 
     // ==========================================
@@ -464,7 +462,7 @@
             const password = document.getElementById('u-password').value;
             if (!username || !password) return alert('نام کاربری و رمز الزامی است');
 
-            const btn = document.querySelector('#user-modal .btn-success');
+            const btn = document.getElementById('save-user-btn');
             btn.disabled = true; btn.innerText = 'در حال ساخت...';
 
             try {
@@ -502,7 +500,7 @@
         if (p1.length < 6) return alert('حداقل ۶ کاراکتر'); 
         if (p1 !== p2) return alert('رمزها یکسان نیستند');
 
-        const btn = document.querySelector('#admin-pass-modal .btn-success');
+        const btn = document.getElementById('save-pass-btn');
         btn.disabled = true; btn.innerText = 'در حال تغییر...';
 
         try {
@@ -529,12 +527,24 @@
     function closeDrawer() { document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-overlay').classList.remove('show'); }
     function handleInstallClick() { alert('برای نصب، از منوی مرورگر خود گزینه Add to Home Screen را انتخاب کنید.'); }
 
-    window.addEventListener('load', async () => {
-        if (!db) return;
-        const { data: { session } } = await db.auth.getSession();
-        if (session) {
-            const { data: profile } = await db.from('profiles').select('*').eq('id', session.user.id).single();
-            if (profile) { currentUser = profile; showContactsView(); loadNotifications(); setInterval(()=>callBackend('heartbeat'), 60000); }
+    window.addEventListener('load', function() {
+        if (window.supabase) {
+            db = window.supabase.createClient('https://trnzzevllluhkyvvrtms.supabase.co', 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc');
+            
+            db.auth.getSession().then(({ data: { session } }) => {
+                if (session) {
+                    db.from('profiles').select('*').eq('id', session.user.id).single().then(({ data: profile }) => {
+                        if (profile) { 
+                            currentUser = profile; 
+                            showContactsView(); 
+                            loadNotifications(); 
+                            setInterval(()=>callBackend('heartbeat'), 60000); 
+                        }
+                    });
+                }
+            });
+        } else {
+            console.error("Supabase SDK failed to load.");
         }
     });
 
