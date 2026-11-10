@@ -11,7 +11,8 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
-  <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
     :root { --primary: #00a8ff; --primary-dark: #0097e6; --bg: #f5f6fa; --white: #ffffff; --text: #2f3640; --text-light: #718093; --danger: #e84118; --success: #4cd137; --warning: #fbc531; --border: #dcdde1; --chat-bg: #efeae2; }
@@ -219,6 +220,7 @@
     <div class="admin-list" id="users-list-container"></div>
   </div>
 
+  <!-- Modals -->
   <div id="notif-modal" class="modal-overlay hidden">
     <div class="modal-content" style="padding: 0;">
       <div style="padding: 15px; background: var(--primary); color: white; border-top-left-radius: 16px; border-top-right-radius: 16px; display: flex; justify-content: space-between; align-items: center;">
@@ -265,7 +267,6 @@
       </div>
       <div class="form-group"><label>مدیران مستقیم</label><div id="u-manager-container" class="manager-list-container"></div></div>
       <div class="modal-actions">
-        <!-- شناسه save-user-btn اضافه شد -->
         <button class="btn" id="save-user-btn" style="flex:1; background: var(--success);" onclick="submitUserForm()">ذخیره</button>
         <button class="btn" style="flex:1; background: var(--danger);" onclick="closeUserModal()">انصراف</button>
       </div>
@@ -280,7 +281,6 @@
       <div class="form-group"><label>رمز جدید</label><input type="password" id="admin-new-password" class="input" dir="ltr"></div>
       <div class="form-group"><label>تکرار رمز</label><input type="password" id="admin-confirm-password" class="input" dir="ltr"></div>
       <div class="modal-actions">
-        <!-- شناسه save-pass-btn اضافه شد -->
         <button class="btn" id="save-pass-btn" style="flex:1; background: var(--success);" onclick="submitAdminResetPass()">ذخیره</button>
         <button class="btn" style="flex:1; background: var(--danger);" onclick="closeAdminPassModal()">انصراف</button>
       </div>
@@ -288,7 +288,6 @@
   </div>
 
   <script>
-    // تعریف ایمن db قبل از هر چیز
     var db = null;
 
     let currentUser = null;
@@ -313,7 +312,7 @@
 
     async function callBackend(action, data = {}) {
       try {
-        if (!db) return { ok: false, error: 'اتصال به دیتابیس برقرار نشده است. صفحه را رفرش کنید.' };
+        if (!db) return { ok: false, error: 'در حال اتصال به سرور... لطفاً یک لحظه صبر کنید.' };
 
         if (action === 'login') {
             const email = formatEmail(data.username);
@@ -451,12 +450,10 @@
 
         if (!name || !role) return alert('نام و نقش الزامی است');
 
-        // اگر در حالت ویرایش بود
         if (editId) {
             const { error } = await db.from('profiles').update({ name: name, role: role, manager_id: manager_ids }).eq('id', editId);
             if (!error) { closeUserModal(); loadAdminUsers(); } else { alert('خطا در ویرایش'); }
         } 
-        // اگر در حالت ساخت کاربر جدید بود
         else {
             const username = document.getElementById('u-username').value;
             const password = document.getElementById('u-password').value;
