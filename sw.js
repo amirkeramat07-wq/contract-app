@@ -1,4 +1,4 @@
-const CACHE_NAME = 'contract-app-v22';
+const CACHE_NAME = 'contract-app-v24';
 const ASSETS_TO_CACHE = [
   './',
   './index.html',
@@ -6,11 +6,6 @@ const ASSETS_TO_CACHE = [
 ];
 
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
-  );
   self.skipWaiting();
 });
 
@@ -30,14 +25,18 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // درخواست‌های ارسال پیام به گوگل را کش نکن (تا همیشه آپدیت باشند)
-  if (event.request.method !== 'GET' || event.request.url.includes('script.google.com')) {
+  // درخواست‌های ارسال داده به Supabase یا درخواست‌های غیر GET را کش نکن
+  if (event.request.method !== 'GET' || event.request.url.includes('supabase.co')) {
     return;
   }
   
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      // اگر در کش بود، همان را بده. اگر نبود، از اینترنت بگیر.
+      return response || fetch(event.request).catch(() => {
+          // اگر اینترنت قطع بود یا CDN مسدود بود، کرش نکن
+          return new Response('', { status: 408, statusText: 'Network Error' });
+      });
     })
   );
 });
