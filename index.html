@@ -44,7 +44,6 @@
     .input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.3s; background: var(--bg); }
     .input:focus { border-color: var(--primary); background: var(--white); box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.1); }
     
-    /* Login */
     #login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); }
     .login-box { background: var(--white); padding: 40px 30px; border-radius: 24px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); width: 100%; max-width: 400px; animation: slideUp 0.6s ease; display: flex; flex-direction: column; align-items: center; }
     .login-box img { width: 100px; height: 100px; margin-bottom: 15px; object-fit: contain; }
@@ -53,7 +52,6 @@
     .form-group { width: 100%; margin-bottom: 20px; }
     .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: var(--text); }
     
-    /* Contacts */
     #contacts-view { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
     .header { background: var(--white); color: var(--text); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10; border-bottom: 1px solid var(--border); }
     .header-info { display: flex; align-items: center; gap: 10px; }
@@ -81,7 +79,6 @@
     .contact-role { font-size: 12px; color: var(--primary); font-weight: bold; }
     .contact-last-msg { font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-    /* Drawer */
     .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; animation: fadeIn 0.3s; }
     .drawer-overlay.show { display: block; }
     .drawer { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: var(--white); z-index: 201; transition: right 0.3s cubic-bezier(0.82, 0.085, 0.395, 0.895); box-shadow: -5px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; border-top-left-radius: 24px; border-bottom-left-radius: 24px; }
@@ -97,7 +94,6 @@
     .drawer-item.danger { color: var(--danger); }
     .drawer-item .badge { background: var(--danger); color: white; border-radius: 12px; padding: 2px 10px; font-size: 12px; margin-right: auto; display: none; }
 
-    /* Profile */
     #profile-view { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--bg); animation: slideInRight 0.3s ease; }
     .profile-header { background: var(--white); padding: 30px 20px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid var(--border); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
     .profile-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; display: flex; justify-content: center; align-items: center; font-size: 36px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 6px 12px rgba(192, 57, 43, 0.3); }
@@ -110,7 +106,6 @@
     .task-title { font-weight: bold; font-size: 16px; color: var(--text); }
     .badge-status { padding: 5px 12px; border-radius: 20px; color: white; font-size: 12px; font-weight: bold; }
     
-    /* Chat */
     #chat-view { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); min-height: 0; animation: slideInRight 0.3s ease; }
     .chat-header { background: var(--white); color: var(--text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10; }
     .chat-header-right { display: flex; align-items: center; gap: 15px; }
@@ -134,6 +129,7 @@
     .download-btn:hover { background: rgba(255,255,255,0.4); }
     .message.other .download-btn { background: var(--bg); color: var(--primary); }
     .message.other .download-btn:hover { background: #e1e4e8; }
+    
     .transcribe-btn { background: #f39c12; color: white; border: none; border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: opacity 0.2s; }
     .transcribe-btn:hover { opacity: 0.8; }
     .transcription-box { width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.3); font-size: 13px; color: rgba(255,255,255,0.9); font-style: italic; }
@@ -147,13 +143,11 @@
     .mic-btn { background: var(--bg); color: var(--primary); box-shadow: none; border: 1px solid var(--border); }
     .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; border: none; }
     
-    /* Modals */
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 300; animation: fadeIn 0.3s; }
     .modal-content { background: var(--white); width: 90%; max-width: 420px; padding: 25px; border-radius: 20px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .modal-content h3 { margin-bottom: 20px; text-align: center; color: var(--primary-dark); font-size: 20px; }
     .modal-actions { display: flex; gap: 12px; margin-top: 25px; }
 
-    /* Full Screen Notification Modal */
     #notif-modal .modal-content { 
         width: 100%; height: 100%; max-width: 100%; max-height: 100%; 
         border-radius: 0; padding: 0; display: flex; flex-direction: column; 
@@ -168,7 +162,6 @@
     .notif-item .n-title { font-weight: bold; font-size: 15px; color: var(--text); }
     .notif-item .n-msg { font-size: 13px; color: var(--text-light); }
     
-    /* Admin Panel */
     #admin-view { flex: 1; display: flex; flex-direction: column; background: var(--bg); min-height: 0; animation: slideInRight 0.3s ease; }
     .admin-header { background: var(--primary-dark); color: white; padding: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
     .admin-list { flex: 1; overflow-y: auto; padding: 20px; }
@@ -187,10 +180,8 @@
 </head>
 <body>
 
-  <!-- Login -->
   <div id="login-view">
     <div class="login-box">
-      <!-- جایگزینی با لوگو شرکت -->
       <img src="logo.png" alt="لوگو شرکت پاریز پیشرو صنعت توسعه">
       <h2>پیام‌رسان مدیریت قراردادها</h2>
       <h4>شرکت پاریز پیشرو صنعت توسعه</h4>
@@ -200,11 +191,9 @@
     </div>
   </div>
 
-  <!-- Drawer -->
   <div id="drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <div id="side-drawer" class="drawer">
       <div class="drawer-header">
-          <!-- نمایش لوگو در منو -->
           <img src="logo.png" style="width: 40px; height: 40px; background: white; border-radius: 8px; padding: 2px; object-fit: contain;">
           <div class="drawer-user-info">
               <span class="drawer-user-name" id="drawer-name">نام کاربر</span>
@@ -228,11 +217,9 @@
       </div>
   </div>
 
-  <!-- Contacts -->
   <div id="contacts-view" class="hidden">
     <div class="header">
       <div class="header-info">
-          <!-- نمایش لوگو در هدر -->
           <img src="logo.png" alt="لوگو">
           <div class="header-info-text">
               <h3>پیام‌رسان</h3>
@@ -250,7 +237,6 @@
     <div class="contact-list" id="contacts-container"></div>
   </div>
 
-  <!-- Profile -->
   <div id="profile-view" class="hidden">
     <div class="chat-header">
       <div class="chat-header-right"><button class="back-btn" onclick="closeProfile()">→</button><h3 style="font-size: 18px; font-weight: bold; color: var(--primary);">پروفایل همکار</h3></div>
@@ -264,7 +250,6 @@
     <div class="profile-tasks" id="profile-tasks-container"></div>
   </div>
 
-  <!-- Chat -->
   <div id="chat-view" class="hidden">
     <div class="chat-header">
       <div class="chat-header-right">
@@ -283,7 +268,6 @@
     </div>
   </div>
 
-  <!-- Admin Panel -->
   <div id="admin-view" class="hidden">
     <div class="admin-header">
       <button class="back-btn" onclick="closeAdminPanel()" style="color: white;">→</button>
@@ -293,7 +277,6 @@
     <div class="admin-list" id="users-list-container"></div>
   </div>
 
-  <!-- Modals -->
   <div id="notif-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <div style="padding: 20px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center;">
@@ -376,8 +359,10 @@
     let audioChunks = [];
     let isRecording = false;
     let deferredPrompt = null;
+    
+    let globalAudioPlayer = null;
+    let activePlayBtn = null;
 
-    // مدیریت دکمه نصب
     window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
@@ -395,7 +380,6 @@
                 deferredPrompt = null;
             });
         } else {
-            // راهنمای دستی
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
             if (isIOS) {
                 alert('برای نصب روی آیفون:\n۱. در مرورگر سافاری، روی دکمه Share (مربع با فلش رو به بالا) بزنید.\n۲. گزینه Add to Home Screen را انتخاب کنید.\n۳. روی Add بزنید.');
@@ -405,7 +389,6 @@
         }
     }
 
-    // ذخیره اعلانات خوانده شده
     let readNotifs = JSON.parse(localStorage.getItem('read_notifs') || '[]');
 
     function formatEmail(username) { 
@@ -485,7 +468,6 @@
             const { data: urlData } = db.storage.from('voice-messages').getPublicUrl(fileName);
             const publicUrl = urlData.publicUrl;
 
-            // در این نسخه، تبدیل خودکار متن را حذف کردیم تا کاربر با دکمه این کار را انجام دهد.
             const { error: insertError } = await db.from('messages').insert({ 
                 task_id: data.taskId, from_user_id: myId, type: 'voice', content: publicUrl, transcription: ''
             });
@@ -504,7 +486,6 @@
             
             if (fnError) throw new Error("خطای تبدیل: " + fnError.message);
             
-            // آپدیت دیتابیس
             const { error: updateError } = await db.from('messages').update({ transcription: fnData.text }).eq('id', data.msgId);
             if (updateError) throw new Error("خطای ذخیره متن: " + updateError.message);
             
@@ -540,9 +521,6 @@
       } catch (error) { return { ok: false, error: 'خطای شبکه: ' + error.message }; }
     }
 
-    // ==========================================
-    // توابع مدیریت پنل ادمین
-    // ==========================================
     async function openAddUserModal() {
         if (currentUser.username !== 'admin') return alert('فقط مدیر سیستم دسترسی دارد');
         
@@ -646,9 +624,6 @@
         }
     }
 
-    // ==========================================
-    // بقیه توابع
-    // ==========================================
     function toggleDrawer() { document.getElementById('side-drawer').classList.add('open'); document.getElementById('drawer-overlay').classList.add('show'); }
     function closeDrawer() { document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-overlay').classList.remove('show'); }
 
@@ -732,13 +707,11 @@
                 const d = document.createElement('div'); d.className = 'notif-item ' + n.type;
                 d.onclick = () => { 
                     closeNotifModal(); 
-                    
                     if(!readNotifs.includes(n.id)) {
                         readNotifs.push(n.id);
                         localStorage.setItem('read_notifs', JSON.stringify(readNotifs));
                     }
                     loadNotifications(); 
-
                     openChat(n.id); 
                 };
                 d.innerHTML = `<span class="n-title">${n.title}</span><span class="n-msg">${n.message}</span>`; c.appendChild(d);
@@ -832,7 +805,7 @@
 
             d.innerHTML = `
                 <div class="audio-player">
-                    <button class="play-btn" id="play-btn-${msg.id}" onclick="playCachedAudio('${msg.id}', '${msg.content}')">▶</button>
+                    <button class="play-btn" onclick="playAudioDirect('${msg.content}', this)">▶</button>
                     <button class="download-btn" onclick="downloadAudio('${msg.id}', '${msg.content}')">⬇️</button>
                     ${transBtn}
                 </div>
@@ -844,7 +817,6 @@
         document.getElementById('messages-area').appendChild(d);
     }
 
-    // تبدیل به متن دستی
     async function manualTranscribe(msgId, audioUrl, btn) {
         btn.innerText = '⏳ در حال تبدیل...';
         btn.disabled = true;
@@ -867,35 +839,40 @@
         }
     }
 
-    async function playCachedAudio(msgId, url) {
-        const audio = document.getElementById('audio-' + msgId);
-        const btn = document.getElementById('play-btn-' + msgId);
-        
-        if (audio.paused) {
-            if (!audio.src || audio.src === window.location.href) {
-                btn.innerText = '⏳';
-                try {
-                    const cache = await caches.open('voice-cache-v1');
-                    let response = await cache.match(url);
-                    if (!response) {
-                        response = await fetch(url);
-                        if (response.ok) await cache.put(url, response.clone());
-                    }
-                    if (!response.ok) throw new Error('404');
-                    const blob = await response.blob();
-                    audio.src = URL.createObjectURL(blob);
-                } catch (e) {
-                    btn.innerText = '▶';
-                    alert('فایل صوتی از سرور پاک شده و در حافظه گوشی شما نیز موجود نیست.');
-                    return;
-                }
+    function playAudioDirect(url, btn) {
+        if (globalAudioPlayer && activePlayBtn === btn) {
+            if (globalAudioPlayer.paused) {
+                globalAudioPlayer.play();
+                btn.innerText = '⏸';
+            } else {
+                globalAudioPlayer.pause();
+                btn.innerText = '▶';
             }
-            audio.play();
-            btn.innerText = '⏸';
-        } else {
-            audio.pause();
-            btn.innerText = '▶';
+            return;
         }
+
+        if (globalAudioPlayer) {
+            globalAudioPlayer.pause();
+            if (activePlayBtn) activePlayBtn.innerText = '▶';
+        }
+
+        btn.innerText = '⏳';
+        globalAudioPlayer = new Audio(url);
+        activePlayBtn = btn;
+
+        globalAudioPlayer.play().then(() => {
+            btn.innerText = '⏸';
+        }).catch((e) => {
+            console.error(e);
+            btn.innerText = '▶';
+            alert('خطا در پخش صدا. ممکن است فرمت این فایل در مرورگر شما پشتیبانی نشود یا فایل از سرور پاک شده باشد.');
+        });
+
+        globalAudioPlayer.onended = () => {
+            btn.innerText = '▶';
+            globalAudioPlayer = null;
+            activePlayBtn = null;
+        };
     }
 
     async function downloadAudio(msgId, url) {
