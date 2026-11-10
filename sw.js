@@ -25,16 +25,13 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // درخواست‌های ارسال داده به Supabase یا درخواست‌های غیر GET را کش نکن
   if (event.request.method !== 'GET' || event.request.url.includes('supabase.co')) {
     return;
   }
   
   event.respondWith(
     caches.match(event.request).then((response) => {
-      // اگر در کش بود، همان را بده. اگر نبود، از اینترنت بگیر.
       return response || fetch(event.request).catch(() => {
-          // اگر اینترنت قطع بود یا CDN مسدود بود، کرش نکن
           return new Response('', { status: 408, statusText: 'Network Error' });
       });
     })
