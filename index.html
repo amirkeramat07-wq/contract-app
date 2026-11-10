@@ -11,6 +11,7 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
+  <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -89,10 +90,23 @@
     .message.me { background: #dcf8c6; color: var(--text); align-self: flex-start; border-top-right-radius: 2px; }
     .message.other { background: var(--white); color: var(--text); align-self: flex-end; border-top-left-radius: 2px; }
     
+    .audio-player { display: flex; align-items: center; gap: 10px; min-width: 200px; padding: 5px 0; }
+    .play-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+    .play-btn.playing { background: var(--danger); }
+    .progress-container { flex: 1; height: 4px; background: rgba(0,0,0,0.1); border-radius: 2px; cursor: pointer; }
+    .progress-bar { height: 100%; background: var(--primary); width: 0%; border-radius: 2px; }
+    .time-display { font-size: 11px; color: var(--text-light); min-width: 35px; text-align: center; }
+    
+    .transcription-box { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); font-size: 12px; color: var(--text-light); font-style: italic; }
+    
     .chat-input-area { background: #f0f0f0; padding: 10px 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); }
     .chat-input { flex: 1; border-radius: 20px; padding: 10px 15px; border: none; }
     .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 18px; }
+    .mic-btn { background: var(--white); color: var(--text-light); }
+    .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; }
     
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
     .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 300; }
     .modal-content { background: var(--white); width: 90%; max-width: 400px; padding: 20px; border-radius: 16px; max-height: 90vh; overflow-y: auto; }
     .modal-content h3 { margin-bottom: 15px; text-align: center; color: var(--primary-dark); }
@@ -116,8 +130,6 @@
     .btn-toggle.active { background: var(--success); }
     .manager-list-container { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 8px; background: #f9f9f9; }
     .manager-list-container label { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 14px; cursor: pointer; }
-    
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
   </style>
 </head>
 <body>
@@ -195,6 +207,8 @@
     <div class="chat-task-info"><div id="chat-task-details"></div></div>
     <div class="messages-area" id="messages-area"></div>
     <div class="chat-input-area">
+      <button class="action-btn mic-btn" id="mic-btn" onclick="toggleRecording()">🎤</button>
+      <input type="file" id="audio-upload" accept="audio/*" capture style="display:none;" onchange="handleAudioUpload(event)">
       <input type="text" id="chat-input" class="chat-input" placeholder="پیام...">
       <button class="action-btn" onclick="sendTextMessage()">➤</button>
     </div>
@@ -262,7 +276,6 @@
     const SUPABASE_URL = 'https://trnzzevllluhkyvvrtms.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc';
     
-    // تغییر نام متغیر از supabase به db برای جلوگیری از تداخل با کتابخانه
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
@@ -275,6 +288,10 @@
     let isSending = false;
     let cachedUsers = [];
     let allContacts = [];
+    
+    let mediaRecorder = null;
+    let audioChunks = [];
+    let isRecording = false;
 
     function formatEmail(username) { 
         if(username.trim().toLowerCase() === 'admin') return 'admin@example.com';
@@ -342,6 +359,37 @@
 
         if (action === 'sendTextMessage') {
             await db.from('messages').insert({ task_id: data.taskId, from_user_id: myId, type: 'text', content: data.text });
+            return { ok: true };
+        }
+
+        if (action === 'sendVoiceMessage') {
+            // 1. آپلود به Supabase Storage
+            const fileName = `${data.taskId}_${Date.now()}.webm`;
+            const { data: uploadData, error: uploadError } = await db.storage.from('voice-messages').upload(fileName, data.blob, { contentType: data.mimeType });
+            
+            if (uploadError) throw uploadError;
+            
+            // 2. گرفتن لینک عمومی فایل
+            const { data: urlData } = db.storage.from('voice-messages').getPublicUrl(fileName);
+            const publicUrl = urlData.publicUrl;
+
+            // 3. ارسال به تابع Edge برای تبدیل به متن
+            let transcription = '';
+            try {
+                const { data: transData, error: transError } = await db.functions.invoke('transcribe', {
+                    body: { audioBase64: data.base64 }
+                });
+                if (!transError && transData) transcription = transData.text;
+            } catch (e) { console.log('Transcription failed', e); }
+
+            // 4. ذخیره پیام در دیتابیس
+            await db.from('messages').insert({ 
+                task_id: data.taskId, 
+                from_user_id: myId, 
+                type: 'voice', 
+                content: publicUrl,
+                transcription: transcription
+            });
             return { ok: true };
         }
 
@@ -519,14 +567,94 @@
     }
 
     function appendMessage(msg) {
-        const d = document.createElement('div'); d.className = 'message ' + (msg.from_user_id === currentUser.id ? 'me' : 'other');
-        d.innerText = msg.content; document.getElementById('messages-area').appendChild(d);
+        const d = document.createElement('div'); 
+        d.className = 'message ' + (msg.from_user_id === currentUser.id ? 'me' : 'other');
+        
+        if (msg.type === 'voice') {
+            let transText = msg.transcription ? msg.transcription : 'در حال تبدیل به متن...';
+            d.innerHTML = `
+                <div class="audio-player">
+                    <audio controls src="${msg.content}" style="max-width: 100%; height: 40px;"></audio>
+                </div>
+                <div class="transcription-box">📝 ${transText}</div>
+            `;
+        } else {
+            d.innerText = msg.content;
+        }
+        document.getElementById('messages-area').appendChild(d);
+    }
+
+    // ==========================================
+    // توابع ضبط و ارسال صدا (Supabase + Groq)
+    // ==========================================
+    async function toggleRecording() {
+      const micBtn = document.getElementById('mic-btn');
+      if (!isRecording) {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          let options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : { mimeType: 'audio/mp4' };
+          mediaRecorder = new MediaRecorder(stream, options);
+          mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) audioChunks.push(e.data); };
+          mediaRecorder.onstop = async function() {
+            const mimeType = mediaRecorder.mimeType || 'audio/webm';
+            const audioBlob = new Blob(audioChunks, { type: mimeType }); 
+            audioChunks = [];
+            await uploadVoiceBlob(audioBlob, mimeType); 
+            stream.getTracks().forEach(function(track) { track.stop(); });
+          };
+          audioChunks = []; mediaRecorder.start(); isRecording = true;
+          micBtn.classList.add('recording'); micBtn.innerText = '⏹';
+        } catch (err) { document.getElementById('audio-upload').click(); }
+      } else {
+        mediaRecorder.stop(); isRecording = false; micBtn.classList.remove('recording'); micBtn.innerText = '🎤';
+      }
+    }
+    
+    async function uploadVoiceBlob(blob, mimeType) {
+      if (isSending) return; 
+      isSending = true; 
+      const micBtn = document.getElementById('mic-btn'); micBtn.innerText = '⏳';
+      
+      const reader = new FileReader(); 
+      reader.readAsDataURL(blob);
+      reader.onloadend = async function() {
+        const base64data = reader.result.split(',')[1];
+        
+        // ارسال به تابع بک‌اند
+        const res = await callBackend('sendVoiceMessage', { 
+            taskId: currentTaskId, 
+            blob: blob, 
+            mimeType: mimeType,
+            base64: base64data 
+        });
+        
+        if (res.ok) {
+            setTimeout(pollUpdates, 500);
+        } else {
+            alert('خطا در ارسال: ' + res.error);
+        }
+        
+        micBtn.innerText = '🎤'; 
+        isSending = false;
+      };
+    }
+    
+    function handleAudioUpload(event) {
+      const file = event.target.files[0]; if (!file) return;
+      if (file.size > 5 * 1024 * 1024) return alert('حجم زیاد است.');
+      
+      // استفاده از همان تابع برای فایل‌های آپلود شده از گالری
+      uploadVoiceBlob(file, file.type || 'audio/mp4');
+      event.target.value = ''; 
     }
 
     async function handleDeleteTask() { if (!confirm('حذف شود؟')) return; await callBackend('deleteTask', { taskId: currentTaskId }); closeChat(); }
     async function sendTextMessage() { const i = document.getElementById('chat-input'); const t = i.value.trim(); if (!t || isSending) return; isSending = true; i.value = ''; await callBackend('sendTextMessage', { taskId: currentTaskId, text: t }); setTimeout(pollUpdates, 500); isSending = false; }
     document.getElementById('chat-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendTextMessage(); });
 
+    // ==========================================
+    // پنل مدیریت
+    // ==========================================
     async function openAdminPanel() { 
         if (currentUser.role !== 'مدیر') return alert('دسترسی غیرمجاز');
         document.getElementById('contacts-view').classList.add('hidden'); 
@@ -601,6 +729,9 @@
         if (!error) { closeUserModal(); loadAdminUsers(); } else { alert('خطا در ویرایش'); }
     }
 
+    // ==========================================
+    // تقویم شمسی
+    // ==========================================
     const jMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
     function initCalendar() {
         const y = document.getElementById('jYear'); const m = document.getElementById('jMonth');
