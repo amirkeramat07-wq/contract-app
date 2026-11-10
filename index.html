@@ -6,16 +6,14 @@
   <title>پیام‌رسان مدیریت قراردادها</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="مدیریت قراردادها">
+  <meta name="apple-mobile-web-app-title" content="پاریز پیشرو">
   <meta name="theme-color" content="#c0392b">
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- 👇 لود کتابخانه Supabase از سرور خودمان (بدون نیاز به اینترنت خارجی) -->
   <script src="./supabase.min.js"></script>
 
   <style>
-    /* رنگ‌بندی: قرمز و خاکستری */
     :root { 
         --primary: #c0392b; 
         --primary-dark: #8e2a20; 
@@ -34,7 +32,6 @@
     body { background-color: var(--bg); color: var(--text); height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
     .hidden { display: none !important; }
     
-    /* انیمیشن‌ها */
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
@@ -49,16 +46,20 @@
     
     /* Login */
     #login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); }
-    .login-box { background: var(--white); padding: 40px 30px; border-radius: 24px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); width: 100%; max-width: 400px; animation: slideUp 0.6s ease; }
-    .login-box h2 { text-align: center; margin-bottom: 30px; font-size: 24px; color: var(--primary); font-weight: 800; }
-    .form-group { margin-bottom: 20px; }
+    .login-box { background: var(--white); padding: 40px 30px; border-radius: 24px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); width: 100%; max-width: 400px; animation: slideUp 0.6s ease; display: flex; flex-direction: column; align-items: center; }
+    .login-box img { width: 100px; height: 100px; margin-bottom: 15px; object-fit: contain; }
+    .login-box h2 { text-align: center; margin-bottom: 5px; font-size: 22px; color: var(--primary); font-weight: 800; }
+    .login-box h4 { text-align: center; margin-bottom: 25px; font-size: 13px; color: var(--text-light); font-weight: normal; }
+    .form-group { width: 100%; margin-bottom: 20px; }
     .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: var(--text); }
     
     /* Contacts */
     #contacts-view { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
     .header { background: var(--white); color: var(--text); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10; border-bottom: 1px solid var(--border); }
-    .header-info h3 { font-size: 20px; margin-bottom: 4px; color: var(--primary-dark); }
-    .header-info span { font-size: 13px; color: var(--text-light); }
+    .header-info { display: flex; align-items: center; gap: 10px; }
+    .header-info img { width: 35px; height: 35px; object-fit: contain; }
+    .header-info-text h3 { font-size: 18px; margin-bottom: 2px; color: var(--primary-dark); }
+    .header-info-text span { font-size: 12px; color: var(--text-light); }
     
     .menu-btn { background: none; border: none; color: var(--primary); font-size: 28px; cursor: pointer; padding: 0 5px; display: flex; align-items: center; transition: transform 0.2s; }
     .menu-btn:active { transform: scale(0.9); }
@@ -126,20 +127,22 @@
     .message.me { background: var(--primary); color: white; align-self: flex-start; border-top-right-radius: 4px; }
     .message.other { background: var(--white); color: var(--text); align-self: flex-end; border-top-left-radius: 4px; }
     
-    .audio-player { display: flex; align-items: center; gap: 10px; min-width: 220px; padding: 5px 0; }
-    .play-btn { background: var(--white); color: var(--primary); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.2s; }
+    .audio-player { display: flex; align-items: center; gap: 8px; min-width: 220px; padding: 5px 0; flex-wrap: wrap; }
+    .play-btn { background: var(--white); color: var(--primary); border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.2s; }
     .play-btn:active { transform: scale(0.9); }
-    .download-btn { background: rgba(255,255,255,0.2); color: var(--white); border: none; width: 40px; height: 40px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; text-decoration: none; font-size: 18px; transition: background 0.2s; }
+    .download-btn { background: rgba(255,255,255,0.2); color: var(--white); border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; text-decoration: none; font-size: 16px; transition: background 0.2s; }
     .download-btn:hover { background: rgba(255,255,255,0.4); }
     .message.other .download-btn { background: var(--bg); color: var(--primary); }
     .message.other .download-btn:hover { background: #e1e4e8; }
-    .transcription-box { margin-top: 10px; padding-top: 10px; border-top: 1px dashed rgba(255,255,255,0.3); font-size: 13px; color: rgba(255,255,255,0.9); font-style: italic; }
+    .transcribe-btn { background: #f39c12; color: white; border: none; border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: opacity 0.2s; }
+    .transcribe-btn:hover { opacity: 0.8; }
+    .transcription-box { width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.3); font-size: 13px; color: rgba(255,255,255,0.9); font-style: italic; }
     .message.other .transcription-box { border-top-color: var(--border); color: var(--text-light); }
     
     .chat-input-area { background: var(--white); padding: 15px 20px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); width: 100%; }
     .chat-input { flex: 1; min-width: 0; border-radius: 24px; padding: 12px 20px; border: 1px solid var(--border); background: var(--bg); outline: none; font-size: 15px; transition: border-color 0.3s; }
     .chat-input:focus { border-color: var(--primary); background: var(--white); }
-    .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 48px; height: 48px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 20px; box-shadow: 0 4px 8px rgba(192, 57, 43, 0.2); transition: all 0.2s; }
+    .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 20px; box-shadow: 0 4px 8px rgba(192, 57, 43, 0.2); transition: all 0.2s; }
     .action-btn:active { transform: scale(0.9); }
     .mic-btn { background: var(--bg); color: var(--primary); box-shadow: none; border: 1px solid var(--border); }
     .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; border: none; }
@@ -149,6 +152,14 @@
     .modal-content { background: var(--white); width: 90%; max-width: 420px; padding: 25px; border-radius: 20px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .modal-content h3 { margin-bottom: 20px; text-align: center; color: var(--primary-dark); font-size: 20px; }
     .modal-actions { display: flex; gap: 12px; margin-top: 25px; }
+
+    /* Full Screen Notification Modal */
+    #notif-modal .modal-content { 
+        width: 100%; height: 100%; max-width: 100%; max-height: 100%; 
+        border-radius: 0; padding: 0; display: flex; flex-direction: column; 
+        animation: slideUp 0.3s ease;
+    }
+    #notif-list-container { flex: 1; overflow-y: auto; }
 
     .notif-item { padding: 15px 20px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: background 0.2s; }
     .notif-item:hover { background: var(--bg); }
@@ -179,7 +190,10 @@
   <!-- Login -->
   <div id="login-view">
     <div class="login-box">
+      <!-- جایگزینی با لوگو شرکت -->
+      <img src="logo.png" alt="لوگو شرکت پاریز پیشرو صنعت توسعه">
       <h2>پیام‌رسان مدیریت قراردادها</h2>
+      <h4>شرکت پاریز پیشرو صنعت توسعه</h4>
       <div class="form-group"><label>نام کاربری</label><input type="text" id="login-username" class="input" dir="ltr" style="text-align:left;" placeholder="نام کاربری خود را وارد کنید"></div>
       <div class="form-group"><label>رمز عبور</label><input type="password" id="login-password" class="input" dir="ltr" style="text-align:left;" placeholder="رمز عبور خود را وارد کنید"></div>
       <button class="btn" style="width: 100%;" id="login-btn" onclick="handleLogin()">ورود به سیستم</button>
@@ -190,7 +204,8 @@
   <div id="drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <div id="side-drawer" class="drawer">
       <div class="drawer-header">
-          <div class="drawer-avatar" id="drawer-avatar">U</div>
+          <!-- نمایش لوگو در منو -->
+          <img src="logo.png" style="width: 40px; height: 40px; background: white; border-radius: 8px; padding: 2px; object-fit: contain;">
           <div class="drawer-user-info">
               <span class="drawer-user-name" id="drawer-name">نام کاربر</span>
               <span class="drawer-user-role" id="drawer-role">نقش</span>
@@ -216,7 +231,14 @@
   <!-- Contacts -->
   <div id="contacts-view" class="hidden">
     <div class="header">
-      <div class="header-info"><h3>پیام‌رسان</h3><span id="user-info"></span></div>
+      <div class="header-info">
+          <!-- نمایش لوگو در هدر -->
+          <img src="logo.png" alt="لوگو">
+          <div class="header-info-text">
+              <h3>پیام‌رسان</h3>
+              <span id="user-info"></span>
+          </div>
+      </div>
       <div style="display:flex; align-items:center;">
           <button class="bell-btn" onclick="openNotifModal()">🔔<div class="bell-badge" id="bell-badge"></div></button>
           <button class="menu-btn" onclick="toggleDrawer()">☰</button>
@@ -273,12 +295,12 @@
 
   <!-- Modals -->
   <div id="notif-modal" class="modal-overlay hidden">
-    <div class="modal-content" style="padding: 0; overflow: hidden;">
+    <div class="modal-content">
       <div style="padding: 20px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center;">
         <h3 style="margin: 0; color: white;">اعلانات</h3>
         <button onclick="closeNotifModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">×</button>
       </div>
-      <div id="notif-list-container" style="max-height: 400px; overflow-y: auto; padding: 0;"></div>
+      <div id="notif-list-container"></div>
     </div>
   </div>
 
@@ -353,8 +375,37 @@
     let mediaRecorder = null;
     let audioChunks = [];
     let isRecording = false;
+    let deferredPrompt = null;
 
-    // ذخیره اعلانات خوانده شده در حافظه مرورگر
+    // مدیریت دکمه نصب
+    window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+    });
+
+    function handleInstallClick() {
+        if (window.matchMedia('(display-mode: standalone)').matches) {
+            alert('برنامه از قبل روی گوشی شما نصب است.');
+            return;
+        }
+        if (deferredPrompt) {
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+                if (choiceResult.outcome === 'accepted') console.log('User accepted the install');
+                deferredPrompt = null;
+            });
+        } else {
+            // راهنمای دستی
+            const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+                alert('برای نصب روی آیفون:\n۱. در مرورگر سافاری، روی دکمه Share (مربع با فلش رو به بالا) بزنید.\n۲. گزینه Add to Home Screen را انتخاب کنید.\n۳. روی Add بزنید.');
+            } else {
+                alert('برای نصب روی اندروید:\n۱. در مرورگر کروم، روی سه نقطه (بالا سمت راست) بزنید.\n۲. گزینه Install app یا Add to Home screen را انتخاب کنید.\n۳. روی Install بزنید.');
+            }
+        }
+    }
+
+    // ذخیره اعلانات خوانده شده
     let readNotifs = JSON.parse(localStorage.getItem('read_notifs') || '[]');
 
     function formatEmail(username) { 
@@ -389,7 +440,6 @@
         }
 
         if (action === 'getContacts') {
-            // فیلتر کردن کاربر admin تا برای هیچ‌کس نمایش داده نشود
             const { data: contacts } = await db.from('profiles')
                 .select('*')
                 .neq('id', myId)
@@ -435,19 +485,30 @@
             const { data: urlData } = db.storage.from('voice-messages').getPublicUrl(fileName);
             const publicUrl = urlData.publicUrl;
 
-            let transcription = 'در حال پردازش...';
-            try {
-                const { data: transData, error: transError } = await db.functions.invoke('transcribe', {
-                    body: { audioBase64: data.base64 }
-                });
-                if (!transError && transData) transcription = transData.text;
-            } catch (e) { console.log('Transcription failed', e); }
-
+            // در این نسخه، تبدیل خودکار متن را حذف کردیم تا کاربر با دکمه این کار را انجام دهد.
             const { error: insertError } = await db.from('messages').insert({ 
-                task_id: data.taskId, from_user_id: myId, type: 'voice', content: publicUrl, transcription: transcription
+                task_id: data.taskId, from_user_id: myId, type: 'voice', content: publicUrl, transcription: ''
             });
             if (insertError) throw new Error("خطای دیتابیس: " + insertError.message);
             return { ok: true };
+        }
+
+        if (action === 'manualTranscribe') {
+            const { data: sessionData } = await db.auth.getSession();
+            const token = sessionData.session.access_token;
+            
+            const { data: fnData, error: fnError } = await db.functions.invoke('transcribe', {
+                headers: { Authorization: `Bearer ${token}` },
+                body: { audioUrl: data.audioUrl }
+            });
+            
+            if (fnError) throw new Error("خطای تبدیل: " + fnError.message);
+            
+            // آپدیت دیتابیس
+            const { error: updateError } = await db.from('messages').update({ transcription: fnData.text }).eq('id', data.msgId);
+            if (updateError) throw new Error("خطای ذخیره متن: " + updateError.message);
+            
+            return { ok: true, text: fnData.text };
         }
 
         if (action === 'createTask') {
@@ -463,7 +524,6 @@
         if (action === 'getNotifications') {
             const { data: tasks } = await db.from('tasks').select('*').eq('to_user_id', myId).in('status', ['در انتظار', 'در حال انجام', 'گذشته از مهلت']);
             
-            // فیلتر کردن اعلاناتی که قبلا کلیک شده‌اند (در حافظه مرورگر)
             const unreadTasks = (tasks || []).filter(t => !readNotifs.includes(t.id));
             
             const notifs = unreadTasks.map(t => ({ 
@@ -591,7 +651,6 @@
     // ==========================================
     function toggleDrawer() { document.getElementById('side-drawer').classList.add('open'); document.getElementById('drawer-overlay').classList.add('show'); }
     function closeDrawer() { document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-overlay').classList.remove('show'); }
-    function handleInstallClick() { alert('برای نصب، از منوی مرورگر خود گزینه Add to Home Screen را انتخاب کنید.'); }
 
     window.addEventListener('load', function() {
         if (window.supabase) {
@@ -620,9 +679,7 @@
         document.getElementById('user-info').innerText = currentUser.name + ' (' + currentUser.role + ')';
         document.getElementById('drawer-name').innerText = currentUser.name;
         document.getElementById('drawer-role').innerText = currentUser.role;
-        document.getElementById('drawer-avatar').innerText = currentUser.name.trim().charAt(0) || 'U';
         
-        // نمایش پنل ادمین فقط برای کاربر admin
         document.getElementById('drawer-admin-btn').style.display = currentUser.username === 'admin' ? 'flex' : 'none';
         
         loadContacts();
@@ -676,12 +733,11 @@
                 d.onclick = () => { 
                     closeNotifModal(); 
                     
-                    // ثبت این اعلان به عنوان خوانده شده
                     if(!readNotifs.includes(n.id)) {
                         readNotifs.push(n.id);
                         localStorage.setItem('read_notifs', JSON.stringify(readNotifs));
                     }
-                    loadNotifications(); // آپدیت زنگوله
+                    loadNotifications(); 
 
                     openChat(n.id); 
                 };
@@ -770,19 +826,45 @@
         d.className = 'message ' + (msg.from_user_id === currentUser.id ? 'me' : 'other');
         
         if (msg.type === 'voice') {
-            let transText = msg.transcription ? msg.transcription : 'در حال تبدیل به متن...';
+            let transText = msg.transcription ? msg.transcription : '';
+            let transBtn = transText ? '' : `<button class="transcribe-btn" onclick="manualTranscribe('${msg.id}', '${msg.content}', this)">📝 تبدیل به متن</button>`;
+            let transBox = transText ? `<div class="transcription-box" id="trans-box-${msg.id}">📝 ${transText}</div>` : `<div class="transcription-box hidden" id="trans-box-${msg.id}"></div>`;
+
             d.innerHTML = `
                 <div class="audio-player">
                     <button class="play-btn" id="play-btn-${msg.id}" onclick="playCachedAudio('${msg.id}', '${msg.content}')">▶</button>
                     <button class="download-btn" onclick="downloadAudio('${msg.id}', '${msg.content}')">⬇️</button>
-                    <audio id="audio-${msg.id}" onended="document.getElementById('play-btn-${msg.id}').innerText='▶'"></audio>
+                    ${transBtn}
                 </div>
-                <div class="transcription-box">📝 ${transText}</div>
+                ${transBox}
             `;
         } else {
             d.innerText = msg.content;
         }
         document.getElementById('messages-area').appendChild(d);
+    }
+
+    // تبدیل به متن دستی
+    async function manualTranscribe(msgId, audioUrl, btn) {
+        btn.innerText = '⏳ در حال تبدیل...';
+        btn.disabled = true;
+        try {
+            const res = await callBackend('manualTranscribe', { msgId, audioUrl });
+            if (res.ok) {
+                const box = document.getElementById('trans-box-' + msgId);
+                box.innerText = '📝 ' + res.text;
+                box.classList.remove('hidden');
+                btn.remove();
+            } else {
+                alert(res.error);
+                btn.innerText = '📝 تبدیل به متن';
+                btn.disabled = false;
+            }
+        } catch (e) {
+            alert('خطای ارتباط');
+            btn.innerText = '📝 تبدیل به متن';
+            btn.disabled = false;
+        }
     }
 
     async function playCachedAudio(msgId, url) {
@@ -804,7 +886,7 @@
                     audio.src = URL.createObjectURL(blob);
                 } catch (e) {
                     btn.innerText = '▶';
-                    alert('فایل صوتی از سرور پاک شده و در حافظه گوشی شما نیز موجود نیست. (فقط متن آن در دسترس است)');
+                    alert('فایل صوتی از سرور پاک شده و در حافظه گوشی شما نیز موجود نیست.');
                     return;
                 }
             }
@@ -909,7 +991,6 @@
         
         cachedUsers = users; container.innerHTML = '';
         
-        // مخفی کردن دکمه ساخت کاربر برای غیر ادمین
         document.getElementById('add-user-btn').style.display = currentUser.username === 'admin' ? 'block' : 'none';
 
         users.forEach(u => {
