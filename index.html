@@ -11,7 +11,6 @@
   <link rel="manifest" href="manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
   
-  <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
   <style>
@@ -90,7 +89,10 @@
     .message.me { background: #dcf8c6; color: var(--text); align-self: flex-start; border-top-right-radius: 2px; }
     .message.other { background: var(--white); color: var(--text); align-self: flex-end; border-top-left-radius: 2px; }
     
-    .audio-player { display: flex; align-items: center; gap: 10px; min-width: 200px; padding: 5px 0; }
+    /* استایل‌های جدید پلیر صوتی */
+    .audio-player { display: flex; align-items: center; gap: 8px; min-width: 200px; padding: 5px 0; }
+    .play-btn { background: var(--primary); color: white; border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; }
+    .download-btn { background: var(--white); color: var(--primary-dark); border: 1px solid var(--border); width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; text-decoration: none; font-size: 16px; }
     .transcription-box { margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(0,0,0,0.1); font-size: 12px; color: var(--text-light); font-style: italic; }
     
     .chat-input-area { background: #f0f0f0; padding: 10px 15px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; border-top: 1px solid var(--border); width: 100%; }
@@ -270,7 +272,6 @@
     const SUPABASE_URL = 'https://trnzzevllluhkyvvrtms.supabase.co';
     const SUPABASE_KEY = 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc';
     
-    // تغییر نام متغیر به db برای جلوگیری از تداخل
     const db = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentUser = null;
@@ -359,16 +360,12 @@
 
         if (action === 'sendVoiceMessage') {
             const fileName = `${data.taskId}_${Date.now()}.webm`;
-            
-            // 1. آپلود به Supabase Storage
             const { data: uploadData, error: uploadError } = await db.storage.from('voice-messages').upload(fileName, data.blob, { contentType: data.mimeType });
             if (uploadError) throw new Error("خطا در آپلود: " + uploadError.message);
             
-            // 2. گرفتن لینک عمومی
             const { data: urlData } = db.storage.from('voice-messages').getPublicUrl(fileName);
             const publicUrl = urlData.publicUrl;
 
-            // 3. تبدیل به متن (با خطای امن)
             let transcription = '';
             try {
                 const { data: transData, error: transError } = await db.functions.invoke('transcribe', {
@@ -377,7 +374,6 @@
                 if (!transError && transData) transcription = transData.text;
             } catch (e) { console.log('Transcription failed', e); }
 
-            // 4. ذخیره در دیتابیس
             const { error: insertError } = await db.from('messages').insert({ 
                 task_id: data.taskId, 
                 from_user_id: myId, 
@@ -442,8 +438,7 @@
       if (!user || !pass) return alert('رمز عبور را وارد کنید');
       
       const btn = document.getElementById('login-btn'); 
-      btn.disabled = true; 
-      btn.innerText = 'در حال ورود...';
+      btn.disabled = true; btn.innerText = 'در حال ورود...';
       
       const res = await callBackend('login', { username: user, password: pass });
       
@@ -456,8 +451,7 @@
           alert(res.error); 
       }
       
-      btn.disabled = false; 
-      btn.innerText = 'ورود به سیستم';
+      btn.disabled = false; btn.innerText = 'ورود به سیستم';
     }
 
     async function handleLogout() { await callBackend('logout'); location.reload(); }
@@ -572,7 +566,9 @@
             let transText = msg.transcription ? msg.transcription : 'در حال تبدیل به متن...';
             d.innerHTML = `
                 <div class="audio-player">
-                    <audio controls src="${msg.content}" style="max-width: 100%; height: 40px;"></audio>
+                    <button class="play-btn" id="play-btn-${msg.id}" onclick="playCachedAudio('${msg.id}', '${msg.content}')">▶</button>
+                    <button class="download-btn" onclick="downloadAudio('${msg.id}', '${msg.content}')">⬇️</button>
+                    <audio id="audio-${msg.id}" onended="document.getElementById('play-btn-${msg.id}').innerText='▶'"></audio>
                 </div>
                 <div class="transcription-box">📝 ${transText}</div>
             `;
@@ -580,6 +576,69 @@
             d.innerText = msg.content;
         }
         document.getElementById('messages-area').appendChild(d);
+    }
+
+    // ==========================================
+    // مدیریت پخش و دانلود صدا (با حافظه کش)
+    // ==========================================
+    async function playCachedAudio(msgId, url) {
+        const audio = document.getElementById('audio-' + msgId);
+        const btn = document.getElementById('play-btn-' + msgId);
+        
+        if (audio.paused) {
+            // اگر منبع صدا هنوز تنظیم نشده (یا از قبل پخش نشده)
+            if (!audio.src || audio.src === window.location.href) {
+                btn.innerText = '⏳';
+                try {
+                    // باز کردن حافظه کش مرورگر
+                    const cache = await caches.open('voice-cache-v1');
+                    let response = await cache.match(url);
+                    
+                    if (!response) {
+                        // اگر در حافظه نبود، از سرور دانلود و در حافظه ذخیره کن
+                        response = await fetch(url);
+                        if (response.ok) await cache.put(url, response.clone());
+                    }
+                    
+                    if (!response.ok) throw new Error('404');
+                    
+                    // تبدیل به فایل قابل پخش
+                    const blob = await response.blob();
+                    audio.src = URL.createObjectURL(blob);
+                } catch (e) {
+                    btn.innerText = '▶';
+                    alert('فایل صوتی از سرور پاک شده و در حافظه گوشی شما نیز موجود نیست. (فقط متن آن در دسترس است)');
+                    return;
+                }
+            }
+            audio.play();
+            btn.innerText = '⏸';
+        } else {
+            audio.pause();
+            btn.innerText = '▶';
+        }
+    }
+
+    async function downloadAudio(msgId, url) {
+        try {
+            const cache = await caches.open('voice-cache-v1');
+            let response = await cache.match(url);
+            if (!response) response = await fetch(url);
+            
+            if (response.ok) {
+                const blob = await response.blob();
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = `voice-message-${msgId}.webm`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+            } else {
+                alert('فایل برای دانلود در دسترس نیست.');
+            }
+        } catch (e) {
+            alert('خطا در دانلود فایل.');
+        }
     }
 
     async function toggleRecording() {
@@ -624,11 +683,8 @@
                 base64: base64data 
             });
             
-            if (res.ok) {
-                setTimeout(pollUpdates, 500);
-            } else {
-                alert('خطا در ارسال: ' + res.error);
-            }
+            if (res.ok) { setTimeout(pollUpdates, 500); } 
+            else { alert('خطا در ارسال: ' + res.error); }
         } catch (err) {
             alert('خطای شبکه یا دیتابیس: ' + err.message);
         } finally {
