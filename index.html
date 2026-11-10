@@ -121,6 +121,7 @@
     .user-actions { display: flex; gap: 5px; flex-wrap: wrap; }
     .user-btn { border: none; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; font-weight: bold; color: white; }
     .btn-edit { background: var(--warning); color: #333; }
+    .btn-pass { background: var(--primary); }
     .btn-toggle { background: var(--danger); }
     .btn-toggle.active { background: var(--success); }
     .manager-list-container { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); padding: 10px; border-radius: 8px; background: #f9f9f9; }
@@ -213,6 +214,7 @@
     <div class="admin-header">
       <button class="back-btn" onclick="closeAdminPanel()">→</button>
       <h3 style="font-size: 16px;">مدیریت کاربران</h3>
+      <button class="pass-btn" style="margin-right: auto; background: white; color: var(--primary);" onclick="openAddUserModal()">+ کاربر جدید</button>
     </div>
     <div class="admin-list" id="users-list-container"></div>
   </div>
@@ -250,9 +252,11 @@
 
   <div id="user-modal" class="modal-overlay hidden">
     <div class="modal-content">
-      <h3>ویرایش کاربر</h3>
+      <h3 id="user-modal-title">کاربر جدید</h3>
       <input type="hidden" id="edit-user-id">
       <div class="form-group"><label>نام</label><input type="text" id="u-name" class="input"></div>
+      <div class="form-group" id="username-group"><label>نام کاربری</label><input type="text" id="u-username" class="input" dir="ltr"></div>
+      <div class="form-group" id="password-group"><label>رمز</label><input type="password" id="u-password" class="input" dir="ltr"></div>
       <div class="form-group">
         <label>نقش</label>
         <select id="u-role" class="input">
@@ -267,15 +271,25 @@
     </div>
   </div>
 
+  <div id="admin-pass-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <h3>تغییر رمز کاربر</h3>
+      <p style="text-align:center; margin-bottom:15px; font-size:14px; color:var(--text-light);" id="admin-pass-username-label"></p>
+      <input type="hidden" id="admin-pass-user-id">
+      <div class="form-group"><label>رمز جدید</label><input type="password" id="admin-new-password" class="input" dir="ltr"></div>
+      <div class="form-group"><label>تکرار رمز</label><input type="password" id="admin-confirm-password" class="input" dir="ltr"></div>
+      <div class="modal-actions">
+        <button class="btn" style="flex:1; background: var(--success);" onclick="submitAdminResetPass()">ذخیره</button>
+        <button class="btn" style="flex:1; background: var(--danger);" onclick="closeAdminPassModal()">انصراف</button>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // تعریف ایمن db به صورتی که خطای TDZ رخ ندهد
     var db = null;
-    
     window.addEventListener('load', function() {
         if (window.supabase) {
             db = window.supabase.createClient('https://trnzzevllluhkyvvrtms.supabase.co', 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc');
-        } else {
-            console.error("کتابخانه Supabase لود نشد. احتمالاً اینترنت گوشی مشکل دارد.");
         }
     });
 
@@ -301,22 +315,16 @@
 
     async function callBackend(action, data = {}) {
       try {
-        if (!db) return { ok: false, error: 'در حال اتصال به سرور... لطفاً یک لحظه صبر کنید و دوباره تلاش کنید.' };
+        if (!db) return { ok: false, error: 'در حال اتصال به سرور...' };
 
         if (action === 'login') {
             const email = formatEmail(data.username);
             const { data: authData, error: authError } = await db.auth.signInWithPassword({ email: email, password: data.password });
-            if (authError) return { ok: false, error: 'نام کاربری یا رمز اشتباه است (' + authError.message + ')' };
+            if (authError) return { ok: false, error: 'نام کاربری یا رمز اشتباه است' };
             
             const { data: profile, error: pError } = await db.from('profiles').select('*').eq('id', authData.user.id).single();
-            if (pError) {
-                await db.auth.signOut();
-                return { ok: false, error: 'پروفایل در دیتابیس یافت نشد' };
-            }
-            if (!profile.active) {
-                await db.auth.signOut();
-                return { ok: false, error: 'حساب شما غیرفعال است' };
-            }
+            if (pError) { await db.auth.signOut(); return { ok: false, error: 'پروفایل یافت نشد' }; }
+            if (!profile.active) { await db.auth.signOut(); return { ok: false, error: 'حساب غیرفعال است' }; }
             return { ok: true, user: profile };
         }
 
@@ -373,7 +381,7 @@
             const { data: urlData } = db.storage.from('voice-messages').getPublicUrl(fileName);
             const publicUrl = urlData.publicUrl;
 
-            let transcription = '';
+            let transcription = 'در حال پردازش...';
             try {
                 const { data: transData, error: transError } = await db.functions.invoke('transcribe', {
                     body: { audioBase64: data.base64 }
@@ -382,15 +390,9 @@
             } catch (e) { console.log('Transcription failed', e); }
 
             const { error: insertError } = await db.from('messages').insert({ 
-                task_id: data.taskId, 
-                from_user_id: myId, 
-                type: 'voice', 
-                content: publicUrl,
-                transcription: transcription || '' 
+                task_id: data.taskId, from_user_id: myId, type: 'voice', content: publicUrl, transcription: transcription
             });
-            
             if (insertError) throw new Error("خطای دیتابیس: " + insertError.message);
-
             return { ok: true };
         }
 
@@ -414,6 +416,115 @@
       } catch (error) { return { ok: false, error: error.message }; }
     }
 
+    // ==========================================
+    // توابع مدیریت پنل ادمین (اتصال به Edge Function)
+    // ==========================================
+    async function openAddUserModal() {
+        document.getElementById('user-modal-title').innerText = 'کاربر جدید';
+        document.getElementById('edit-user-id').value = '';
+        document.getElementById('u-name').value = '';
+        document.getElementById('u-username').value = '';
+        document.getElementById('u-password').value = '';
+        document.getElementById('u-role').value = 'کارشناس';
+        
+        document.getElementById('username-group').style.display = 'block';
+        document.getElementById('password-group').style.display = 'block';
+
+        populateManagersCheckboxes([]);
+        document.getElementById('user-modal').classList.remove('hidden');
+    }
+
+    function closeUserModal() { document.getElementById('user-modal').classList.add('hidden'); }
+
+    function populateManagersCheckboxes(selectedIds) {
+        const c = document.getElementById('u-manager-container'); c.innerHTML = '';
+        cachedUsers.forEach(u => { 
+            if (u.active && u.id !== currentUser.id) {
+                c.innerHTML += `<label><input type="checkbox" value="${u.id}" ${selectedIds.includes(u.id) ? 'checked' : ''}> <span>${u.name}</span></label>`; 
+            }
+        });
+    }
+
+    async function submitUserForm() {
+        const editId = document.getElementById('edit-user-id').value;
+        const name = document.getElementById('u-name').value; 
+        const role = document.getElementById('u-role').value;
+        const manager_ids = Array.from(document.querySelectorAll('#u-manager-container input:checked')).map(cb => cb.value).join(',');
+
+        if (!name || !role) return alert('نام و نقش الزامی است');
+
+        // اگر در حالت ویرایش بود
+        if (editId) {
+            const { error } = await db.from('profiles').update({ name: name, role: role, manager_id: manager_ids }).eq('id', editId);
+            if (!error) { closeUserModal(); loadAdminUsers(); } else { alert('خطا در ویرایش'); }
+        } 
+        // اگر در حالت ساخت کاربر جدید بود
+        else {
+            const username = document.getElementById('u-username').value;
+            const password = document.getElementById('u-password').value;
+            if (!username || !password) return alert('نام کاربری و رمز الزامی است');
+
+            const btn = document.querySelector('#user-modal .btn-success');
+            btn.disabled = true; btn.innerText = 'در حال ساخت...';
+
+            try {
+                const { data: sessionData } = await db.auth.getSession();
+                const { data, error } = await db.functions.invoke('admin-users', {
+                    headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+                    body: { action: 'createUser', data: { name, username, password, role, manager_id: manager_ids } }
+                });
+
+                if (error) throw error;
+                alert('کاربر با موفقیت ساخته شد.');
+                closeUserModal(); loadAdminUsers();
+            } catch (err) {
+                alert('خطا: ' + err.message);
+            } finally {
+                btn.disabled = false; btn.innerText = 'ذخیره';
+            }
+        }
+    }
+
+    function openAdminResetPassModal(userId, userName) {
+        document.getElementById('admin-pass-user-id').value = userId; 
+        document.getElementById('admin-pass-username-label').innerText = 'کاربر: ' + userName;
+        document.getElementById('admin-new-password').value = ''; 
+        document.getElementById('admin-confirm-password').value = '';
+        document.getElementById('admin-pass-modal').classList.remove('hidden');
+    }
+
+    function closeAdminPassModal() { document.getElementById('admin-pass-modal').classList.add('hidden'); }
+
+    async function submitAdminResetPass() {
+        const userId = document.getElementById('admin-pass-user-id').value;
+        const p1 = document.getElementById('admin-new-password').value.trim(); 
+        const p2 = document.getElementById('admin-confirm-password').value.trim();
+        if (p1.length < 6) return alert('حداقل ۶ کاراکتر'); 
+        if (p1 !== p2) return alert('رمزها یکسان نیستند');
+
+        const btn = document.querySelector('#admin-pass-modal .btn-success');
+        btn.disabled = true; btn.innerText = 'در حال تغییر...';
+
+        try {
+            const { data: sessionData } = await db.auth.getSession();
+            const { data, error } = await db.functions.invoke('admin-users', {
+                headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
+                body: { action: 'resetPassword', data: { userId, newPassword: p1 } }
+            });
+
+            if (error) throw error;
+            alert('رمز عبور با موفقیت تغییر کرد.');
+            closeAdminPassModal();
+        } catch (err) {
+            alert('خطا: ' + err.message);
+        } finally {
+            btn.disabled = false; btn.innerText = 'ذخیره';
+        }
+    }
+
+    // ==========================================
+    // بقیه توابع رابط کاربری
+    // ==========================================
     function toggleDrawer() { document.getElementById('side-drawer').classList.add('open'); document.getElementById('drawer-overlay').classList.add('show'); }
     function closeDrawer() { document.getElementById('side-drawer').classList.remove('open'); document.getElementById('drawer-overlay').classList.remove('show'); }
     function handleInstallClick() { alert('برای نصب، از منوی مرورگر خود گزینه Add to Home Screen را انتخاب کنید.'); }
@@ -596,14 +707,11 @@
                 try {
                     const cache = await caches.open('voice-cache-v1');
                     let response = await cache.match(url);
-                    
                     if (!response) {
                         response = await fetch(url);
                         if (response.ok) await cache.put(url, response.clone());
                     }
-                    
                     if (!response.ok) throw new Error('404');
-                    
                     const blob = await response.blob();
                     audio.src = URL.createObjectURL(blob);
                 } catch (e) {
@@ -634,12 +742,8 @@
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-            } else {
-                alert('فایل برای دانلود در دسترس نیست.');
-            }
-        } catch (e) {
-            alert('خطا در دانلود فایل.');
-        }
+            } else { alert('فایل برای دانلود در دسترس نیست.'); }
+        } catch (e) { alert('خطا در دانلود فایل.'); }
     }
 
     async function toggleRecording() {
@@ -675,23 +779,12 @@
       reader.readAsDataURL(blob);
       reader.onloadend = async function() {
         const base64data = reader.result.split(',')[1];
-        
         try {
-            const res = await callBackend('sendVoiceMessage', { 
-                taskId: currentTaskId, 
-                blob: blob, 
-                mimeType: mimeType,
-                base64: base64data 
-            });
-            
+            const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, blob: blob, mimeType: mimeType, base64: base64data });
             if (res.ok) { setTimeout(pollUpdates, 500); } 
             else { alert('خطا در ارسال: ' + res.error); }
-        } catch (err) {
-            alert('خطای شبکه یا دیتابیس: ' + err.message);
-        } finally {
-            if (micBtn) micBtn.innerText = '🎤'; 
-            isSending = false;
-        }
+        } catch (err) { alert('خطای شبکه یا دیتابیس: ' + err.message); } 
+        finally { if (micBtn) micBtn.innerText = '🎤'; isSending = false; }
       };
     }
     
@@ -738,6 +831,7 @@
                 </div>
                 <div class="user-actions">
                     <button class="user-btn btn-edit" onclick="openEditUserModal('${u.id}')">ویرایش</button>
+                    <button class="user-btn btn-pass" onclick="openAdminResetPassModal('${u.id}', '${u.name}')">رمز</button>
                     <button class="user-btn btn-toggle ${u.active ? 'active' : ''}" onclick="toggleUserStatus('${u.id}', ${u.active})">${u.active ? 'فعال' : 'غیرفعال'}</button>
                 </div>
             </div>`;
@@ -751,33 +845,17 @@
 
     function openEditUserModal(userId) {
         const u = cachedUsers.find(x => x.id === userId); if (!u) return;
+        document.getElementById('user-modal-title').innerText = 'ویرایش کاربر'; 
         document.getElementById('edit-user-id').value = u.id;
         document.getElementById('u-name').value = u.name; 
+        document.getElementById('u-username').value = u.username;
         document.getElementById('u-role').value = u.role;
+        
+        document.getElementById('username-group').style.display = 'none'; 
+        document.getElementById('password-group').style.display = 'none';
+        
         populateManagersCheckboxes(u.manager_id ? String(u.manager_id).split(',') : []); 
         document.getElementById('user-modal').classList.remove('hidden');
-    }
-
-    function closeUserModal() { document.getElementById('user-modal').classList.add('hidden'); }
-
-    function populateManagersCheckboxes(selectedIds) {
-        const c = document.getElementById('u-manager-container'); c.innerHTML = '';
-        cachedUsers.forEach(u => { 
-            if (u.active && u.id !== currentUser.id) {
-                c.innerHTML += `<label><input type="checkbox" value="${u.id}" ${selectedIds.includes(u.id) ? 'checked' : ''}> <span>${u.name}</span></label>`; 
-            }
-        });
-    }
-
-    async function submitUserForm() {
-        const editId = document.getElementById('edit-user-id').value;
-        const name = document.getElementById('u-name').value; 
-        const role = document.getElementById('u-role').value;
-        const manager_ids = Array.from(document.querySelectorAll('#u-manager-container input:checked')).map(cb => cb.value).join(',');
-        
-        if (!name || !role) return alert('نام و نقش الزامی است');
-        const { error } = await db.from('profiles').update({ name: name, role: role, manager_id: manager_ids }).eq('id', editId);
-        if (!error) { closeUserModal(); loadAdminUsers(); } else { alert('خطا در ویرایش'); }
     }
 
     const jMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
