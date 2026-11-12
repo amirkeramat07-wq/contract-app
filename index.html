@@ -2,180 +2,346 @@
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>پیام‌رسان مدیریت قراردادها</title>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="پاریز پیشرو">
-  <meta name="theme-color" content="#c0392b">
+  <meta name="theme-color" content="#f6e7e4">
   <link rel="manifest" href="manifest.json">
-  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
-  
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
   <script src="./supabase.min.js"></script>
 
   <style>
-    :root { 
-        --primary: #c0392b; 
-        --primary-dark: #8e2a20; 
-        --bg: #f0f2f5; 
-        --white: #ffffff;
-        --text: #2f3640; 
-        --text-light: #718093;
-        --danger: #e74c3c; 
-        --success: #27ae60; 
-        --warning: #f39c12; 
-        --border: #dcdde1;
-        --chat-bg: #e4e6eb;
+/* ==========================================================================
+   LIQUID GLASS THEME
+   ========================================================================== */
+:root {
+    --primary: #d8463a;
+    --primary-dark: #a52e26;
+    --primary-soft: #f08a78;
+    --bg: rgba(255, 255, 255, .46);
+    --white: #ffffff;
+    --text: #2b2022;
+    --text-light: #7c6d70;
+    --danger: #e8493f;
+    --success: #1f9d68;
+    --warning: #e39c2a;
+    --border: rgba(255, 255, 255, .62);
+    --chat-bg: transparent;
+    --glass-hi: rgba(255, 255, 255, .80);
+    --glass-mid: rgba(255, 255, 255, .58);
+    --glass-lo: rgba(255, 255, 255, .34);
+    --edge: rgba(255, 255, 255, .78);
+    --edge-soft: rgba(255, 255, 255, .32);
+    --blur: saturate(180%) blur(22px);
+    --blur-soft: saturate(160%) blur(14px);
+    --shadow-1: 0 6px 20px rgba(120, 52, 46, .10);
+    --shadow-2: 0 14px 38px rgba(120, 52, 46, .16);
+    --shadow-3: 0 26px 70px rgba(96, 38, 38, .26);
+    --r-sm: 14px;
+    --r-md: 20px;
+    --r-lg: 26px;
+    --r-xl: 32px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+    height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden;
+    color: var(--text); background: #fdf2f0;
+    -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+}
+body::before {
+    content: ''; position: fixed; inset: -18%; z-index: -2;
+    background:
+        radial-gradient(38% 34% at 74% 8%, #ff9c86 0%, rgba(255, 156, 134, 0) 62%),
+        radial-gradient(42% 38% at 12% 18%, #ffdcb8 0%, rgba(255, 220, 184, 0) 64%),
+        radial-gradient(46% 42% at 90% 72%, #ff819d 0%, rgba(255, 129, 157, 0) 62%),
+        radial-gradient(44% 44% at 14% 94%, #a98cff 0%, rgba(169, 140, 255, 0) 66%),
+        linear-gradient(160deg, #fff8f4 0%, #ffe9ef 46%, #efe9ff 100%);
+    filter: blur(20px) saturate(118%);
+    animation: aurora 30s ease-in-out infinite alternate;
+}
+body::after {
+    content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    opacity: .26; mix-blend-mode: soft-light;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.55'/%3E%3C/svg%3E");
+}
+@keyframes aurora {
+    0% { transform: translate3d(0, 0, 0) scale(1.02); }
+    50% { transform: translate3d(-2%, 2%, 0) scale(1.06); }
+    100% { transform: translate3d(2%, -2%, 0) scale(1.03); }
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(18px) scale(.985); } to { opacity: 1; transform: none; } }
+@keyframes slideInRight { from { opacity: .4; transform: translateX(7%); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(232, 73, 63, .55); } 70% { box-shadow: 0 0 0 14px rgba(232, 73, 63, 0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.hidden { display: none !important; }
+
+.header, .chat-header, .login-box, .contact-item, .drawer, .profile-header, .task-card,
+.chat-input-area, .chat-task-info, .modal-content, .notif-item, .user-card, .manager-list-container {
+    -webkit-backdrop-filter: var(--blur);
+    backdrop-filter: var(--blur);
+}
+
+.ico { width: 22px; height: 22px; display: block; flex-shrink: 0; }
+.ico-sm { width: 18px; height: 18px; }
+
+.btn {
+    position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    background: linear-gradient(165deg, var(--primary-soft) 0%, var(--primary) 45%, var(--primary-dark) 100%);
+    color: #fff; border: 1px solid rgba(255, 255, 255, .30);
+    padding: 13px 22px; border-radius: var(--r-sm); cursor: pointer;
+    font-weight: 700; font-size: 15.5px; letter-spacing: -.1px;
+    transition: transform .18s ease, box-shadow .25s ease, filter .2s ease;
+    box-shadow: 0 8px 22px rgba(180, 60, 48, .26), inset 0 1px 0 rgba(255, 255, 255, .45), inset 0 -1px 0 rgba(0, 0, 0, .10);
+}
+.btn:hover { filter: brightness(1.04); transform: translateY(-1px); }
+.btn:active { transform: translateY(0) scale(.985); }
+.btn:disabled { opacity: .6; cursor: default; transform: none; }
+.btn-ghost, .modal-actions .btn[style*="var(--bg)"] {
+    background: var(--glass-mid) !important; color: var(--text) !important;
+    border: 1px solid var(--edge) !important;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .8), 0 4px 14px rgba(120, 52, 46, .08) !important;
+}
+
+.action-btn {
+    position: relative;
+    background: linear-gradient(165deg, var(--primary-soft), var(--primary) 60%, var(--primary-dark));
+    color: #fff; border: 1px solid rgba(255, 255, 255, .28); border-radius: 50%;
+    width: 48px; height: 48px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; flex-shrink: 0;
+    transition: transform .18s ease, box-shadow .2s ease;
+    box-shadow: 0 8px 20px rgba(180, 60, 48, .28), inset 0 1px 0 rgba(255, 255, 255, .45);
+}
+.action-btn:active { transform: scale(.92); }
+.mic-btn {
+    background: var(--glass-hi); color: var(--primary);
+    border: 1px solid var(--edge);
+    box-shadow: inset 0 1px 0 #fff, 0 6px 16px rgba(120, 52, 46, .12);
+}
+.mic-btn .ico-stop { display: none; }
+.mic-btn.recording { background: linear-gradient(165deg, #f4685c, var(--danger)); color: #fff; border-color: rgba(255, 255, 255, .35); animation: pulse 1.6s infinite; }
+.mic-btn.recording .ico-mic { display: none; }
+.mic-btn.recording .ico-stop { display: block; }
+.mic-btn.busy { opacity: .55; pointer-events: none; }
+
+.input {
+    width: 100%; padding: 14px 16px; border: 1px solid var(--edge);
+    border-radius: var(--r-sm); font-size: 16px; outline: none; color: var(--text);
+    background: rgba(255, 255, 255, .62);
+    box-shadow: inset 0 1px 2px rgba(120, 52, 46, .06), 0 1px 0 rgba(255, 255, 255, .8);
+    transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.input::placeholder { color: #a99a9c; }
+.input:focus { border-color: rgba(216, 70, 58, .55); background: #fff; box-shadow: 0 0 0 4px rgba(216, 70, 58, .12), inset 0 1px 0 #fff; }
+select.input { -webkit-appearance: none; appearance: none; }
+textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
+.form-group { width: 100%; margin-bottom: 18px; }
+.form-group label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 13.5px; color: var(--text-light); }
+
+#login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 22px; }
+.login-box {
+    position: relative; width: 100%; max-width: 390px; padding: 38px 26px 30px;
+    border-radius: var(--r-xl); display: flex; flex-direction: column; align-items: center;
+    background: linear-gradient(158deg, rgba(255,255,255,.82) 0%, rgba(255,255,255,.46) 48%, rgba(255,255,255,.62) 100%);
+    border: 1px solid var(--edge);
+    box-shadow: var(--shadow-3), inset 0 1px 0 #fff, inset 0 26px 44px -28px rgba(255, 255, 255, .95);
+    animation: slideUp .7s cubic-bezier(.22, 1, .36, 1);
+}
+.login-box img { width: 84px; height: 84px; object-fit: contain; margin-bottom: 16px; padding: 10px; border-radius: 24px; background: rgba(255, 255, 255, .75); border: 1px solid var(--edge); box-shadow: 0 10px 24px rgba(120, 52, 46, .12), inset 0 1px 0 #fff; }
+.login-box h2 { text-align: center; font-size: 21px; font-weight: 800; color: var(--primary-dark); margin-bottom: 4px; }
+.login-box h4 { text-align: center; font-size: 12.5px; font-weight: 400; color: var(--text-light); margin-bottom: 26px; }
+
+#contacts-view, #profile-view, #chat-view, #admin-view { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.header, .chat-header {
+    position: relative; z-index: 10; display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; padding-top: calc(12px + env(safe-area-inset-top)); color: var(--text);
+    background: linear-gradient(180deg, rgba(255, 255, 255, .72), rgba(255, 255, 255, .48));
+    border-bottom: 1px solid var(--edge);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .6), 0 8px 24px rgba(120, 52, 46, .07);
+}
+.header-info { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.header-info img { width: 38px; height: 38px; object-fit: contain; padding: 4px; border-radius: 12px; background: rgba(255, 255, 255, .8); border: 1px solid var(--edge); }
+.header-info-text { min-width: 0; }
+.header-info-text h3 { font-size: 16.5px; font-weight: 800; color: var(--text); line-height: 1.3; }
+.header-info-text span { display: block; font-size: 11.5px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 42vw; }
+
+.bell-btn, .menu-btn { display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; color: var(--primary); transition: transform .18s ease, background .2s; }
+.bell-btn { position: relative; background: var(--glass-mid); border: 1px solid var(--edge); margin-left: 8px; box-shadow: inset 0 1px 0 #fff, 0 4px 12px rgba(120, 52, 46, .08); }
+.menu-btn { background: transparent; border: none; }
+.bell-btn:active, .menu-btn:active { transform: scale(.92); }
+.bell-badge { position: absolute; top: 2px; left: 2px; min-width: 15px; height: 15px; background: linear-gradient(180deg, #f4685c, var(--danger)); border: 2px solid #fff; border-radius: 50%; display: none; box-shadow: 0 2px 6px rgba(232, 73, 63, .5); }
+
+.search-container { padding: 12px 16px 6px; }
+.search-input { width: 100%; padding: 12px 18px; border-radius: 999px; border: 1px solid var(--edge); background: rgba(255, 255, 255, .58); font-size: 14.5px; color: var(--text); outline: none; box-shadow: inset 0 1px 2px rgba(120, 52, 46, .05), inset 0 1px 0 #fff; transition: box-shadow .25s, background .25s; }
+.search-input:focus { background: rgba(255, 255, 255, .85); border-color: rgba(216, 70, 58, .45); box-shadow: 0 0 0 4px rgba(216, 70, 58, .1); }
+
+.contact-list { flex: 1; overflow-y: auto; padding: 10px 14px 24px; -webkit-overflow-scrolling: touch; }
+.contact-item { position: relative; display: flex; align-items: center; padding: 12px 14px; margin-bottom: 10px; border-radius: var(--r-lg); cursor: pointer; background: linear-gradient(160deg, rgba(255,255,255,.74), rgba(255,255,255,.44)); border: 1px solid var(--edge); box-shadow: var(--shadow-1), inset 0 1px 0 #fff; transition: transform .22s, box-shadow .25s; animation: slideUp .45s cubic-bezier(.22, 1, .36, 1) both; }
+.contact-item:active { transform: translateY(-2px) scale(1.008); background: linear-gradient(160deg, rgba(255,255,255,.88), rgba(255,255,255,.6)); box-shadow: var(--shadow-2), inset 0 1px 0 #fff; }
+.avatar { position: relative; width: 50px; height: 50px; border-radius: 50%; flex-shrink: 0; margin-left: 13px; display: flex; align-items: center; justify-content: center; font-size: 19px; font-weight: 700; color: #fff; background: linear-gradient(155deg, var(--primary-soft) 0%, var(--primary) 52%, var(--primary-dark) 100%); border: 1px solid rgba(255, 255, 255, .5); box-shadow: 0 6px 16px rgba(180, 60, 48, .28), inset 0 1px 0 rgba(255, 255, 255, .45); }
+.contact-info { flex: 1; overflow: hidden; }
+.contact-name { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-weight: 700; font-size: 15.5px; margin-bottom: 3px; color: var(--text); }
+.contact-role { font-size: 11px; font-weight: 700; color: var(--primary); background: rgba(216, 70, 58, .10); border: 1px solid rgba(216, 70, 58, .16); padding: 3px 9px; border-radius: 999px; }
+.contact-last-msg { font-size: 12.5px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.drawer-overlay { position: fixed; inset: 0; background: rgba(50, 22, 22, .28); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); z-index: 200; display: none; animation: fadeIn .3s; }
+.drawer-overlay.show { display: block; }
+.drawer { position: fixed; top: 0; right: -320px; width: 300px; height: 100%; z-index: 201; display: flex; flex-direction: column; background: rgba(255, 255, 255, .70); border-left: 1px solid var(--edge); border-radius: var(--r-xl) 0 0 var(--r-xl); box-shadow: -18px 0 60px rgba(96, 38, 38, .20); transition: right .38s cubic-bezier(.22, 1, .36, 1); }
+.drawer.open { right: 0; }
+.drawer-header { display: flex; align-items: center; gap: 14px; padding: 26px 20px; border-radius: var(--r-xl) 0 0 0; color: #fff; background: linear-gradient(150deg, var(--primary-soft) 0%, var(--primary) 50%, var(--primary-dark) 100%); }
+.drawer-header img { width: 44px; height: 44px; object-fit: contain; padding: 5px; border-radius: 14px; background: rgba(255, 255, 255, .92); }
+.drawer-user-info { display: flex; flex-direction: column; min-width: 0; }
+.drawer-user-name { font-weight: 700; font-size: 16px; }
+.drawer-user-role { font-size: 12.5px; opacity: .88; margin-top: 2px; }
+.drawer-menu { flex: 1; padding: 14px 12px; overflow-y: auto; }
+.drawer-item { width: 100%; display: flex; align-items: center; gap: 12px; padding: 14px 16px; margin-bottom: 6px; font-size: 14.5px; font-weight: 600; text-align: right; color: var(--text); background: rgba(255, 255, 255, .40); border: 1px solid var(--edge-soft); border-radius: var(--r-sm); cursor: pointer; transition: background .2s, transform .15s; }
+.drawer-item:hover { background: rgba(255, 255, 255, .78); }
+.drawer-item:active { transform: scale(.985); }
+.drawer-item .ico { color: var(--primary); }
+.drawer-item.danger { color: var(--danger); }
+.drawer-item.danger .ico { color: var(--danger); }
+.drawer-item .badge { margin-right: auto; display: none; padding: 2px 9px; font-size: 11.5px; font-weight: 700; color: #fff; background: var(--danger); border-radius: 999px; }
+
+#profile-view { animation: slideInRight .3s ease; }
+.profile-header { display: flex; flex-direction: column; align-items: center; padding: 24px 20px 22px; margin: 12px 14px 0; border-radius: var(--r-xl); background: linear-gradient(160deg, rgba(255,255,255,.78), rgba(255,255,255,.44)); border: 1px solid var(--edge); box-shadow: var(--shadow-2), inset 0 1px 0 #fff; }
+.profile-avatar { width: 86px; height: 86px; margin-bottom: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: 700; color: #fff; background: linear-gradient(155deg, var(--primary-soft) 0%, var(--primary) 52%, var(--primary-dark) 100%); border: 1px solid rgba(255, 255, 255, .45); box-shadow: 0 12px 28px rgba(180, 60, 48, .30), inset 0 2px 0 rgba(255, 255, 255, .4); }
+.profile-name { font-size: 19px; font-weight: 800; color: var(--text); }
+.profile-role { margin: 4px 0 18px; font-size: 13px; font-weight: 700; color: var(--primary); }
+.profile-tasks { flex: 1; overflow-y: auto; padding: 14px 14px 26px; }
+.task-card { position: relative; padding: 16px; margin-bottom: 11px; border-radius: var(--r-md); cursor: pointer; background: linear-gradient(160deg, rgba(255,255,255,.72), rgba(255,255,255,.42)); border: 1px solid var(--edge); box-shadow: var(--shadow-1), inset 0 1px 0 #fff; transition: transform .22s, box-shadow .25s; animation: slideUp .4s ease both; }
+.task-card::before { content: ''; position: absolute; top: 14px; bottom: 14px; right: 0; width: 3px; border-radius: 3px; background: linear-gradient(180deg, var(--primary-soft), var(--primary-dark)); }
+.task-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-2), inset 0 1px 0 #fff; }
+.task-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.task-title { font-weight: 700; font-size: 15px; color: var(--text); }
+.badge-status { padding: 4px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 3px 8px rgba(0, 0, 0, .10); }
+
+#chat-view { animation: slideInRight .3s ease; }
+.chat-header { padding-left: 14px; padding-right: 14px; }
+.chat-header-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.chat-header h3 { font-size: 16px !important; font-weight: 700 !important; color: var(--text) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
+.back-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border: 1px solid var(--edge); border-radius: 50%; background: var(--glass-mid); color: var(--primary); cursor: pointer; box-shadow: inset 0 1px 0 #fff; transition: transform .18s; flex-shrink: 0; }
+.back-btn:active { transform: scale(.92); }
+.delete-btn { display: none; padding: 7px 14px; font-size: 12.5px; font-weight: 700; color: #fff; background: linear-gradient(180deg, #f4685c, var(--danger)); border: 1px solid rgba(255, 255, 255, .3); border-radius: 999px; cursor: pointer; box-shadow: 0 6px 16px rgba(232, 73, 63, .28); }
+
+.chat-task-info { margin: 10px 14px 0; padding: 12px 15px; border-radius: var(--r-md); background: linear-gradient(160deg, rgba(255,255,255,.68), rgba(255,255,255,.40)); border: 1px solid var(--edge); box-shadow: var(--shadow-1), inset 0 1px 0 #fff; }
+.chat-task-info p { font-size: 13px; line-height: 1.75; color: var(--text); margin-bottom: 6px; }
+.chat-task-info .status { font-size: 11.5px; font-weight: 600; color: var(--text-light); }
+
+.status-actions { display: flex; gap: 6px; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(120, 52, 46, .10); flex-wrap: wrap; }
+.status-chip { padding: 6px 12px; font-size: 11.5px; font-weight: 700; border-radius: 999px; cursor: pointer; border: 1px solid var(--edge); background: rgba(255, 255, 255, .55); color: var(--text); transition: all .18s; }
+.status-chip:hover { background: rgba(255, 255, 255, .85); transform: translateY(-1px); }
+.status-chip.active { background: linear-gradient(180deg, var(--primary-soft), var(--primary)); color: #fff; border-color: transparent; box-shadow: 0 4px 12px rgba(216, 70, 58, .3); }
+.status-chip.active.done { background: linear-gradient(180deg, #48c98d, var(--success)); box-shadow: 0 4px 12px rgba(31, 157, 104, .3); }
+.status-chip.active.late { background: linear-gradient(180deg, #f4685c, var(--danger)); box-shadow: 0 4px 12px rgba(232, 73, 63, .3); }
+.status-chip.active.cancel { background: linear-gradient(180deg, #9c9c9c, #6e6e6e); }
+
+.messages-area { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 16px 14px 8px; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
+.message { max-width: 84%; padding: 10px 14px; border-radius: var(--r-md); font-size: 14.5px; line-height: 1.75; word-wrap: break-word; animation: slideUp .3s cubic-bezier(.22, 1, .36, 1); }
+.message.me { align-self: flex-start; color: #fff; border-top-right-radius: 7px; border: 1px solid rgba(255, 255, 255, .28); background: linear-gradient(160deg, #e4604f 0%, var(--primary) 55%, var(--primary-dark) 100%); box-shadow: 0 10px 24px rgba(180, 60, 48, .26), inset 0 1px 0 rgba(255, 255, 255, .35); }
+.message.other { align-self: flex-end; color: var(--text); border-top-left-radius: 7px; border: 1px solid var(--edge); background: linear-gradient(160deg, rgba(255,255,255,.86), rgba(255,255,255,.58)); box-shadow: 0 8px 20px rgba(120, 52, 46, .10), inset 0 1px 0 #fff; }
+
+.audio-player { display: flex; align-items: center; gap: 8px; min-width: 200px; padding: 2px 0; flex-wrap: wrap; }
+.play-btn, .download-btn { display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; transition: transform .18s; }
+.play-btn { color: #fff; background: rgba(255, 255, 255, .22); border: 1px solid rgba(255, 255, 255, .35); }
+.message.other .play-btn { color: var(--primary); background: rgba(216, 70, 58, .08); border-color: rgba(216, 70, 58, .18); }
+.play-btn:active, .download-btn:active { transform: scale(.9); }
+.play-btn .ico-pause, .play-btn .ico-load { display: none; }
+.play-btn.is-playing .ico-play { display: none; }
+.play-btn.is-playing .ico-pause { display: block; }
+.play-btn.is-loading .ico-play, .play-btn.is-loading .ico-pause { display: none; }
+.play-btn.is-loading .ico-load { display: block; animation: spin 1s linear infinite; }
+.download-btn { color: #fff; background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .3); }
+.message.other .download-btn { color: var(--primary); background: rgba(255, 255, 255, .7); border-color: var(--edge); }
+.transcribe-btn { display: inline-flex; align-items: center; gap: 5px; padding: 7px 12px; font-size: 11.5px; font-weight: 700; color: #fff; background: rgba(255, 255, 255, .20); border: 1px solid rgba(255, 255, 255, .32); border-radius: 999px; cursor: pointer; }
+.message.other .transcribe-btn { color: var(--warning); background: rgba(227, 156, 42, .12); border-color: rgba(227, 156, 42, .25); }
+.transcription-box { width: 100%; margin-top: 9px; padding-top: 9px; font-size: 12.5px; line-height: 1.8; font-style: italic; color: rgba(255, 255, 255, .88); border-top: 1px dashed rgba(255, 255, 255, .35); }
+.message.other .transcription-box { color: var(--text-light); border-top-color: rgba(120, 52, 46, .16); }
+
+.chat-input-area { display: flex; align-items: center; gap: 8px; width: auto; margin: 6px 12px; margin-bottom: calc(12px + env(safe-area-inset-bottom)); padding: 7px; border-radius: 999px; background: linear-gradient(180deg, rgba(255,255,255,.78), rgba(255,255,255,.55)); border: 1px solid var(--edge); box-shadow: var(--shadow-2), inset 0 1px 0 #fff; }
+.chat-input { flex: 1; min-width: 0; padding: 10px 8px; font-size: 14.5px; color: var(--text); background: transparent; border: none; outline: none; }
+.chat-input::placeholder { color: #a99a9c; }
+
+.modal-overlay { position: fixed; inset: 0; z-index: 300; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(50, 22, 22, .30); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); animation: fadeIn .25s ease; }
+.modal-content { width: 100%; max-width: 420px; max-height: 90vh; overflow-y: auto; padding: 22px; border-radius: var(--r-xl); background: linear-gradient(160deg, rgba(255,255,255,.90), rgba(255,255,255,.68)); border: 1px solid var(--edge); box-shadow: var(--shadow-3), inset 0 1px 0 #fff; animation: slideUp .42s cubic-bezier(.22, 1, .36, 1); }
+.modal-content h3 { margin-bottom: 18px; text-align: center; font-size: 18px; font-weight: 800; color: var(--text); }
+.modal-actions { display: flex; gap: 10px; margin-top: 22px; }
+.modal-actions .btn { flex: 1; }
+
+#notif-modal .modal-content { width: 100%; height: 100%; max-width: 100%; max-height: 100%; padding: 0; border-radius: 0; border: none; display: flex; flex-direction: column; background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.80)); box-shadow: none; }
+#notif-list-container { flex: 1; overflow-y: auto; padding: 8px 12px 24px; }
+.notif-item { display: flex; flex-direction: column; gap: 5px; padding: 14px 16px; margin-bottom: 9px; border-radius: var(--r-md); cursor: pointer; background: linear-gradient(160deg, rgba(255,255,255,.82), rgba(255,255,255,.55)); border: 1px solid var(--edge); box-shadow: var(--shadow-1), inset 0 1px 0 #fff; }
+.notif-item.danger { border-right: 3px solid var(--danger); }
+.notif-item.info { border-right: 3px solid var(--primary); }
+.notif-item.warn { border-right: 3px solid var(--warning); }
+.notif-item .n-title { font-weight: 700; font-size: 14px; color: var(--text); }
+.notif-item .n-msg { font-size: 12.5px; color: var(--text-light); }
+
+#admin-view { animation: slideInRight .3s ease; }
+.admin-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px; padding-top: calc(14px + env(safe-area-inset-top)); color: #fff; background: linear-gradient(150deg, var(--primary-soft) 0%, var(--primary) 48%, var(--primary-dark) 100%); border-bottom: 1px solid rgba(255, 255, 255, .25); box-shadow: 0 10px 30px rgba(150, 50, 42, .22); }
+.admin-header .back-btn { color: #fff; background: rgba(255, 255, 255, .18); border-color: rgba(255, 255, 255, .32); }
+.admin-header h3 { font-size: 16px; font-weight: 700; margin: 0; color: #fff; }
+#add-user-btn { margin-right: auto; padding: 9px 15px !important; font-size: 13px !important; color: var(--primary-dark) !important; background: rgba(255, 255, 255, .92) !important; border: 1px solid rgba(255, 255, 255, .8) !important; border-radius: 999px !important; box-shadow: 0 6px 16px rgba(0, 0, 0, .12) !important; }
+
+.admin-list { flex: 1; overflow-y: auto; padding: 14px 14px 26px; }
+.user-card { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 15px; margin-bottom: 10px; border-radius: var(--r-md); background: linear-gradient(160deg, rgba(255,255,255,.80), rgba(255,255,255,.52)); border: 1px solid var(--edge); box-shadow: var(--shadow-1), inset 0 1px 0 #fff; }
+.user-info { display: flex; flex-direction: column; gap: 3px; }
+.user-name { font-weight: 700; font-size: 14.5px; color: var(--text); }
+.user-role { font-size: 11.5px; color: var(--text-light); }
+.user-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.user-btn { padding: 7px 12px; font-size: 11.5px; font-weight: 700; color: #fff; border: 1px solid rgba(255, 255, 255, .28); border-radius: 999px; cursor: pointer; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 4px 10px rgba(0, 0, 0, .08); }
+.user-btn:active { transform: scale(.96); }
+.btn-edit { color: #4a3405; background: linear-gradient(180deg, #f7c964, var(--warning)); }
+.btn-pass { background: linear-gradient(180deg, var(--primary-soft), var(--primary)); }
+.btn-toggle { background: linear-gradient(180deg, #f4685c, var(--danger)); }
+.btn-toggle.active { background: linear-gradient(180deg, #48c98d, var(--success)); }
+
+.manager-list-container { max-height: 160px; overflow-y: auto; padding: 12px 14px; border-radius: var(--r-sm); background: rgba(255, 255, 255, .55); border: 1px solid var(--edge); }
+.manager-list-container label { display: flex; align-items: center; gap: 9px; margin-bottom: 9px; font-size: 14px; cursor: pointer; }
+.manager-list-container input[type="checkbox"] { accent-color: var(--primary); width: 17px; height: 17px; }
+
+.notif-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 20px; padding-top: calc(18px + env(safe-area-inset-top)); color: #fff; background: linear-gradient(150deg, var(--primary-soft) 0%, var(--primary) 52%, var(--primary-dark) 100%); }
+.notif-head h3 { margin: 0; color: #fff; font-size: 17px; font-weight: 800; }
+.close-x { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; color: #fff; background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .32); cursor: pointer; }
+.empty-note { text-align: center; color: var(--text-light); font-size: 13.5px; padding: 26px 10px; }
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --text: #f6eeee; --text-light: #b9a9ac;
+        --bg: rgba(255, 255, 255, .08); --border: rgba(255, 255, 255, .16);
+        --glass-hi: rgba(255, 255, 255, .16); --glass-mid: rgba(255, 255, 255, .10);
+        --glass-lo: rgba(255, 255, 255, .06);
+        --edge: rgba(255, 255, 255, .18); --edge-soft: rgba(255, 255, 255, .10);
+        --shadow-1: 0 6px 20px rgba(0, 0, 0, .32);
+        --shadow-2: 0 14px 38px rgba(0, 0, 0, .42);
+        --shadow-3: 0 26px 70px rgba(0, 0, 0, .55);
     }
-    
-    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', sans-serif; }
-    body { background-color: var(--bg); color: var(--text); height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
-    .hidden { display: none !important; }
-    
-    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-    @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }
-    @keyframes pulse { 0% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.1); } 100% { opacity: 1; transform: scale(1); } }
-
-    .btn { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: bold; font-size: 16px; transition: all 0.3s ease; box-shadow: 0 4px 6px rgba(192, 57, 43, 0.2); }
-    .btn:hover { background: var(--primary-dark); transform: translateY(-2px); box-shadow: 0 6px 8px rgba(192, 57, 43, 0.3); }
-    .btn:active { transform: translateY(0); }
-    
-    .input { width: 100%; padding: 14px; border: 1px solid var(--border); border-radius: 10px; font-size: 16px; outline: none; transition: border-color 0.3s; background: var(--bg); }
-    .input:focus { border-color: var(--primary); background: var(--white); box-shadow: 0 0 0 3px rgba(192, 57, 43, 0.1); }
-    
-    #login-view { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); }
-    .login-box { background: var(--white); padding: 40px 30px; border-radius: 24px; box-shadow: 0 15px 30px rgba(0,0,0,0.2); width: 100%; max-width: 400px; animation: slideUp 0.6s ease; display: flex; flex-direction: column; align-items: center; }
-    .login-box img { width: 100px; height: 100px; margin-bottom: 15px; object-fit: contain; }
-    .login-box h2 { text-align: center; margin-bottom: 5px; font-size: 22px; color: var(--primary); font-weight: 800; }
-    .login-box h4 { text-align: center; margin-bottom: 25px; font-size: 13px; color: var(--text-light); font-weight: normal; }
-    .form-group { width: 100%; margin-bottom: 20px; }
-    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; font-size: 14px; color: var(--text); }
-    
-    #contacts-view { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--bg); }
-    .header { background: var(--white); color: var(--text); padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10; border-bottom: 1px solid var(--border); }
-    .header-info { display: flex; align-items: center; gap: 10px; }
-    .header-info img { width: 35px; height: 35px; object-fit: contain; }
-    .header-info-text h3 { font-size: 18px; margin-bottom: 2px; color: var(--primary-dark); }
-    .header-info-text span { font-size: 12px; color: var(--text-light); }
-    
-    .menu-btn { background: none; border: none; color: var(--primary); font-size: 28px; cursor: pointer; padding: 0 5px; display: flex; align-items: center; transition: transform 0.2s; }
-    .menu-btn:active { transform: scale(0.9); }
-    
-    .bell-btn { background: var(--bg); color: var(--primary); border: 1px solid var(--border); border-radius: 50%; width: 40px; height: 40px; font-size: 20px; cursor: pointer; position: relative; display: flex; justify-content: center; align-items: center; margin-left: 12px; transition: all 0.2s; }
-    .bell-btn:active { background: #e1e4e8; }
-    .bell-badge { position: absolute; top: -2px; right: -2px; background: var(--danger); width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--white); display: none; animation: fadeIn 0.3s; }
-
-    .search-container { padding: 15px 20px; background: var(--bg); }
-    .search-input { width: 100%; padding: 12px 20px; border-radius: 30px; border: 1px solid var(--border); background: var(--white); font-size: 15px; outline: none; box-shadow: 0 2px 5px rgba(0,0,0,0.02); transition: box-shadow 0.3s; }
-    .search-input:focus { box-shadow: 0 4px 10px rgba(0,0,0,0.05); border-color: var(--primary); }
-    
-    .contact-list { flex: 1; overflow-y: auto; padding: 10px 20px; }
-    .contact-item { background: var(--white); display: flex; align-items: center; padding: 15px; margin-bottom: 12px; border-radius: 16px; cursor: pointer; transition: all 0.3s; box-shadow: 0 2px 8px rgba(0,0,0,0.04); animation: slideUp 0.4s ease; }
-    .contact-item:hover { transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.08); }
-    .avatar { width: 55px; height: 55px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; display: flex; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; margin-left: 15px; flex-shrink: 0; box-shadow: 0 4px 8px rgba(192, 57, 43, 0.2); }
-    .contact-info { flex: 1; overflow: hidden; }
-    .contact-name { font-weight: bold; font-size: 17px; margin-bottom: 4px; display: flex; justify-content: space-between; color: var(--text); }
-    .contact-role { font-size: 12px; color: var(--primary); font-weight: bold; }
-    .contact-last-msg { font-size: 13px; color: var(--text-light); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .drawer-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 200; display: none; animation: fadeIn 0.3s; }
-    .drawer-overlay.show { display: block; }
-    .drawer { position: fixed; top: 0; right: -300px; width: 300px; height: 100%; background: var(--white); z-index: 201; transition: right 0.3s cubic-bezier(0.82, 0.085, 0.395, 0.895); box-shadow: -5px 0 15px rgba(0,0,0,0.1); display: flex; flex-direction: column; border-top-left-radius: 24px; border-bottom-left-radius: 24px; }
-    .drawer.open { right: 0; }
-    .drawer-header { padding: 25px 20px; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; display: flex; align-items: center; gap: 15px; border-top-left-radius: 24px; }
-    .drawer-avatar { width: 55px; height: 55px; border-radius: 50%; background: var(--white); color: var(--primary); display: flex; justify-content: center; align-items: center; font-size: 22px; font-weight: bold; }
-    .drawer-user-info { display: flex; flex-direction: column; }
-    .drawer-user-name { font-weight: bold; font-size: 17px; }
-    .drawer-user-role { font-size: 13px; opacity: 0.9; }
-    .drawer-menu { flex: 1; padding: 15px 10px; overflow-y: auto; }
-    .drawer-item { width: 100%; text-align: right; background: none; border: none; padding: 16px 20px; font-size: 16px; cursor: pointer; border-radius: 12px; display: flex; align-items: center; gap: 15px; color: var(--text); transition: all 0.2s; margin-bottom: 5px; }
-    .drawer-item:hover { background: var(--bg); }
-    .drawer-item.danger { color: var(--danger); }
-    .drawer-item .badge { background: var(--danger); color: white; border-radius: 12px; padding: 2px 10px; font-size: 12px; margin-right: auto; display: none; }
-
-    #profile-view { flex: 1; display: flex; flex-direction: column; min-height: 0; background: var(--bg); animation: slideInRight 0.3s ease; }
-    .profile-header { background: var(--white); padding: 30px 20px; display: flex; flex-direction: column; align-items: center; border-bottom: 1px solid var(--border); border-bottom-left-radius: 24px; border-bottom-right-radius: 24px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
-    .profile-avatar { width: 90px; height: 90px; border-radius: 50%; background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; display: flex; justify-content: center; align-items: center; font-size: 36px; font-weight: bold; margin-bottom: 15px; box-shadow: 0 6px 12px rgba(192, 57, 43, 0.3); }
-    .profile-name { font-size: 22px; font-weight: bold; color: var(--text); }
-    .profile-role { font-size: 15px; color: var(--primary); font-weight: bold; margin-bottom: 20px; }
-    .profile-tasks { flex: 1; overflow-y: auto; padding: 20px; }
-    .task-card { background: var(--white); border-radius: 16px; padding: 18px; margin-bottom: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); cursor: pointer; transition: all 0.3s; border-right: 5px solid var(--primary); animation: slideUp 0.4s ease; }
-    .task-card:hover { transform: translateY(-3px); box-shadow: 0 6px 15px rgba(0,0,0,0.08); }
-    .task-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-    .task-title { font-weight: bold; font-size: 16px; color: var(--text); }
-    .badge-status { padding: 5px 12px; border-radius: 20px; color: white; font-size: 12px; font-weight: bold; }
-    
-    #chat-view { flex: 1; display: flex; flex-direction: column; background: var(--chat-bg); min-height: 0; animation: slideInRight 0.3s ease; }
-    .chat-header { background: var(--white); color: var(--text); padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 10; }
-    .chat-header-right { display: flex; align-items: center; gap: 15px; }
-    .back-btn { background: none; border: none; font-size: 26px; cursor: pointer; color: var(--primary); padding: 0 10px; transition: transform 0.2s; }
-    .back-btn:active { transform: scale(0.9); }
-    .delete-btn { background: var(--danger); color: white; border: none; padding: 8px 15px; border-radius: 10px; font-size: 13px; font-weight: bold; cursor: pointer; display: none; transition: background 0.2s; }
-    .delete-btn:hover { background: #c0392b; }
-    .chat-task-info { padding: 15px 20px; background: var(--white); border-bottom: 1px solid var(--border); }
-    .chat-task-info p { font-size: 14px; margin-bottom: 8px; color: var(--text); }
-    .chat-task-info .status { color: var(--primary); font-weight: bold; font-size: 13px; }
-    
-    .messages-area { flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 12px; }
-    .message { max-width: 85%; padding: 12px 16px; border-radius: 16px; font-size: 15px; word-wrap: break-word; box-shadow: 0 1px 3px rgba(0,0,0,0.1); animation: slideUp 0.3s ease; }
-    .message.me { background: var(--primary); color: white; align-self: flex-start; border-top-right-radius: 4px; }
-    .message.other { background: var(--white); color: var(--text); align-self: flex-end; border-top-left-radius: 4px; }
-    
-    .audio-player { display: flex; align-items: center; gap: 8px; min-width: 220px; padding: 5px 0; flex-wrap: wrap; }
-    .play-btn { background: var(--white); color: var(--primary); border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.1); transition: transform 0.2s; }
-    .play-btn:active { transform: scale(0.9); }
-    .download-btn { background: rgba(255,255,255,0.2); color: var(--white); border: none; width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; text-decoration: none; font-size: 16px; transition: background 0.2s; }
-    .download-btn:hover { background: rgba(255,255,255,0.4); }
-    .message.other .download-btn { background: var(--bg); color: var(--primary); }
-    .message.other .download-btn:hover { background: #e1e4e8; }
-    
-    .transcribe-btn { background: #f39c12; color: white; border: none; border-radius: 8px; padding: 5px 10px; font-size: 12px; cursor: pointer; font-weight: bold; display: flex; align-items: center; gap: 5px; transition: opacity 0.2s; }
-    .transcribe-btn:hover { opacity: 0.8; }
-    .transcription-box { width: 100%; margin-top: 8px; padding-top: 8px; border-top: 1px dashed rgba(255,255,255,0.3); font-size: 13px; color: rgba(255,255,255,0.9); font-style: italic; }
-    .message.other .transcription-box { border-top-color: var(--border); color: var(--text-light); }
-    
-    .chat-input-area { background: var(--white); padding: 15px 20px; padding-bottom: calc(15px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 10px; border-top: 1px solid var(--border); width: 100%; }
-    .chat-input { flex: 1; min-width: 0; border-radius: 24px; padding: 12px 20px; border: 1px solid var(--border); background: var(--bg); outline: none; font-size: 15px; transition: border-color 0.3s; }
-    .chat-input:focus { border-color: var(--primary); background: var(--white); }
-    .action-btn { background: var(--primary); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; display: flex; justify-content: center; align-items: center; cursor: pointer; flex-shrink: 0; font-size: 20px; box-shadow: 0 4px 8px rgba(192, 57, 43, 0.2); transition: all 0.2s; }
-    .action-btn:active { transform: scale(0.9); }
-    .mic-btn { background: var(--bg); color: var(--primary); box-shadow: none; border: 1px solid var(--border); }
-    .mic-btn.recording { background: var(--danger); color: white; animation: pulse 1s infinite; border: none; }
-    
-    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; z-index: 300; animation: fadeIn 0.3s; }
-    .modal-content { background: var(--white); width: 90%; max-width: 420px; padding: 25px; border-radius: 20px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 40px rgba(0,0,0,0.2); animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-    .modal-content h3 { margin-bottom: 20px; text-align: center; color: var(--primary-dark); font-size: 20px; }
-    .modal-actions { display: flex; gap: 12px; margin-top: 25px; }
-
-    #notif-modal .modal-content { 
-        width: 100%; height: 100%; max-width: 100%; max-height: 100%; 
-        border-radius: 0; padding: 0; display: flex; flex-direction: column; 
-        animation: slideUp 0.3s ease;
+    body { background: #170d10; }
+    body::before {
+        background:
+            radial-gradient(38% 34% at 74% 8%, #7a2822 0%, rgba(122, 40, 34, 0) 62%),
+            radial-gradient(42% 38% at 12% 18%, #5c2a3a 0%, rgba(92, 42, 58, 0) 64%),
+            radial-gradient(46% 42% at 90% 72%, #8a2f4a 0%, rgba(138, 47, 74, 0) 62%),
+            radial-gradient(44% 44% at 14% 94%, #322a5e 0%, rgba(50, 42, 94, 0) 66%),
+            linear-gradient(160deg, #1d1114 0%, #170d10 50%, #140f1c 100%);
     }
-    #notif-list-container { flex: 1; overflow-y: auto; }
-
-    .notif-item { padding: 15px 20px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; flex-direction: column; gap: 6px; transition: background 0.2s; }
-    .notif-item:hover { background: var(--bg); }
-    .notif-item.danger { border-right: 5px solid var(--danger); }
-    .notif-item.info { border-right: 5px solid var(--primary); }
-    .notif-item .n-title { font-weight: bold; font-size: 15px; color: var(--text); }
-    .notif-item .n-msg { font-size: 13px; color: var(--text-light); }
-    
-    #admin-view { flex: 1; display: flex; flex-direction: column; background: var(--bg); min-height: 0; animation: slideInRight 0.3s ease; }
-    .admin-header { background: var(--primary-dark); color: white; padding: 20px; display: flex; align-items: center; gap: 15px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    .admin-list { flex: 1; overflow-y: auto; padding: 20px; }
-    .user-card { background: var(--white); border-radius: 16px; padding: 18px; margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.2s; }
-    .user-card:hover { transform: translateY(-2px); }
-    .user-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-    .user-btn { border: none; padding: 8px 12px; border-radius: 8px; font-size: 12px; cursor: pointer; font-weight: bold; color: white; transition: opacity 0.2s; }
-    .user-btn:hover { opacity: 0.8; }
-    .btn-edit { background: var(--warning); color: #333; }
-    .btn-pass { background: var(--primary); }
-    .btn-toggle { background: var(--danger); }
-    .btn-toggle.active { background: var(--success); }
-    .manager-list-container { max-height: 150px; overflow-y: auto; border: 1px solid var(--border); padding: 15px; border-radius: 12px; background: var(--bg); }
-    .manager-list-container label { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; font-size: 15px; cursor: pointer; }
+    .header, .chat-header { background: linear-gradient(180deg, rgba(40, 28, 30, .78), rgba(40, 28, 30, .5)); }
+    .login-box, .contact-item, .profile-header, .task-card, .chat-task-info, .modal-content,
+    .notif-item, .user-card, .chat-input-area, .search-input, .input, .manager-list-container {
+        background: linear-gradient(160deg, rgba(255, 255, 255, .14), rgba(255, 255, 255, .06));
+    }
+    .message.other { background: linear-gradient(160deg, rgba(255,255,255,.16), rgba(255,255,255,.08)); }
+    .message.me { background: linear-gradient(160deg, #c14a3c 0%, #a52e26 60%, #86221c 100%); }
+    .drawer { background: rgba(34, 24, 26, .82); }
+    .status-chip { background: rgba(255, 255, 255, .08); }
+    .status-chip:hover { background: rgba(255, 255, 255, .18); }
+    #notif-modal .modal-content { background: linear-gradient(180deg, rgba(34, 24, 26, .95), rgba(26, 18, 20, .92)); }
+}
   </style>
 </head>
 <body>
@@ -194,7 +360,7 @@
   <div id="drawer-overlay" class="drawer-overlay" onclick="closeDrawer()"></div>
   <div id="side-drawer" class="drawer">
       <div class="drawer-header">
-          <img src="logo.png" style="width: 40px; height: 40px; background: white; border-radius: 8px; padding: 2px; object-fit: contain;">
+          <img src="logo.png" alt="لوگو">
           <div class="drawer-user-info">
               <span class="drawer-user-name" id="drawer-name">نام کاربر</span>
               <span class="drawer-user-role" id="drawer-role">نقش</span>
@@ -202,17 +368,21 @@
       </div>
       <div class="drawer-menu">
           <button class="drawer-item" onclick="openNotifModal(); closeDrawer();">
-              <span>🔔 اعلانات</span>
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.6a6 6 0 1 0-12 0c0 3.2-1 4.6-1.6 5.4-.3.4 0 1 .5 1h14.2c.5 0 .8-.6.5-1-.6-.8-1.6-2.2-1.6-5.4Z"/><path d="M9.6 18.3a2.6 2.6 0 0 0 4.8 0"/></svg>
+              <span>اعلانات</span>
               <span class="badge" id="drawer-bell-badge">0</span>
           </button>
           <button class="drawer-item" id="drawer-admin-btn" onclick="openAdminPanel(); closeDrawer();" style="display:none;">
-              <span>👥 مدیریت کاربران</span>
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="9.5" cy="8.5" r="3.2"/><path d="M3.6 19.2c.5-3 2.9-4.7 5.9-4.7s5.4 1.7 5.9 4.7"/><circle cx="17" cy="9.4" r="2.3"/><path d="M16.6 14.3c2.1.2 3.7 1.6 4 3.9"/></svg>
+              <span>مدیریت کاربران</span>
           </button>
           <button class="drawer-item" onclick="handleInstallClick(); closeDrawer();">
-              <span>⬇️ نصب برنامه روی گوشی</span>
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v9"/><path d="M8.4 9.4 12 13l3.6-3.6"/><path d="M5 16.6v1.5A1.9 1.9 0 0 0 6.9 20h10.2a1.9 1.9 0 0 0 1.9-1.9v-1.5"/></svg>
+              <span>نصب برنامه روی گوشی</span>
           </button>
           <button class="drawer-item danger" onclick="handleLogout();">
-              <span>🚪 خروج از حساب</span>
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13.5 5H7.6A1.6 1.6 0 0 0 6 6.6v10.8A1.6 1.6 0 0 0 7.6 19h5.9"/><path d="M11.5 12H21"/><path d="M17.6 8.4 21 12l-3.4 3.6"/></svg>
+              <span>خروج از حساب</span>
           </button>
       </div>
   </div>
@@ -227,8 +397,13 @@
           </div>
       </div>
       <div style="display:flex; align-items:center;">
-          <button class="bell-btn" onclick="openNotifModal()">🔔<div class="bell-badge" id="bell-badge"></div></button>
-          <button class="menu-btn" onclick="toggleDrawer()">☰</button>
+          <button class="bell-btn" onclick="openNotifModal()" aria-label="اعلانات">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.6a6 6 0 1 0-12 0c0 3.2-1 4.6-1.6 5.4-.3.4 0 1 .5 1h14.2c.5 0 .8-.6.5-1-.6-.8-1.6-2.2-1.6-5.4Z"/><path d="M9.6 18.3a2.6 2.6 0 0 0 4.8 0"/></svg>
+              <div class="bell-badge" id="bell-badge"></div>
+          </button>
+          <button class="menu-btn" onclick="toggleDrawer()" aria-label="منو">
+              <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h11"/></svg>
+          </button>
       </div>
     </div>
     <div class="search-container">
@@ -239,13 +414,18 @@
 
   <div id="profile-view" class="hidden">
     <div class="chat-header">
-      <div class="chat-header-right"><button class="back-btn" onclick="closeProfile()">→</button><h3 style="font-size: 18px; font-weight: bold; color: var(--primary);">پروفایل همکار</h3></div>
+      <div class="chat-header-right">
+        <button class="back-btn" onclick="closeProfile()" aria-label="بازگشت">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+        </button>
+        <h3 style="font-size: 16px; font-weight: 700;">پروفایل همکار</h3>
+      </div>
     </div>
     <div class="profile-header">
       <div class="profile-avatar" id="profile-avatar">U</div>
       <div class="profile-name" id="profile-name">نام مخاطب</div>
       <div class="profile-role" id="profile-role">نقش</div>
-      <button class="btn" style="width: 100%; background: var(--primary);" onclick="openCreateModalFromProfile()">+ ارسال موضوع جدید</button>
+      <button class="btn" style="width: 100%;" onclick="openCreateModalFromProfile()">+ ارسال موضوع جدید</button>
     </div>
     <div class="profile-tasks" id="profile-tasks-container"></div>
   </div>
@@ -253,35 +433,46 @@
   <div id="chat-view" class="hidden">
     <div class="chat-header">
       <div class="chat-header-right">
-        <button class="back-btn" onclick="closeChat()">→</button>
-        <h3 id="chat-title" style="font-size: 18px; font-weight: bold; color: var(--primary);">عنوان موضوع</h3>
+        <button class="back-btn" onclick="closeChat()" aria-label="بازگشت">
+          <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+        </button>
+        <h3 id="chat-title">عنوان موضوع</h3>
       </div>
       <button class="delete-btn" id="delete-task-btn" onclick="handleDeleteTask()">حذف</button>
     </div>
     <div class="chat-task-info"><div id="chat-task-details"></div></div>
     <div class="messages-area" id="messages-area"></div>
     <div class="chat-input-area">
-      <button class="action-btn mic-btn" id="mic-btn" onclick="toggleRecording()">🎤</button>
-      <input type="file" id="audio-upload" accept="audio/*" capture style="display:none;" onchange="handleAudioUpload(event)">
+      <button class="action-btn mic-btn" id="mic-btn" onclick="toggleRecording()" aria-label="ضبط صدا">
+        <svg class="ico ico-mic" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4a3 3 0 0 0-3 3v5a3 3 0 0 0 6 0V7a3 3 0 0 0-3-3Z"/><path d="M6.5 11.5a.9.9 0 1 1 1.8 0 3.7 3.7 0 0 0 7.4 0 .9.9 0 1 1 1.8 0 5.5 5.5 0 0 1-4.6 5.4v1.7h1.6a.9.9 0 1 1 0 1.8H9.5a.9.9 0 1 1 0-1.8h1.6v-1.7a5.5 5.5 0 0 1-4.6-5.4Z"/></svg>
+        <svg class="ico ico-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2.6"/></svg>
+      </button>
+      <input type="file" id="audio-upload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(event)">
       <input type="text" id="chat-input" class="chat-input" placeholder="پیام خود را بنویسید...">
-      <button class="action-btn" onclick="sendTextMessage()">➤</button>
+      <button class="action-btn" onclick="sendTextMessage()" aria-label="ارسال">
+        <svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M22 21 1 12 22 3v7l-15 2 15 2z"/></svg>
+      </button>
     </div>
   </div>
 
   <div id="admin-view" class="hidden">
     <div class="admin-header">
-      <button class="back-btn" onclick="closeAdminPanel()" style="color: white;">→</button>
-      <h3 style="font-size: 18px; font-weight: bold;">مدیریت کاربران</h3>
-      <button class="user-btn btn-edit" id="add-user-btn" style="margin-right: auto; background: white; color: var(--primary-dark); font-size: 14px; padding: 10px 15px;" onclick="openAddUserModal()">+ کاربر جدید</button>
+      <button class="back-btn" onclick="closeAdminPanel()" aria-label="بازگشت">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.5 5.5 16 12l-6.5 6.5"/></svg>
+      </button>
+      <h3>مدیریت کاربران</h3>
+      <button class="user-btn btn-edit" id="add-user-btn" onclick="openAddUserModal()">+ کاربر جدید</button>
     </div>
     <div class="admin-list" id="users-list-container"></div>
   </div>
 
   <div id="notif-modal" class="modal-overlay hidden">
     <div class="modal-content">
-      <div style="padding: 20px; background: var(--primary); color: white; display: flex; justify-content: space-between; align-items: center;">
-        <h3 style="margin: 0; color: white;">اعلانات</h3>
-        <button onclick="closeNotifModal()" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">×</button>
+      <div class="notif-head">
+        <h3>اعلانات</h3>
+        <button class="close-x" onclick="closeNotifModal()" aria-label="بستن">
+          <svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
       </div>
       <div id="notif-list-container"></div>
     </div>
@@ -302,8 +493,8 @@
       </div>
       <div class="form-group"><label>ساعت</label><input type="time" id="task-time" class="input" value="18:00"></div>
       <div class="modal-actions">
-        <button class="btn" style="flex:1; background: var(--success);" onclick="submitNewTask()">ثبت و ارسال</button>
-        <button class="btn" style="flex:1; background: var(--bg); color: var(--text);" onclick="closeCreateModal()">انصراف</button>
+        <button class="btn" style="background: var(--success);" onclick="submitNewTask()">ثبت و ارسال</button>
+        <button class="btn btn-ghost" onclick="closeCreateModal()">انصراف</button>
       </div>
     </div>
   </div>
@@ -323,8 +514,8 @@
       </div>
       <div class="form-group"><label>مدیران مستقیم</label><div id="u-manager-container" class="manager-list-container"></div></div>
       <div class="modal-actions">
-        <button class="btn" id="save-user-btn" style="flex:1; background: var(--success);" onclick="submitUserForm()">ذخیره</button>
-        <button class="btn" style="flex:1; background: var(--bg); color: var(--text);" onclick="closeUserModal()">انصراف</button>
+        <button class="btn" id="save-user-btn" style="background: var(--success);" onclick="submitUserForm()">ذخیره</button>
+        <button class="btn btn-ghost" onclick="closeUserModal()">انصراف</button>
       </div>
     </div>
   </div>
@@ -337,8 +528,8 @@
       <div class="form-group"><label>رمز جدید</label><input type="password" id="admin-new-password" class="input" dir="ltr" style="text-align:left;"></div>
       <div class="form-group"><label>تکرار رمز جدید</label><input type="password" id="admin-confirm-password" class="input" dir="ltr" style="text-align:left;"></div>
       <div class="modal-actions">
-        <button class="btn" id="save-pass-btn" style="flex:1; background: var(--success);" onclick="submitAdminResetPass()">ذخیره</button>
-        <button class="btn" style="flex:1; background: var(--bg); color: var(--text);" onclick="closeAdminPassModal()">انصراف</button>
+        <button class="btn" id="save-pass-btn" style="background: var(--success);" onclick="submitAdminResetPass()">ذخیره</button>
+        <button class="btn btn-ghost" onclick="closeAdminPassModal()">انصراف</button>
       </div>
     </div>
   </div>
@@ -359,41 +550,56 @@
     let audioChunks = [];
     let isRecording = false;
     let deferredPrompt = null;
-    
+    let heartbeatInterval = null;
     let globalAudioPlayer = null;
     let activePlayBtn = null;
 
-    window.addEventListener('beforeinstallprompt', (e) => {
-        e.preventDefault();
-        deferredPrompt = e;
-    });
+    const ICO = {
+        play: '<svg class="ico ico-play" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5.1v13.8c0 .84-.9 1.34-1.6.9L4.3 12.9a1.04 1.04 0 0 1 0-1.75L14.4 4.2c.7-.45 1.6.05 1.6.9Z"/></svg>',
+        pause: '<svg class="ico ico-pause" viewBox="0 0 24 24" fill="currentColor"><rect x="6.8" y="5" width="3.8" height="14" rx="1.5"/><rect x="13.4" y="5" width="3.8" height="14" rx="1.5"/></svg>',
+        load: '<svg class="ico ico-load" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="8" stroke-dasharray="34 22"/></svg>',
+        download: '<svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v9"/><path d="M8.4 9.4 12 13l3.6-3.6"/><path d="M5 16.6v1.5A1.9 1.9 0 0 0 6.9 20h10.2a1.9 1.9 0 0 0 1.9-1.9v-1.5"/></svg>',
+        doc: '<svg class="ico ico-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M6 3.5h7.2L18 8.3v12.2H6z"/><path d="M9 12h6M9 15.5h4" stroke-linecap="round"/></svg>'
+    };
+
+    window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); deferredPrompt = e; });
 
     function handleInstallClick() {
-        if (window.matchMedia('(display-mode: standalone)').matches) {
-            alert('برنامه از قبل روی گوشی شما نصب است.');
-            return;
-        }
+        if (window.matchMedia('(display-mode: standalone)').matches) { alert('برنامه از قبل روی گوشی شما نصب است.'); return; }
         if (deferredPrompt) {
             deferredPrompt.prompt();
-            deferredPrompt.userChoice.then((choiceResult) => {
-                if (choiceResult.outcome === 'accepted') console.log('User accepted the install');
-                deferredPrompt = null;
-            });
+            deferredPrompt.userChoice.then((r) => { if (r.outcome === 'accepted') console.log('installed'); deferredPrompt = null; });
         } else {
             const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-            if (isIOS) {
-                alert('برای نصب روی آیفون:\n۱. در مرورگر سافاری، روی دکمه Share (مربع با فلش رو به بالا) بزنید.\n۲. گزینه Add to Home Screen را انتخاب کنید.\n۳. روی Add بزنید.');
-            } else {
-                alert('برای نصب روی اندروید:\n۱. در مرورگر کروم، روی سه نقطه (بالا سمت راست) بزنید.\n۲. گزینه Install app یا Add to Home screen را انتخاب کنید.\n۳. روی Install بزنید.');
-            }
+            if (isIOS) alert('برای نصب روی آیفون:\n۱. در سافاری روی Share بزنید.\n۲. Add to Home Screen.\n۳. Add.');
+            else alert('برای نصب روی اندروید:\n۱. در کروم سه‌نقطه بالا.\n۲. Install app یا Add to Home screen.\n۳. Install.');
         }
     }
 
     let readNotifs = JSON.parse(localStorage.getItem('read_notifs') || '[]');
 
-    function formatEmail(username) { 
-        if(username.trim().toLowerCase() === 'admin') return 'admin@example.com';
-        return username.trim().toLowerCase() + '@example.com'; 
+    // prune readNotifs older than 60 days to avoid unbounded growth
+    (function pruneReadNotifs() {
+        const now = Date.now();
+        const pruned = readNotifs.filter(x => (now - (x.ts || 0)) < 60 * 24 * 3600 * 1000).map(x => x.id || x);
+        if (pruned.length !== readNotifs.length) {
+            readNotifs = pruned;
+            localStorage.setItem('read_notifs', JSON.stringify(readNotifs));
+        }
+    })();
+
+    function markRead(id) {
+        if (readNotifs.some(x => (x.id || x) === id)) return;
+        readNotifs.push({ id, ts: Date.now() });
+        // keep it simple, keep both shapes for compat
+        localStorage.setItem('read_notifs', JSON.stringify(readNotifs));
+    }
+    function isRead(id) { return readNotifs.some(x => (x.id || x) === id); }
+
+    function formatEmail(username) {
+        const u = username.trim().toLowerCase();
+        if (u === 'admin') return 'admin@example.com';
+        return u + '@example.com';
     }
 
     async function callBackend(action, data = {}) {
@@ -402,9 +608,8 @@
 
         if (action === 'login') {
             const email = formatEmail(data.username);
-            const { data: authData, error: authError } = await db.auth.signInWithPassword({ email: email, password: data.password });
+            const { data: authData, error: authError } = await db.auth.signInWithPassword({ email, password: data.password });
             if (authError) return { ok: false, error: 'نام کاربری یا رمز اشتباه است' };
-            
             const { data: profile, error: pError } = await db.from('profiles').select('*').eq('id', authData.user.id).single();
             if (pError) { await db.auth.signOut(); return { ok: false, error: 'پروفایل یافت نشد' }; }
             if (!profile.active) { await db.auth.signOut(); return { ok: false, error: 'حساب غیرفعال است' }; }
@@ -423,11 +628,7 @@
         }
 
         if (action === 'getContacts') {
-            const { data: contacts } = await db.from('profiles')
-                .select('*')
-                .neq('id', myId)
-                .neq('username', 'admin') 
-                .eq('active', true);
+            const { data: contacts } = await db.from('profiles').select('*').neq('id', myId).neq('username', 'admin').eq('active', true);
             return { ok: true, contacts: contacts.map(c => ({ ...c, lastTask: null })) };
         }
 
@@ -439,9 +640,10 @@
         }
 
         if (action === 'getTaskDetail' || action === 'getUpdates') {
-            const { data: task } = await db.from('tasks').select('*').eq('id', data.taskId).single();
-            let query = db.from('messages').select('*').eq('task_id', data.taskId).order('created_at', { ascending: true });
-            const { data: messages } = await query;
+            const { data: task, error: taskErr } = await db.from('tasks').select('*').eq('id', data.taskId).single();
+            if (taskErr || !task) return { ok: false, error: 'موضوع یافت نشد یا حذف شده است', deleted: true };
+
+            const { data: messages } = await db.from('messages').select('*').eq('task_id', data.taskId).order('created_at', { ascending: true });
 
             let newMessages = messages || [];
             if (action === 'getUpdates' && data.lastMessageId) {
@@ -452,68 +654,131 @@
             const otherUserId = myId === task.from_user_id ? task.to_user_id : task.from_user_id;
             const { data: otherProfile } = await db.from('profiles').select('last_seen').eq('id', otherUserId).single();
 
-            return { ok: true, task: task, messages: action === 'getTaskDetail' ? newMessages : undefined, newMessages: action === 'getUpdates' ? newMessages : undefined, otherUserLastSeen: otherProfile?.last_seen || task.created_at, canDelete: myId === task.from_user_id };
+            // mark me as seen when opening the chat
+            if (action === 'getTaskDetail') {
+                db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', myId);
+            }
+
+            return {
+                ok: true, task: task,
+                messages: action === 'getTaskDetail' ? newMessages : undefined,
+                newMessages: action === 'getUpdates' ? newMessages : undefined,
+                otherUserLastSeen: otherProfile?.last_seen || task.created_at,
+                canDelete: myId === task.from_user_id
+            };
+        }
+
+        if (action === 'updateTaskStatus') {
+            const allowed = ['در انتظار','در حال انجام','انجام شد','گذشته از مهلت','لغو شد'];
+            if (!allowed.includes(data.status)) return { ok: false, error: 'وضعیت نامعتبر' };
+            const { error } = await db.from('tasks').update({ status: data.status }).eq('id', data.taskId);
+            if (error) return { ok: false, error: 'خطا در تغییر وضعیت: ' + error.message };
+            return { ok: true };
         }
 
         if (action === 'sendTextMessage') {
-            await db.from('messages').insert({ task_id: data.taskId, from_user_id: myId, type: 'text', content: data.text });
+            const { error } = await db.from('messages').insert({ task_id: data.taskId, from_user_id: myId, type: 'text', content: data.text });
+            if (error) return { ok: false, error: error.message };
             return { ok: true };
         }
 
         if (action === 'sendVoiceMessage') {
-            const fileName = `${data.taskId}_${Date.now()}.webm`;
-            const { data: uploadData, error: uploadError } = await db.storage.from('voice-messages').upload(fileName, data.blob, { contentType: data.mimeType });
-            if (uploadError) throw new Error("خطا در آپلود: " + uploadError.message);
-            
+            const ext = data.mimeType && data.mimeType.includes('mp4') ? 'mp4' : 'webm';
+            const fileName = `${data.taskId}_${Date.now()}.${ext}`;
+            const { error: uploadError } = await db.storage.from('voice-messages').upload(fileName, data.blob, { contentType: data.mimeType });
+            if (uploadError) return { ok: false, error: 'خطا در آپلود: ' + uploadError.message };
             const { data: urlData } = db.storage.from('voice-messages').getPublicUrl(fileName);
             const publicUrl = urlData.publicUrl;
-
-            const { error: insertError } = await db.from('messages').insert({ 
+            const { error: insertError } = await db.from('messages').insert({
                 task_id: data.taskId, from_user_id: myId, type: 'voice', content: publicUrl, transcription: ''
             });
-            if (insertError) throw new Error("خطای دیتابیس: " + insertError.message);
+            if (insertError) return { ok: false, error: 'خطای دیتابیس: ' + insertError.message };
             return { ok: true };
         }
 
         if (action === 'manualTranscribe') {
             const { data: sessionData } = await db.auth.getSession();
             const token = sessionData.session.access_token;
-            
             const { data: fnData, error: fnError } = await db.functions.invoke('transcribe', {
                 headers: { Authorization: `Bearer ${token}` },
                 body: { audioUrl: data.audioUrl }
             });
-            
-            if (fnError) throw new Error("خطای تبدیل: " + fnError.message);
-            
+            if (fnError) return { ok: false, error: 'خطای تبدیل: ' + fnError.message };
             const { error: updateError } = await db.from('messages').update({ transcription: fnData.text }).eq('id', data.msgId);
-            if (updateError) throw new Error("خطای ذخیره متن: " + updateError.message);
-            
+            if (updateError) return { ok: false, error: 'خطای ذخیره متن: ' + updateError.message };
             return { ok: true, text: fnData.text };
         }
 
         if (action === 'createTask') {
-            await db.from('tasks').insert({ title: data.title, description: data.description, from_user_id: myId, to_user_id: data.to_user_id, due_date: data.due_date, due_time: data.due_time });
+            const { error } = await db.from('tasks').insert({
+                title: data.title, description: data.description,
+                from_user_id: myId, to_user_id: data.to_user_id,
+                due_date: data.due_date, due_time: data.due_time
+            });
+            if (error) return { ok: false, error: error.message };
             return { ok: true };
         }
 
         if (action === 'deleteTask') {
-            await db.from('tasks').delete().eq('id', data.taskId).eq('from_user_id', myId);
+            const { error } = await db.from('tasks').delete().eq('id', data.taskId).eq('from_user_id', myId);
+            if (error) return { ok: false, error: error.message };
             return { ok: true };
         }
 
         if (action === 'getNotifications') {
-            const { data: tasks } = await db.from('tasks').select('*').eq('to_user_id', myId).in('status', ['در انتظار', 'در حال انجام', 'گذشته از مهلت']);
-            
-            const unreadTasks = (tasks || []).filter(t => !readNotifs.includes(t.id));
-            
-            const notifs = unreadTasks.map(t => ({ 
-                id: t.id, 
-                title: t.title, 
-                status: t.status, 
-                message: t.status === 'گذشته از مهلت' ? 'مهلت این موضوع گذشته است!' : 'در انتظار بررسی شما', 
-                type: t.status === 'گذشته از مهلت' ? 'danger' : 'info' 
-            }));
+            const now = new Date();
+            const in24h = new Date(now.getTime() + 24 * 3600 * 1000);
+            const notifs = [];
+            const seen = new Set();
+
+            function pushTaskNotif(t, type, msg, owner) {
+                const key = `${t.id}:${owner}:${type}`;
+                if (seen.has(key)) return;
+                seen.add(key);
+                notifs.push({ id: t.id, title: t.title, status: t.status, message: msg, type, owner });
+            }
+
+            function dueDateTime(t) {
+                if (!t.due_date) return null;
+                const time = (t.due_time || '23:59').slice(0, 5);
+                return new Date(`${t.due_date}T${time}:00`);
+            }
+
+            // incoming (I am receiver): pending / in-progress / past due
+            const { data: incoming } = await db.from('tasks').select('*')
+                .eq('to_user_id', myId)
+                .in('status', ['در انتظار', 'در حال انجام', 'گذشته از مهلت']);
+
+            (incoming || []).forEach(t => {
+                if (isRead(t.id) && t.status !== 'گذشته از مهلت') return;
+                const due = dueDateTime(t);
+                if (due && due < now) {
+                    if (!isRead(t.id + ':late')) {
+                        pushTaskNotif(t, 'danger', 'مهلت این موضوع گذشته است!', 'receiver');
+                    }
+                } else if (due && due <= in24h && t.status !== 'گذشته از مهلت') {
+                    if (!isRead(t.id + ':soon')) {
+                        pushTaskNotif(t, 'warn', 'کمتر از ۲۴ ساعت به مهلت باقی مانده', 'receiver');
+                    }
+                } else if (t.status === 'در انتظار' && !isRead(t.id)) {
+                    pushTaskNotif(t, 'info', 'موضوع جدید در انتظار بررسی شما', 'receiver');
+                } else if (t.status === 'در حال انجام' && !isRead(t.id + ':doing')) {
+                    pushTaskNotif(t, 'info', 'موضوع در حال انجام است', 'receiver');
+                }
+            });
+
+            // outgoing (I am sender): if task is past due and not done/cancelled → notify me
+            const { data: outgoing } = await db.from('tasks').select('*')
+                .eq('from_user_id', myId)
+                .in('status', ['در انتظار', 'در حال انجام', 'گذشته از مهلت']);
+
+            (outgoing || []).forEach(t => {
+                const due = dueDateTime(t);
+                if (due && due < now && !isRead(t.id + ':senderLate')) {
+                    pushTaskNotif(t, 'danger', 'موضوع ارسالی شما از مهلت گذشته است', 'sender');
+                }
+            });
+
             return { ok: true, notifications: notifs };
         }
 
@@ -521,107 +786,93 @@
       } catch (error) { return { ok: false, error: 'خطای شبکه: ' + error.message }; }
     }
 
+    function startHeartbeat() {
+        if (heartbeatInterval) clearInterval(heartbeatInterval);
+        heartbeatInterval = setInterval(() => callBackend('heartbeat'), 60000);
+    }
+
     async function openAddUserModal() {
         if (currentUser.username !== 'admin') return alert('فقط مدیر سیستم دسترسی دارد');
-        
         document.getElementById('user-modal-title').innerText = 'کاربر جدید';
         document.getElementById('edit-user-id').value = '';
         document.getElementById('u-name').value = '';
         document.getElementById('u-username').value = '';
         document.getElementById('u-password').value = '';
         document.getElementById('u-role').value = 'کارشناس';
-        
         document.getElementById('username-group').style.display = 'block';
         document.getElementById('password-group').style.display = 'block';
-
         populateManagersCheckboxes([]);
         document.getElementById('user-modal').classList.remove('hidden');
     }
-
     function closeUserModal() { document.getElementById('user-modal').classList.add('hidden'); }
 
     function populateManagersCheckboxes(selectedIds) {
         const c = document.getElementById('u-manager-container'); c.innerHTML = '';
-        cachedUsers.forEach(u => { 
+        cachedUsers.forEach(u => {
             if (u.active && u.id !== currentUser.id && u.username !== 'admin') {
-                c.innerHTML += `<label><input type="checkbox" value="${u.id}" ${selectedIds.includes(u.id) ? 'checked' : ''}> <span>${u.name}</span></label>`; 
+                c.innerHTML += `<label><input type="checkbox" value="${u.id}" ${selectedIds.includes(u.id) ? 'checked' : ''}> <span>${u.name}</span></label>`;
             }
         });
     }
 
     async function submitUserForm() {
         const editId = document.getElementById('edit-user-id').value;
-        const name = document.getElementById('u-name').value; 
+        const name = document.getElementById('u-name').value;
         const role = document.getElementById('u-role').value;
         const manager_ids = Array.from(document.querySelectorAll('#u-manager-container input:checked')).map(cb => cb.value).join(',');
-
         if (!name || !role) return alert('نام و نقش الزامی است');
 
         if (editId) {
-            const { error } = await db.from('profiles').update({ name: name, role: role, manager_id: manager_ids }).eq('id', editId);
+            const { error } = await db.from('profiles').update({ name, role, manager_id: manager_ids }).eq('id', editId);
             if (!error) { closeUserModal(); loadAdminUsers(); } else { alert('خطا در ویرایش'); }
-        } 
-        else {
+        } else {
             const username = document.getElementById('u-username').value;
             const password = document.getElementById('u-password').value;
             if (!username || !password) return alert('نام کاربری و رمز الزامی است');
-
             const btn = document.getElementById('save-user-btn');
             btn.disabled = true; btn.innerText = 'در حال ساخت...';
-
             try {
                 const { data: sessionData } = await db.auth.getSession();
-                const { data, error } = await db.functions.invoke('admin-users', {
+                const { error } = await db.functions.invoke('admin-users', {
                     headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
                     body: { action: 'createUser', data: { name, username, password, role, manager_id: manager_ids } }
                 });
-
                 if (error) throw error;
                 alert('کاربر با موفقیت ساخته شد.');
                 closeUserModal(); loadAdminUsers();
-            } catch (err) {
-                alert('خطا: ' + err.message);
-            } finally {
-                btn.disabled = false; btn.innerText = 'ذخیره';
-            }
+            } catch (err) { alert('خطا: ' + err.message); }
+            finally { btn.disabled = false; btn.innerText = 'ذخیره'; }
         }
     }
 
     function openAdminResetPassModal(userId, userName) {
-        document.getElementById('admin-pass-user-id').value = userId; 
+        document.getElementById('admin-pass-user-id').value = userId;
         document.getElementById('admin-pass-username-label').innerText = 'کاربر: ' + userName;
-        document.getElementById('admin-new-password').value = ''; 
+        document.getElementById('admin-new-password').value = '';
         document.getElementById('admin-confirm-password').value = '';
         document.getElementById('admin-pass-modal').classList.remove('hidden');
     }
-
     function closeAdminPassModal() { document.getElementById('admin-pass-modal').classList.add('hidden'); }
 
     async function submitAdminResetPass() {
         const userId = document.getElementById('admin-pass-user-id').value;
-        const p1 = document.getElementById('admin-new-password').value.trim(); 
+        const p1 = document.getElementById('admin-new-password').value.trim();
         const p2 = document.getElementById('admin-confirm-password').value.trim();
-        if (p1.length < 6) return alert('حداقل ۶ کاراکتر'); 
+        if (p1.length < 6) return alert('حداقل ۶ کاراکتر');
         if (p1 !== p2) return alert('رمزها یکسان نیستند');
-
         const btn = document.getElementById('save-pass-btn');
         btn.disabled = true; btn.innerText = 'در حال تغییر...';
-
         try {
             const { data: sessionData } = await db.auth.getSession();
-            const { data, error } = await db.functions.invoke('admin-users', {
+            const { error } = await db.functions.invoke('admin-users', {
                 headers: { Authorization: `Bearer ${sessionData.session.access_token}` },
                 body: { action: 'resetPassword', data: { userId, newPassword: p1 } }
             });
-
             if (error) throw error;
             alert('رمز عبور با موفقیت تغییر کرد.');
             closeAdminPassModal();
-        } catch (err) {
-            alert('خطا: ' + err.message);
-        } finally {
-            btn.disabled = false; btn.innerText = 'ذخیره';
-        }
+        } catch (err) { alert('خطا: ' + err.message); }
+        finally { btn.disabled = false; btn.innerText = 'ذخیره'; }
     }
 
     function toggleDrawer() { document.getElementById('side-drawer').classList.add('open'); document.getElementById('drawer-overlay').classList.add('show'); }
@@ -630,15 +881,14 @@
     window.addEventListener('load', function() {
         if (window.supabase) {
             db = window.supabase.createClient('https://trnzzevllluhkyvvrtms.supabase.co', 'sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc');
-            
             db.auth.getSession().then(({ data: { session } }) => {
                 if (session) {
                     db.from('profiles').select('*').eq('id', session.user.id).single().then(({ data: profile }) => {
-                        if (profile) { 
-                            currentUser = profile; 
-                            showContactsView(); 
-                            loadNotifications(); 
-                            setInterval(()=>callBackend('heartbeat'), 60000); 
+                        if (profile) {
+                            currentUser = profile;
+                            showContactsView();
+                            loadNotifications();
+                            startHeartbeat();
                         }
                     });
                 }
@@ -654,76 +904,90 @@
         document.getElementById('user-info').innerText = currentUser.name + ' (' + currentUser.role + ')';
         document.getElementById('drawer-name').innerText = currentUser.name;
         document.getElementById('drawer-role').innerText = currentUser.role;
-        
         document.getElementById('drawer-admin-btn').style.display = currentUser.username === 'admin' ? 'flex' : 'none';
-        
         loadContacts();
     }
 
     async function handleLogin() {
       const user = document.getElementById('login-username').value.trim();
       const pass = document.getElementById('login-password').value.trim();
-      if (!user || !pass) return alert('رمز عبور را وارد کنید');
-      
-      const btn = document.getElementById('login-btn'); 
+      if (!user || !pass) return alert('نام کاربری و رمز را وارد کنید');
+      const btn = document.getElementById('login-btn');
       btn.disabled = true; btn.innerText = 'در حال ورود...';
-      
       const res = await callBackend('login', { username: user, password: pass });
-      
-      if (res.ok) { 
-          currentUser = res.user; 
-          showContactsView(); 
-          loadNotifications(); 
-          setInterval(()=>callBackend('heartbeat'), 60000); 
-      } else { 
-          alert(res.error); 
-      }
-      
+      if (res.ok) { currentUser = res.user; showContactsView(); loadNotifications(); startHeartbeat(); }
+      else { alert(res.error); }
       btn.disabled = false; btn.innerText = 'ورود به سیستم';
     }
 
-    async function handleLogout() { await callBackend('logout'); location.reload(); }
+    async function handleLogout() {
+        if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
+        await callBackend('logout'); location.reload();
+    }
 
-    function timeAgo(d) { if (!d) return 'نامشخص'; const s = Math.floor((new Date() - new Date(d)) / 1000); if (s < 60) return "لحظاتی پیش"; if (s < 3600) return Math.floor(s / 60) + " دقیقه پیش"; if (s < 86400) return Math.floor(s / 3600) + " ساعت پیش"; return Math.floor(s / 86400) + " روز پیش"; }
-    function formatJalali(d) { if(!d) return ''; const p = d.split('-'); const j = gregorian_to_jalali(parseInt(p[0]), parseInt(p[1]), parseInt(p[2])); return `${j[0]}/${j[1]}/${j[2]}`; }
+    function timeAgo(d) {
+        if (!d) return 'نامشخص';
+        const s = Math.floor((new Date() - new Date(d)) / 1000);
+        if (s < 60) return "لحظاتی پیش";
+        if (s < 3600) return Math.floor(s / 60) + " دقیقه پیش";
+        if (s < 86400) return Math.floor(s / 3600) + " ساعت پیش";
+        return Math.floor(s / 86400) + " روز پیش";
+    }
+    function formatJalali(d) {
+        if (!d) return '';
+        const p = d.split('-');
+        const j = gregorian_to_jalali(parseInt(p[0]), parseInt(p[1]), parseInt(p[2]));
+        return `${j[0]}/${j[1]}/${j[2]}`;
+    }
 
     async function loadNotifications() {
         if (!currentUser) return;
         const res = await callBackend('getNotifications');
         if (res.ok) {
-            const b = document.getElementById('bell-badge'); const dbadge = document.getElementById('drawer-bell-badge');
-            if (res.notifications.length > 0) { b.style.display = 'block'; dbadge.style.display = 'inline-block'; dbadge.innerText = res.notifications.length; } 
-            else { b.style.display = 'none'; dbadge.style.display = 'none'; }
+            const b = document.getElementById('bell-badge');
+            const dbadge = document.getElementById('drawer-bell-badge');
+            if (res.notifications.length > 0) {
+                b.style.display = 'block';
+                dbadge.style.display = 'inline-block';
+                dbadge.innerText = res.notifications.length;
+            } else {
+                b.style.display = 'none';
+                dbadge.style.display = 'none';
+            }
         }
     }
 
     async function openNotifModal() {
         document.getElementById('notif-modal').classList.remove('hidden');
-        const c = document.getElementById('notif-list-container'); c.innerHTML = 'در حال دریافت...';
+        const c = document.getElementById('notif-list-container');
+        c.innerHTML = '<p class="empty-note">در حال دریافت...</p>';
         const res = await callBackend('getNotifications');
         if (res.ok) {
-            c.innerHTML = res.notifications.length ? '' : '<p style="text-align:center; padding: 20px; color: var(--text-light);">اعلان جدیدی ندارید.</p>';
+            c.innerHTML = res.notifications.length ? '' : '<p class="empty-note">اعلان جدیدی ندارید.</p>';
             res.notifications.forEach(n => {
-                const d = document.createElement('div'); d.className = 'notif-item ' + n.type;
-                d.onclick = () => { 
-                    closeNotifModal(); 
-                    if(!readNotifs.includes(n.id)) {
-                        readNotifs.push(n.id);
-                        localStorage.setItem('read_notifs', JSON.stringify(readNotifs));
-                    }
-                    loadNotifications(); 
-                    openChat(n.id); 
+                const d = document.createElement('div');
+                d.className = 'notif-item ' + n.type;
+                d.onclick = () => {
+                    closeNotifModal();
+                    // mark according to the specific key
+                    const keys = n.status === 'گذشته از مهلت' ? [n.id + ':late', n.id + ':senderLate'] : [n.id, n.id + ':soon', n.id + ':doing'];
+                    keys.forEach(markRead);
+                    loadNotifications();
+                    openChat(n.id);
                 };
-                d.innerHTML = `<span class="n-title">${n.title}</span><span class="n-msg">${n.message}</span>`; c.appendChild(d);
+                d.innerHTML = `<span class="n-title">${n.title}</span><span class="n-msg">${n.message}</span>`;
+                c.appendChild(d);
             });
         }
     }
     function closeNotifModal() { document.getElementById('notif-modal').classList.add('hidden'); }
 
     async function loadContacts() {
-      const c = document.getElementById('contacts-container'); c.innerHTML = '<p style="text-align:center; color: var(--text-light);">در حال دریافت...</p>';
+      const c = document.getElementById('contacts-container');
+      c.innerHTML = '<p class="empty-note">در حال دریافت...</p>';
       const res = await callBackend('getContacts');
-      if (res.ok) { allContacts = res.contacts; renderContacts(allContacts); } else { c.innerHTML = res.error; }
+      if (res.ok) { allContacts = res.contacts; renderContacts(allContacts); }
+      else { c.innerHTML = '<p class="empty-note">' + res.error + '</p>'; }
     }
 
     function filterContacts() {
@@ -733,9 +997,11 @@
 
     function renderContacts(list) {
         const c = document.getElementById('contacts-container'); c.innerHTML = '';
-        if (list.length === 0) return c.innerHTML = '<p style="text-align:center; margin-top:20px; color:var(--text-light);">مخاطبی یافت نشد.</p>';
+        if (list.length === 0) return c.innerHTML = '<p class="empty-note">مخاطبی یافت نشد.</p>';
         list.forEach(u => {
-            const i = document.createElement('div'); i.className = 'contact-item'; i.onclick = () => openProfile(u.id, u.name, u.role);
+            const i = document.createElement('div');
+            i.className = 'contact-item';
+            i.onclick = () => openProfile(u.id, u.name, u.role);
             i.innerHTML = `<div class="avatar">${u.name.charAt(0)}</div><div class="contact-info"><div class="contact-name"><span>${u.name}</span> <span class="contact-role">${u.role}</span></div><div class="contact-last-msg">برای گفتگو کلیک کنید</div></div>`;
             c.appendChild(i);
         });
@@ -743,70 +1009,151 @@
 
     async function openProfile(id, name, role) {
         currentContactId = id;
-        document.getElementById('contacts-view').classList.add('hidden'); document.getElementById('profile-view').classList.remove('hidden');
-        document.getElementById('profile-avatar').innerText = name.charAt(0); document.getElementById('profile-name').innerText = name; document.getElementById('profile-role').innerText = role;
-        const c = document.getElementById('profile-tasks-container'); c.innerHTML = '<p style="text-align:center; color: var(--text-light);">در حال دریافت...</p>';
+        document.getElementById('contacts-view').classList.add('hidden');
+        document.getElementById('profile-view').classList.remove('hidden');
+        document.getElementById('profile-avatar').innerText = name.charAt(0);
+        document.getElementById('profile-name').innerText = name;
+        document.getElementById('profile-role').innerText = role;
+        const c = document.getElementById('profile-tasks-container');
+        c.innerHTML = '<p class="empty-note">در حال دریافت...</p>';
         const res = await callBackend('getTasksByContact', { contactId: id });
         if (res.ok) {
-            c.innerHTML = res.tasks.length ? '' : '<p style="text-align:center; color:var(--text-light); margin-top:20px;">هنوز موضوعی بین شما و این شخص ایجاد نشده است.</p>';
+            c.innerHTML = res.tasks.length ? '' : '<p class="empty-note">هنوز موضوعی بین شما و این شخص ایجاد نشده است.</p>';
             res.tasks.forEach(t => {
-                const card = document.createElement('div'); card.className = 'task-card'; card.onclick = () => openChat(t.id);
-                card.innerHTML = `<div class="task-card-header"><span class="task-title">${t.title}</span><span class="badge-status" style="background:${t.status==='گذشته از مهلت'?'var(--danger)':'var(--primary)'}">${t.status}</span></div>`;
+                const card = document.createElement('div');
+                card.className = 'task-card';
+                card.onclick = () => openChat(t.id);
+                card.innerHTML = `<div class="task-card-header"><span class="task-title">${t.title}</span><span class="badge-status" style="background:${statusColor(t.status)}">${t.status}</span></div><div class="contact-last-msg">مهلت: ${formatJalali(t.due_date)}</div>`;
                 c.appendChild(card);
             });
         }
     }
-    function closeProfile() { currentContactId = null; document.getElementById('profile-view').classList.add('hidden'); document.getElementById('contacts-view').classList.remove('hidden'); loadContacts(); }
+    function closeProfile() {
+        currentContactId = null;
+        document.getElementById('profile-view').classList.add('hidden');
+        document.getElementById('contacts-view').classList.remove('hidden');
+        loadContacts();
+    }
+
+    function statusColor(s) {
+        if (s === 'گذشته از مهلت') return 'var(--danger)';
+        if (s === 'انجام شد') return 'var(--success)';
+        if (s === 'لغو شد') return '#6e6e6e';
+        if (s === 'در حال انجام') return 'var(--warning)';
+        return 'var(--primary)';
+    }
 
     async function openChat(id) {
         currentTaskId = id;
-        document.getElementById('profile-view').classList.add('hidden'); document.getElementById('chat-view').classList.remove('hidden'); document.getElementById('messages-area').innerHTML = '<p style="text-align:center; color: var(--text-light);">در حال دریافت...</p>';
+        lastMessageId = null;
+        currentTaskData = null;
+        document.getElementById('profile-view').classList.add('hidden');
+        document.getElementById('chat-view').classList.remove('hidden');
+        document.getElementById('messages-area').innerHTML = '<p class="empty-note">در حال دریافت...</p>';
         const res = await callBackend('getTaskDetail', { taskId: id });
-        if (res.ok) {
-            currentTaskData = res.task; updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
-            const area = document.getElementById('messages-area'); area.innerHTML = '';
-            if(res.messages.length > 0) { lastMessageId = res.messages[res.messages.length - 1].id; res.messages.forEach(appendMessage); } else area.innerHTML = '<p style="text-align:center;color:var(--text-light);font-size:14px; margin-top:20px;">پیامی وجود ندارد. اولین پیام را بفرستید!</p>';
-            area.scrollTop = area.scrollHeight;
+        if (!res.ok) {
+            alert(res.error || 'خطا در دریافت موضوع');
+            closeChat();
+            return;
         }
-        if(pollInterval) clearInterval(pollInterval); pollInterval = setInterval(pollUpdates, 3000);
+        currentTaskData = res.task;
+        updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
+        const area = document.getElementById('messages-area');
+        area.innerHTML = '';
+        if (res.messages.length > 0) {
+            lastMessageId = res.messages[res.messages.length - 1].id;
+            res.messages.forEach(appendMessage);
+        } else {
+            area.innerHTML = '<p class="empty-note">پیامی وجود ندارد. اولین پیام را بفرستید!</p>';
+        }
+        area.scrollTop = area.scrollHeight;
+        if (pollInterval) clearInterval(pollInterval);
+        pollInterval = setInterval(pollUpdates, 3000);
     }
 
-    function closeChat() { currentTaskId = null; if(pollInterval) clearInterval(pollInterval); document.getElementById('chat-view').classList.add('hidden'); if(currentContactId) document.getElementById('profile-view').classList.remove('hidden'); else { document.getElementById('contacts-view').classList.remove('hidden'); loadContacts(); } }
+    function closeChat() {
+        currentTaskId = null;
+        currentTaskData = null;
+        lastMessageId = null;
+        if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+        document.getElementById('chat-view').classList.add('hidden');
+        if (currentContactId) {
+            document.getElementById('profile-view').classList.remove('hidden');
+        } else {
+            document.getElementById('contacts-view').classList.remove('hidden');
+            loadContacts();
+        }
+    }
 
     async function pollUpdates() {
-        if (!currentTaskId || isPolling) return; isPolling = true;
+        if (!currentTaskId || isPolling) return;
+        isPolling = true;
         const res = await callBackend('getUpdates', { taskId: currentTaskId, lastMessageId: lastMessageId });
         if (res.ok) {
-            currentTaskData = res.task; updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
+            currentTaskData = res.task;
+            updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
             if (res.newMessages.length > 0) {
-                const area = document.getElementById('messages-area'); if (area.innerHTML.includes('پیامی وجود ندارد')) area.innerHTML = '';
+                const area = document.getElementById('messages-area');
+                if (area.innerHTML.includes('پیامی وجود ندارد')) area.innerHTML = '';
                 const isB = area.scrollHeight - area.scrollTop <= area.clientHeight + 50;
                 res.newMessages.forEach(m => { appendMessage(m); lastMessageId = m.id; });
                 if (isB) area.scrollTop = area.scrollHeight;
             }
+        } else if (res.deleted) {
+            alert('این موضوع توسط فرستنده حذف شده است.');
+            closeChat();
         }
         isPolling = false;
     }
 
     function updateTaskInfoUI(task, lastSeen, canDelete) {
         document.getElementById('chat-title').innerText = task.title;
-        document.getElementById('chat-task-details').innerHTML = `<p>${task.description || 'بدون توضیحات'}</p><span class="status">مهلت: ${formatJalali(task.due_date)} | آخرین بازدید: ${timeAgo(lastSeen)}</span>`;
+        const allowedStatuses = ['در انتظار', 'در حال انجام', 'انجام شد', 'لغو شد'];
+        const chips = allowedStatuses.map(s => {
+            const active = task.status === s;
+            let cls = 'status-chip';
+            if (active) {
+                cls += ' active';
+                if (s === 'انجام شد') cls += ' done';
+                else if (s === 'لغو شد') cls += ' cancel';
+                else if (s === 'در حال انجام') cls += ' late';
+            }
+            return `<button class="${cls}" onclick="changeStatus('${s}')">${s}</button>`;
+        }).join('');
+
+        document.getElementById('chat-task-details').innerHTML = `
+            <p>${task.description || 'بدون توضیحات'}</p>
+            <span class="status">مهلت: ${formatJalali(task.due_date)}${task.due_time ? ' - ' + task.due_time.slice(0,5) : ''} | آخرین بازدید: ${timeAgo(lastSeen)}</span>
+            <div class="status-actions">${chips}</div>
+        `;
         document.getElementById('delete-task-btn').style.display = canDelete ? 'block' : 'none';
     }
 
-    function appendMessage(msg) {
-        const d = document.createElement('div'); 
-        d.className = 'message ' + (msg.from_user_id === currentUser.id ? 'me' : 'other');
-        
-        if (msg.type === 'voice') {
-            let transText = msg.transcription ? msg.transcription : '';
-            let transBtn = transText ? '' : `<button class="transcribe-btn" onclick="manualTranscribe('${msg.id}', '${msg.content}', this)">📝 تبدیل به متن</button>`;
-            let transBox = transText ? `<div class="transcription-box" id="trans-box-${msg.id}">📝 ${transText}</div>` : `<div class="transcription-box hidden" id="trans-box-${msg.id}"></div>`;
+    async function changeStatus(newStatus) {
+        if (!currentTaskId) return;
+        if (currentTaskData && currentTaskData.status === newStatus) return;
+        const res = await callBackend('updateTaskStatus', { taskId: currentTaskId, status: newStatus });
+        if (res.ok) {
+            if (currentTaskData) currentTaskData.status = newStatus;
+            updateTaskInfoUI(currentTaskData, null, currentTaskData && currentTaskData.from_user_id === currentUser.id);
+        } else {
+            alert(res.error || 'خطا در تغییر وضعیت');
+        }
+    }
 
+    function appendMessage(msg) {
+        const d = document.createElement('div');
+        d.className = 'message ' + (msg.from_user_id === currentUser.id ? 'me' : 'other');
+        if (msg.type === 'voice') {
+            const transText = msg.transcription || '';
+            const transBtn = transText ? '' : `<button class="transcribe-btn" onclick="manualTranscribe('${msg.id}', '${msg.content}', this)">${ICO.doc}تبدیل به متن</button>`;
+            const transBox = transText
+                ? `<div class="transcription-box" id="trans-box-${msg.id}">${transText}</div>`
+                : `<div class="transcription-box hidden" id="trans-box-${msg.id}"></div>`;
             d.innerHTML = `
                 <div class="audio-player">
-                    <button class="play-btn" onclick="playAudioDirect('${msg.content}', this)">▶</button>
-                    <button class="download-btn" onclick="downloadAudio('${msg.id}', '${msg.content}')">⬇️</button>
+                    <button class="play-btn" onclick="playAudioDirect('${msg.content}', this)" aria-label="پخش">${ICO.play}${ICO.pause}${ICO.load}</button>
+                    <button class="download-btn" onclick="downloadAudio('${msg.id}', '${msg.content}')" aria-label="دانلود">${ICO.download}</button>
                     ${transBtn}
                 </div>
                 ${transBox}
@@ -818,24 +1165,21 @@
     }
 
     async function manualTranscribe(msgId, audioUrl, btn) {
-        btn.innerText = '⏳ در حال تبدیل...';
-        btn.disabled = true;
+        btn.innerText = 'در حال تبدیل...'; btn.disabled = true;
         try {
             const res = await callBackend('manualTranscribe', { msgId, audioUrl });
             if (res.ok) {
                 const box = document.getElementById('trans-box-' + msgId);
-                box.innerText = '📝 ' + res.text;
+                box.innerText = res.text;
                 box.classList.remove('hidden');
                 btn.remove();
             } else {
                 alert(res.error);
-                btn.innerText = '📝 تبدیل به متن';
-                btn.disabled = false;
+                btn.innerText = 'تبدیل به متن'; btn.disabled = false;
             }
         } catch (e) {
             alert('خطای ارتباط');
-            btn.innerText = '📝 تبدیل به متن';
-            btn.disabled = false;
+            btn.innerText = 'تبدیل به متن'; btn.disabled = false;
         }
     }
 
@@ -843,33 +1187,30 @@
         if (globalAudioPlayer && activePlayBtn === btn) {
             if (globalAudioPlayer.paused) {
                 globalAudioPlayer.play();
-                btn.innerText = '⏸';
+                btn.classList.add('is-playing');
+                btn.classList.remove('is-loading');
             } else {
                 globalAudioPlayer.pause();
-                btn.innerText = '▶';
+                btn.classList.remove('is-playing');
             }
             return;
         }
-
         if (globalAudioPlayer) {
             globalAudioPlayer.pause();
-            if (activePlayBtn) activePlayBtn.innerText = '▶';
+            if (activePlayBtn) activePlayBtn.classList.remove('is-playing', 'is-loading');
         }
-
-        btn.innerText = '⏳';
+        btn.classList.add('is-loading');
         globalAudioPlayer = new Audio(url);
         activePlayBtn = btn;
-
         globalAudioPlayer.play().then(() => {
-            btn.innerText = '⏸';
-        }).catch((e) => {
-            console.error(e);
-            btn.innerText = '▶';
-            alert('خطا در پخش صدا. ممکن است فرمت این فایل در مرورگر شما پشتیبانی نشود یا فایل از سرور پاک شده باشد.');
+            btn.classList.remove('is-loading');
+            btn.classList.add('is-playing');
+        }).catch(() => {
+            btn.classList.remove('is-loading', 'is-playing');
+            alert('خطا در پخش صدا. ممکن است فرمت این فایل در مرورگر شما پشتیبانی نشود.');
         });
-
         globalAudioPlayer.onended = () => {
-            btn.innerText = '▶';
+            btn.classList.remove('is-playing', 'is-loading');
             globalAudioPlayer = null;
             activePlayBtn = null;
         };
@@ -880,7 +1221,6 @@
             const cache = await caches.open('voice-cache-v1');
             let response = await cache.match(url);
             if (!response) response = await fetch(url);
-            
             if (response.ok) {
                 const blob = await response.blob();
                 const a = document.createElement('a');
@@ -889,8 +1229,13 @@
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-            } else { alert('فایل برای دانلود در دسترس نیست.'); }
-        } catch (e) { alert('خطا در دانلود فایل.'); }
+            } else {
+                window.open(url, '_blank');
+            }
+        } catch (e) {
+            // iOS fallback
+            window.open(url, '_blank');
+        }
     }
 
     async function toggleRecording() {
@@ -898,78 +1243,88 @@
       if (!isRecording) {
         try {
           const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          let options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : { mimeType: 'audio/mp4' };
+          const options = MediaRecorder.isTypeSupported('audio/webm') ? { mimeType: 'audio/webm' } : { mimeType: 'audio/mp4' };
           mediaRecorder = new MediaRecorder(stream, options);
           mediaRecorder.ondataavailable = function(e) { if (e.data.size > 0) audioChunks.push(e.data); };
           mediaRecorder.onstop = async function() {
             const mimeType = mediaRecorder.mimeType || 'audio/webm';
-            const audioBlob = new Blob(audioChunks, { type: mimeType }); 
+            const audioBlob = new Blob(audioChunks, { type: mimeType });
             audioChunks = [];
-            await uploadVoiceBlob(audioBlob, mimeType); 
-            stream.getTracks().forEach(function(track) { track.stop(); });
+            await uploadVoiceBlob(audioBlob, mimeType);
+            stream.getTracks().forEach(track => track.stop());
           };
           audioChunks = []; mediaRecorder.start(); isRecording = true;
-          micBtn.classList.add('recording'); micBtn.innerText = '⏹';
-        } catch (err) { document.getElementById('audio-upload').click(); }
+          micBtn.classList.add('recording');
+        } catch (err) {
+          document.getElementById('audio-upload').click();
+        }
       } else {
-        mediaRecorder.stop(); isRecording = false; micBtn.classList.remove('recording'); micBtn.innerText = '🎤';
+        mediaRecorder.stop(); isRecording = false; micBtn.classList.remove('recording');
       }
     }
-    
+
     async function uploadVoiceBlob(blob, mimeType) {
-      if (isSending) return; 
-      isSending = true; 
-      const micBtn = document.getElementById('mic-btn'); 
-      if (micBtn) micBtn.innerText = '⏳';
-      
-      const reader = new FileReader(); 
-      reader.readAsDataURL(blob);
-      reader.onloadend = async function() {
-        const base64data = reader.result.split(',')[1];
-        try {
-            const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, blob: blob, mimeType: mimeType, base64: base64data });
-            if (res.ok) { setTimeout(pollUpdates, 500); } 
-            else { alert('خطا در ارسال: ' + res.error); }
-        } catch (err) { alert('خطای شبکه یا دیتابیس: ' + err.message); } 
-        finally { if (micBtn) micBtn.innerText = '🎤'; isSending = false; }
-      };
+      if (isSending) return;
+      isSending = true;
+      const micBtn = document.getElementById('mic-btn');
+      if (micBtn) micBtn.classList.add('busy');
+      try {
+        const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, blob, mimeType });
+        if (res.ok) { setTimeout(pollUpdates, 500); }
+        else { alert('خطا در ارسال: ' + res.error); }
+      } catch (err) { alert('خطای شبکه یا دیتابیس: ' + err.message); }
+      finally { if (micBtn) micBtn.classList.remove('busy'); isSending = false; }
     }
-    
+
     function handleAudioUpload(event) {
       const file = event.target.files[0]; if (!file) return;
-      if (file.size > 5 * 1024 * 1024) return alert('حجم زیاد است.');
+      if (file.size > 5 * 1024 * 1024) { alert('حجم فایل زیاد است (حداکثر ۵ مگابایت).'); event.target.value = ''; return; }
       uploadVoiceBlob(file, file.type || 'audio/mp4');
-      event.target.value = ''; 
+      event.target.value = '';
     }
 
-    async function handleDeleteTask() { if (!confirm('حذف شود؟')) return; await callBackend('deleteTask', { taskId: currentTaskId }); closeChat(); }
-    async function sendTextMessage() { const i = document.getElementById('chat-input'); const t = i.value.trim(); if (!t || isSending) return; isSending = true; i.value = ''; await callBackend('sendTextMessage', { taskId: currentTaskId, text: t }); setTimeout(pollUpdates, 500); isSending = false; }
+    async function handleDeleteTask() {
+        if (!confirm('آیا مطمئن هستید؟ این موضوع و همه پیام‌های آن حذف می‌شود.')) return;
+        const res = await callBackend('deleteTask', { taskId: currentTaskId });
+        if (res.ok) {
+            currentTaskData = null;
+            closeChat();
+        } else {
+            alert(res.error || 'خطا در حذف');
+        }
+    }
+
+    async function sendTextMessage() {
+        const i = document.getElementById('chat-input');
+        const t = i.value.trim();
+        if (!t || isSending) return;
+        isSending = true;
+        i.value = '';
+        await callBackend('sendTextMessage', { taskId: currentTaskId, text: t });
+        setTimeout(pollUpdates, 500);
+        isSending = false;
+    }
     document.getElementById('chat-input').addEventListener('keypress', e => { if (e.key === 'Enter') sendTextMessage(); });
 
-    async function openAdminPanel() { 
+    async function openAdminPanel() {
         if (currentUser.username !== 'admin') return alert('دسترسی غیرمجاز');
-        document.getElementById('contacts-view').classList.add('hidden'); 
-        document.getElementById('admin-view').classList.remove('hidden'); 
-        await loadAdminUsers(); 
+        document.getElementById('contacts-view').classList.add('hidden');
+        document.getElementById('admin-view').classList.remove('hidden');
+        await loadAdminUsers();
     }
-    
-    function closeAdminPanel() { 
-        document.getElementById('admin-view').classList.add('hidden'); 
-        document.getElementById('contacts-view').classList.remove('hidden'); 
-        loadContacts(); 
+    function closeAdminPanel() {
+        document.getElementById('admin-view').classList.add('hidden');
+        document.getElementById('contacts-view').classList.remove('hidden');
+        loadContacts();
     }
 
     async function loadAdminUsers() {
-        const container = document.getElementById('users-list-container'); 
-        container.innerHTML = '<p style="text-align:center; color:gray;">در حال دریافت...</p>';
+        const container = document.getElementById('users-list-container');
+        container.innerHTML = '<p class="empty-note">در حال دریافت...</p>';
         const { data: users, error } = await db.from('profiles').select('*');
-        
-        if (error) { container.innerHTML = '<p style="text-align:center; color:red;">خطا در دریافت لیست</p>'; return; }
-        
+        if (error) { container.innerHTML = '<p class="empty-note" style="color:var(--danger)">خطا در دریافت لیست</p>'; return; }
         cachedUsers = users; container.innerHTML = '';
-        
         document.getElementById('add-user-btn').style.display = currentUser.username === 'admin' ? 'block' : 'none';
-
         users.forEach(u => {
             let roleColor = u.role === 'مدیر' ? '#e84118' : (u.role === 'رئیس' ? '#fbc531' : (u.role === 'سرپرست' ? '#00a8ff' : '#718093'));
             container.innerHTML += `
@@ -994,16 +1349,14 @@
 
     function openEditUserModal(userId) {
         const u = cachedUsers.find(x => x.id === userId); if (!u) return;
-        document.getElementById('user-modal-title').innerText = 'ویرایش کاربر'; 
+        document.getElementById('user-modal-title').innerText = 'ویرایش کاربر';
         document.getElementById('edit-user-id').value = u.id;
-        document.getElementById('u-name').value = u.name; 
+        document.getElementById('u-name').value = u.name;
         document.getElementById('u-username').value = u.username;
         document.getElementById('u-role').value = u.role;
-        
-        document.getElementById('username-group').style.display = 'none'; 
+        document.getElementById('username-group').style.display = 'none';
         document.getElementById('password-group').style.display = 'none';
-        
-        populateManagersCheckboxes(u.manager_id ? String(u.manager_id).split(',') : []); 
+        populateManagersCheckboxes(u.manager_id ? String(u.manager_id).split(',') : []);
         document.getElementById('user-modal').classList.remove('hidden');
     }
 
@@ -1050,14 +1403,22 @@
         document.getElementById('create-modal').classList.remove('hidden'); initCalendar();
     }
     function closeCreateModal() { document.getElementById('create-modal').classList.add('hidden'); }
+
     async function submitNewTask() {
-        const title = document.getElementById('task-title').value; const desc = document.getElementById('task-desc').value;
+        const title = document.getElementById('task-title').value;
+        const desc = document.getElementById('task-desc').value;
         const time = document.getElementById('task-time').value;
-        const jy = parseInt(document.getElementById('jYear').value), jm = parseInt(document.getElementById('jMonth').value), jd = parseInt(document.getElementById('jDay').value);
-        const g = jalali_to_gregorian(jy, jm, jd); const date = `${g[0]}-${g[1] < 10 ? '0'+g[1] : g[1]}-${g[2] < 10 ? '0'+g[2] : g[2]}`;
+        const jy = parseInt(document.getElementById('jYear').value);
+        const jm = parseInt(document.getElementById('jMonth').value);
+        const jd = parseInt(document.getElementById('jDay').value);
+        const g = jalali_to_gregorian(jy, jm, jd);
+        const date = `${g[0]}-${g[1] < 10 ? '0'+g[1] : g[1]}-${g[2] < 10 ? '0'+g[2] : g[2]}`;
         if (!title) return alert('عنوان الزامی است');
         const res = await callBackend('createTask', { title, description: desc, to_user_id: currentContactId, due_date: date, due_time: time });
-        if (res.ok) { closeCreateModal(); openProfile(currentContactId, document.getElementById('profile-name').innerText, document.getElementById('profile-role').innerText); } else alert(res.error);
+        if (res.ok) {
+            closeCreateModal();
+            openProfile(currentContactId, document.getElementById('profile-name').innerText, document.getElementById('profile-role').innerText);
+        } else alert(res.error);
     }
 
     if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(console.log); }); }
