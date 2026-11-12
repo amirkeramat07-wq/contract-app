@@ -67,7 +67,7 @@
     --r-lg: 26px;
     --r-xl: 32px;
     
-    color-scheme: light dark; /* اصلاح خوانایی فرم‌ها در مرورگر */
+    color-scheme: light dark;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Vazirmatn', -apple-system, 'SF Pro Text', 'Segoe UI', sans-serif; }
 html { -webkit-text-size-adjust: 100%; }
@@ -106,9 +106,9 @@ body::after {
 @keyframes spin { to { transform: rotate(360deg); } }
 .hidden { display: none !important; }
 
-/* =====================  DARK THEME FIX  ===================== */
+/* =====================  DARK THEME FIXES  ===================== */
 html[data-theme="dark"] {
-    color-scheme: dark; /* اصلاح آیکون‌های تقویم و ساعت در حالت شب */
+    color-scheme: dark; 
     --text: #e9eef5;
     --text-light: #9aa4b3;
     --bg: rgba(255, 255, 255, .06);
@@ -132,6 +132,8 @@ html[data-theme="dark"] body::before {
         linear-gradient(160deg, #0f1828 0%, #101a2c 45%, #0b1320 100%);
 }
 html[data-theme="dark"] body::after { opacity: .30; mix-blend-mode: screen; }
+
+/* هدرها و کارت‌ها */
 html[data-theme="dark"] .header,
 html[data-theme="dark"] .chat-header { background: linear-gradient(180deg, rgba(20, 30, 48, .82), rgba(20, 30, 48, .52)); }
 html[data-theme="dark"] .login-box,
@@ -152,20 +154,54 @@ html[data-theme="dark"] .message.other { background: linear-gradient(160deg, rgb
 html[data-theme="dark"] .message.me { background: linear-gradient(160deg, #b0453b 0%, #8b2c25 60%, #6b2019 100%); }
 html[data-theme="dark"] .drawer { background: rgba(18, 26, 42, .86); }
 html[data-theme="dark"] #notif-modal .modal-content { background: linear-gradient(180deg, rgba(20, 30, 48, .96), rgba(14, 22, 36, .94)); }
+
+/* متن‌ها و آیکون‌ها - بخش حیاتی برای خوانایی */
 html[data-theme="dark"] .login-box h2,
 html[data-theme="dark"] .header-info-text h3,
 html[data-theme="dark"] .chat-header h3,
 html[data-theme="dark"] .profile-name,
-html[data-theme="dark"] .modal-content h3 { color: #f4f7fb !important; }
+html[data-theme="dark"] .modal-content h3,
+html[data-theme="dark"] .drawer-user-name,
+html[data-theme="dark"] .user-name,
+html[data-theme="dark"] .n-title,
+html[data-theme="dark"] .task-title { 
+    color: #f4f7fb !important; 
+}
+html[data-theme="dark"] .header-info-text span,
+html[data-theme="dark"] .contact-last-msg,
+html[data-theme="dark"] .chat-task-info .status,
+html[data-theme="dark"] .empty-note { 
+    color: var(--text-light) !important; 
+}
+html[data-theme="dark"] .bell-btn,
+html[data-theme="dark"] .menu-btn,
+html[data-theme="dark"] .back-btn,
+html[data-theme="dark"] .drawer-item,
+html[data-theme="dark"] .drawer-item .ico { 
+    color: var(--text) !important; 
+}
+html[data-theme="dark"] .drawer-item.danger,
+html[data-theme="dark"] .drawer-item.danger .ico { 
+    color: var(--danger) !important; 
+}
+html[data-theme="dark"] .drawer-item:hover { background: rgba(255, 255, 255, .15); }
 
-/* اصلاح منوهای کشویی در حالت شب (Dropdowns) */
-select.input option {
-    background-color: var(--white);
-    color: var(--text);
+/* فیلدهای نوشتاری */
+html[data-theme="dark"] .input,
+html[data-theme="dark"] .search-input,
+html[data-theme="dark"] .chat-input {
+    color: var(--text) !important;
+    -webkit-text-fill-color: var(--text) !important;
+}
+html[data-theme="dark"] .input::placeholder,
+html[data-theme="dark"] .search-input::placeholder,
+html[data-theme="dark"] .chat-input::placeholder { 
+    color: #6b7a90 !important; 
+    -webkit-text-fill-color: #6b7a90 !important;
 }
 html[data-theme="dark"] select.input option {
     background-color: #1e293b;
-    color: #f4f7fb;
+    color: #f4f7fb !important;
 }
 
 /* ======================================================= */
@@ -720,7 +756,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
             if (!session || !session.session) return;
 
             const myId = session.session.user.id;
-            const subJson = subscription.toJSON();
+            const subJSON = subscription.toJSON(); // اصلاح شد: J بزرگ
 
             const { error } = await db.from('push_subscriptions').upsert({
                 user_id: myId,
@@ -1511,7 +1547,6 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
       const micBtn = document.getElementById('mic-btn');
       if (micBtn) micBtn.classList.add('busy');
       try {
-        // در اینجا otherUserId را هم می‌فرستیم تا پوش برود
         const otherUserId = currentTaskData ? (currentUser.id === currentTaskData.from_user_id ? currentTaskData.to_user_id : currentTaskData.from_user_id) : null;
         const res = await callBackend('sendVoiceMessage', { taskId: currentTaskId, blob, mimeType, otherUserId });
         if (res.ok) { setTimeout(pollUpdates, 500); }
