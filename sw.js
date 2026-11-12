@@ -37,3 +37,47 @@ self.addEventListener('fetch', (event) => {
     })
   );
 });
+self.addEventListener('install', (event) => {
+  self.skipWaiting();
+});
+
+self.addEventListener('activate', (event) => {
+  event.waitUntil(clients.claim());
+});
+
+// دریافت نوتیفیکیشن
+self.addEventListener('push', function(event) {
+  if (event.data) {
+    const data = event.data.json();
+    const options = {
+      body: data.body,
+      icon: './logo.png',
+      badge: './logo.png',
+      data: { url: data.url || '/' },
+      vibrate: [200, 100, 200]
+    };
+    event.waitUntil(
+      self.registration.showNotification(data.title, options)
+    );
+  }
+});
+
+// وقتی روی نوتیفیکیشن کلیک شد
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window' }).then(windowClients => {
+      // اگر برنامه باز است، فوکوس کن
+      for (var i = 0; i < windowClients.length; i++) {
+        var client = windowClients[i];
+        if (client.url === event.notification.data.url && 'focus' in client) {
+          return client.focus();
+        }
+      }
+      // وگرنه برنامه را باز کن
+      if (clients.openWindow) {
+        return clients.openWindow(event.notification.data.url);
+      }
+    })
+  );
+});
