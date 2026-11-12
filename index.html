@@ -774,12 +774,10 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
     async function triggerPush(targetUserId, title, body) {
         if (!targetUserId) return;
         try {
-            await fetch('https://trnzzevllluhkyvvrtms.supabase.co/functions/v1/send-push', {
+            // 👇 تغییر آدرس به Vercel API
+            await fetch('/api/send-push', { 
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer sb_publishable_Kn5TfcuZGZrPjfQ8IGbNeg_KX2nVLsc'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ targetUserId, title, body, url: window.location.origin })
             });
         } catch (e) {
