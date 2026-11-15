@@ -481,6 +481,269 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
 .close-x { display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; border-radius: 50%; color: #fff; background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .32); cursor: pointer; }
 .empty-note { text-align: center; color: var(--text-light); font-size: 13.5px; padding: 26px 10px; }
   </style>
+
+  <style id="polish">
+/* ===== POLISH LAYER ===== */
+* { -webkit-tap-highlight-color: transparent; }
+button, .contact-item, .task-card, .drawer-item, .notif-item, .user-btn { touch-action: manipulation; }
+:where(button, input, textarea, select, [onclick]):focus-visible { outline: 2px solid rgba(184, 53, 43, .5); outline-offset: 2px; }
+html { scrollbar-color: rgba(120, 132, 150, .45) transparent; }
+.contact-list, .messages-area, .profile-tasks, .admin-list, #notif-list-container, .drawer-menu, .modal-content, .manager-list-container {
+    scrollbar-width: thin; overscroll-behavior: contain;
+}
+.contact-list::-webkit-scrollbar, .messages-area::-webkit-scrollbar, .profile-tasks::-webkit-scrollbar,
+.admin-list::-webkit-scrollbar, #notif-list-container::-webkit-scrollbar, .drawer-menu::-webkit-scrollbar,
+.modal-content::-webkit-scrollbar, .manager-list-container::-webkit-scrollbar { width: 6px; height: 6px; }
+.contact-list::-webkit-scrollbar-thumb, .messages-area::-webkit-scrollbar-thumb, .profile-tasks::-webkit-scrollbar-thumb,
+.admin-list::-webkit-scrollbar-thumb, #notif-list-container::-webkit-scrollbar-thumb, .drawer-menu::-webkit-scrollbar-thumb,
+.modal-content::-webkit-scrollbar-thumb, .manager-list-container::-webkit-scrollbar-thumb { background: rgba(120, 132, 150, .34); border-radius: 999px; }
+.contact-list::-webkit-scrollbar-track, .messages-area::-webkit-scrollbar-track { background: transparent; }
+
+/* حباب پیام‌ها */
+.messages-area { gap: 8px; padding-bottom: 12px; }
+.message { max-width: 78%; line-height: 1.85; user-select: text; -webkit-user-select: text; animation: msgIn .2s cubic-bezier(.22, 1, .36, 1); }
+@keyframes msgIn { from { opacity: 0; transform: translateY(6px) scale(.99); } to { opacity: 1; transform: none; } }
+.message.me { border-top-right-radius: 8px; }
+.message.other { border-top-left-radius: 8px; }
+
+/* ناحیه نوشتن */
+.chat-input-area { transition: box-shadow .2s ease, border-color .2s ease; }
+.chat-input-area:focus-within { border-color: rgba(184, 53, 43, .42); box-shadow: 0 0 0 3px rgba(184, 53, 43, .13), var(--shadow-2), inset 0 1px 0 #fff; }
+.chat-input-area .action-btn { transition: transform .16s ease, filter .2s ease, box-shadow .2s ease; }
+.chat-input-area .action-btn:hover { filter: brightness(1.05); }
+
+/* حالت‌های hover فقط روی دستگاه‌های ماوس‌دار */
+@media (hover: hover) {
+    .contact-item:hover { transform: translateY(-1px); box-shadow: var(--shadow-2), inset 0 1px 0 #fff; }
+    .task-card:hover { transform: translateY(-2px); }
+    .drawer-item:hover { transform: translateX(-2px); }
+}
+
+/* اسکلت بارگذاری */
+.skeleton { position: relative; overflow: hidden; background: rgba(150, 160, 175, .16); border-radius: 12px; }
+.skeleton::after { content: ''; position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .55), transparent); animation: shimmer 1.2s infinite; }
+@keyframes shimmer { to { transform: translateX(100%); } }
+
+/* صفحه ورود */
+.login-box { backdrop-filter: blur(26px) saturate(150%); -webkit-backdrop-filter: blur(26px) saturate(150%); }
+.login-box img { transition: transform .4s cubic-bezier(.22, 1, .36, 1); }
+.login-box img:hover { transform: scale(1.03) rotate(-1deg); }
+
+/* روانی: انیمیشن پس‌زمینه روی موبایل سبک‌تر می‌شود */
+body::before { will-change: transform; }
+@media (max-width: 820px) {
+    body::before { animation-duration: 70s; filter: blur(16px) saturate(112%); }
+}
+@media (prefers-reduced-motion: reduce) {
+    body::before { animation: none; }
+    *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition-duration: .001ms !important; scroll-behavior: auto !important; }
+}
+
+/* دارک مود: کنتراست بهتر */
+html[data-theme="dark"] .chat-input-area { background: rgba(20, 30, 48, .78); }
+html[data-theme="dark"] .message.other { border-color: rgba(255, 255, 255, .18); }
+html[data-theme="dark"] .empty-note { color: #93a1b5; }
+html[data-theme="dark"] .contact-item:active { background: rgba(255, 255, 255, .14); }
+html[data-theme="dark"] .skeleton { background: rgba(255, 255, 255, .08); }
+html[data-theme="dark"] .skeleton::after { background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .12), transparent); }
+  </style>
+  <style id="redesign">
+/* ============================================================
+   REDESIGN v2 — حباب پیام، هدر و صفحه ورود
+   ============================================================ */
+:root { --rd-hairline: rgba(27, 42, 74, .08); --rd-bubble: 20px; }
+
+/* ---------- هدر: شیشه‌ای سبک و مدرن ---------- */
+.header, .chat-header {
+    padding: 10px 16px;
+    padding-top: calc(10px + env(safe-area-inset-top));
+    background: linear-gradient(180deg, rgba(255, 255, 255, .88), rgba(255, 255, 255, .64));
+    border-bottom: 1px solid var(--rd-hairline);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, .7);
+    -webkit-backdrop-filter: saturate(180%) blur(18px);
+    backdrop-filter: saturate(180%) blur(18px);
+}
+.header-info { gap: 11px; }
+.header-info img {
+    width: 40px; height: 40px; padding: 0; border-radius: 50%;
+    object-fit: cover; background: #fff;
+    border: 1px solid rgba(255, 255, 255, .95);
+    box-shadow: 0 4px 12px rgba(27, 42, 74, .12), 0 0 0 3px rgba(184, 53, 43, .07);
+}
+.header-info-text h3 { font-size: 17px; letter-spacing: -.2px; }
+.header-info-text span { font-size: 11.5px; }
+.bell-btn, .menu-btn { width: 38px; height: 38px; }
+.bell-btn {
+    margin-left: 6px; background: rgba(255, 255, 255, .74);
+    border: 1px solid var(--rd-hairline); box-shadow: 0 2px 8px rgba(27, 42, 74, .06);
+}
+.bell-btn:active, .menu-btn:active { transform: scale(.94); }
+.chat-header h3 { font-size: 16.5px !important; letter-spacing: -.2px; }
+.back-btn {
+    width: 34px; height: 34px; background: rgba(255, 255, 255, .74);
+    border: 1px solid var(--rd-hairline); box-shadow: none;
+}
+.delete-btn { padding: 6px 13px; font-size: 12px; box-shadow: 0 4px 12px rgba(192, 57, 43, .22); }
+
+/* ---------- حباب‌های پیام ---------- */
+.messages-area { gap: 10px; padding: 14px 14px 10px; }
+.message {
+    max-width: 76%; padding: 9px 14px;
+    border-radius: var(--rd-bubble);
+    font-size: 14.5px; line-height: 1.8;
+    box-shadow: none;
+}
+.message.me {
+    border-radius: 20px 6px 20px 20px;
+    background: linear-gradient(135deg, #c34a3f 0%, var(--primary) 55%, #9c2b22 100%);
+    box-shadow: 0 6px 16px rgba(165, 46, 37, .24);
+    border: none;
+}
+.message.other {
+    border-radius: 6px 20px 20px 20px;
+    background: rgba(255, 255, 255, .90);
+    border: 1px solid rgba(255, 255, 255, .95);
+    box-shadow: 0 4px 14px rgba(27, 42, 74, .08);
+}
+.message .audio-player { min-width: 178px; gap: 7px; }
+.message .play-btn, .message .download-btn { width: 34px; height: 34px; }
+
+/* ---------- صفحه ورود ---------- */
+#login-view { position: relative; padding: 24px; }
+#login-view::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none;
+    background:
+        radial-gradient(58% 42% at 50% 16%, rgba(184, 53, 43, .15), transparent 70%),
+        radial-gradient(48% 38% at 86% 86%, rgba(44, 74, 124, .15), transparent 70%);
+}
+.login-box {
+    position: relative; max-width: 400px; padding: 38px 26px 28px;
+    border-radius: 30px;
+    background: linear-gradient(165deg, rgba(255, 255, 255, .92) 0%, rgba(255, 255, 255, .62) 55%, rgba(255, 255, 255, .80) 100%);
+    border: 1px solid rgba(255, 255, 255, .9);
+    box-shadow: 0 30px 70px -20px rgba(20, 32, 58, .38), inset 0 1px 0 rgba(255, 255, 255, .95);
+    -webkit-backdrop-filter: blur(24px) saturate(160%);
+    backdrop-filter: blur(24px) saturate(160%);
+}
+.login-box img {
+    width: 76px; height: 76px; padding: 12px; margin-bottom: 18px;
+    border-radius: 22px; background: #fff;
+    box-shadow: 0 12px 26px rgba(27, 42, 74, .14), 0 0 0 1px rgba(27, 42, 74, .05);
+}
+.login-box h2 { font-size: 20px; letter-spacing: -.3px; color: var(--navy); }
+.login-box h4 { font-size: 12px; margin-bottom: 24px; padding-bottom: 14px; position: relative; }
+.login-box h4::after {
+    content: ''; position: absolute; bottom: 0; right: 50%; transform: translateX(50%);
+    width: 46px; height: 2px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--gold), var(--primary));
+}
+.login-box .form-group { margin-bottom: 14px; }
+.login-box .form-group label { font-size: 12.5px; font-weight: 700; margin-bottom: 7px; }
+.login-box .input {
+    height: 52px; border-radius: 15px; font-size: 15px;
+    background: rgba(255, 255, 255, .88);
+    border: 1px solid rgba(27, 42, 74, .10);
+    box-shadow: none;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.login-box .input:focus {
+    background: #fff; border-color: rgba(184, 53, 43, .5);
+    box-shadow: 0 0 0 4px rgba(184, 53, 43, .11);
+}
+#login-btn {
+    height: 54px; border-radius: 16px; font-size: 16px; margin-top: 8px;
+    box-shadow: 0 16px 30px -12px rgba(125, 33, 26, .65);
+}
+#login-btn:active { transform: translateY(1px) scale(.995); }
+@media (max-width: 420px) {
+    .login-box { padding: 32px 20px 24px; border-radius: 26px; }
+}
+
+/* ---------- دارک مود ---------- */
+html[data-theme="dark"] .header, html[data-theme="dark"] .chat-header {
+    background: linear-gradient(180deg, rgba(16, 24, 38, .94), rgba(16, 24, 38, .74));
+    border-bottom-color: rgba(255, 255, 255, .08);
+    box-shadow: none;
+}
+html[data-theme="dark"] .header-info img { border-color: rgba(255, 255, 255, .18); background: rgba(255, 255, 255, .92); }
+html[data-theme="dark"] .bell-btn, html[data-theme="dark"] .back-btn { background: rgba(255, 255, 255, .10); border-color: rgba(255, 255, 255, .14); }
+html[data-theme="dark"] .message.other {
+    background: rgba(255, 255, 255, .10);
+    border: 1px solid rgba(255, 255, 255, .14);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .32);
+}
+html[data-theme="dark"] .message.me {
+    background: linear-gradient(135deg, #b3453b 0%, #8e2b23 65%, #6d1f18 100%);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, .38);
+}
+html[data-theme="dark"] .login-box {
+    background: linear-gradient(165deg, rgba(255, 255, 255, .11) 0%, rgba(255, 255, 255, .05) 60%, rgba(255, 255, 255, .08) 100%);
+    border-color: rgba(255, 255, 255, .14);
+    box-shadow: 0 30px 70px -20px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(255, 255, 255, .12);
+}
+html[data-theme="dark"] .login-box h2 { color: #f2f6fb; }
+html[data-theme="dark"] .login-box .input { background: rgba(255, 255, 255, .07); border-color: rgba(255, 255, 255, .14); }
+html[data-theme="dark"] .login-box .input:focus { background: rgba(255, 255, 255, .12); border-color: rgba(192, 84, 74, .6); box-shadow: 0 0 0 4px rgba(192, 84, 74, .16); }
+
+/* ---------- پالت جسورانه ---------- */
+:root {
+    --primary: #cf3b2c;
+    --primary-dark: #8a1f16;
+    --primary-soft: #e8635a;
+    --gold: #d9ac4e;
+    --navy: #16233d;
+    --steel: #33578e;
+}
+html[data-theme="dark"] body { background: #080e17; }
+
+/* خط برند زیر هدر */
+.header::after, .chat-header::after {
+    content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px;
+    background: linear-gradient(90deg, rgba(207, 59, 44, .6), rgba(217, 172, 78, .55) 45%, rgba(255, 255, 255, 0) 88%);
+}
+html[data-theme="dark"] .header::after, html[data-theme="dark"] .chat-header::after {
+    background: linear-gradient(90deg, rgba(232, 99, 90, .7), rgba(217, 172, 78, .5) 45%, rgba(0, 0, 0, 0) 88%);
+}
+
+/* آواتار و اکسنت‌ها */
+.avatar, .profile-avatar {
+    background: linear-gradient(155deg, #e8635a 0%, #cf3b2c 55%, #8a1f16 100%);
+    box-shadow: 0 6px 16px rgba(138, 31, 22, .30), inset 0 1px 0 rgba(255, 255, 255, .45);
+}
+.contact-role { color: var(--steel); background: rgba(51, 87, 142, .10); border-color: rgba(51, 87, 142, .20); }
+.chat-task-info { position: relative; overflow: hidden; }
+.chat-task-info::before {
+    content: ''; position: absolute; top: 0; bottom: 0; right: 0; width: 3px;
+    background: linear-gradient(180deg, var(--gold), var(--primary));
+}
+html[data-theme="dark"] .chat-task-info { background: rgba(255, 255, 255, .06); }
+
+/* صفحه ورود: هاله سه‌رنگ */
+#login-view::before {
+    background:
+        radial-gradient(58% 42% at 50% 14%, rgba(207, 59, 44, .22), transparent 68%),
+        radial-gradient(46% 36% at 84% 84%, rgba(51, 87, 142, .20), transparent 70%),
+        radial-gradient(38% 30% at 16% 78%, rgba(217, 172, 78, .18), transparent 72%);
+}
+
+/* ---------- فراداده پیام: زمان و تیک ---------- */
+.msg-text { white-space: pre-wrap; word-break: break-word; }
+.msg-meta {
+    display: flex; align-items: center; gap: 6px;
+    justify-content: flex-end; margin-top: 4px;
+    font-size: 10.5px; line-height: 1; opacity: .9;
+}
+.message.other .msg-meta { justify-content: flex-start; }
+.msg-time { font-variant-numeric: tabular-nums; letter-spacing: .2px; }
+.message.me .msg-meta { color: rgba(255, 255, 255, .82); }
+.message.other .msg-meta { color: var(--text-light); }
+.msg-ticks { display: inline-flex; color: rgba(255, 255, 255, .55); transition: color .2s ease; }
+.msg-ticks svg { width: 15px; height: 10px; display: block; }
+.msg-ticks .tick-b { opacity: 0; transition: opacity .2s ease; }
+.msg-ticks.is-read { color: #d6f0ff; }
+.msg-ticks.is-read .tick-b { opacity: 1; }
+html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
+  </style>
 </head>
 <body>
 
@@ -489,8 +752,8 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
       <img src="logo.png" alt="لوگو شرکت پاریز پیشرو صنعت توسعه">
       <h2>پیام‌رسان مدیریت قراردادها</h2>
       <h4>شرکت پاریز پیشرو صنعت توسعه</h4>
-      <div class="form-group"><label>نام کاربری</label><input type="text" id="login-username" class="input" dir="ltr" style="text-align:left;" placeholder="نام کاربری خود را وارد کنید"></div>
-      <div class="form-group"><label>رمز عبور</label><input type="password" id="login-password" class="input" dir="ltr" style="text-align:left;" placeholder="رمز عبور خود را وارد کنید"></div>
+      <div class="form-group"><label>نام کاربری</label><input type="text" id="login-username" class="input" dir="ltr" style="text-align:left;" placeholder="نام کاربری خود را وارد کنید" autocomplete="username" autocapitalize="none" spellcheck="false" enterkeyhint="next"></div>
+      <div class="form-group"><label>رمز عبور</label><input type="password" id="login-password" class="input" dir="ltr" style="text-align:left;" placeholder="رمز عبور خود را وارد کنید" autocomplete="current-password" enterkeyhint="go"></div>
       <button class="btn" style="width: 100%;" id="login-btn" onclick="handleLogin()">ورود به سیستم</button>
     </div>
   </div>
@@ -603,7 +866,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
         <svg class="ico ico-stop" viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="2.6"/></svg>
       </button>
       <input type="file" id="audio-upload" accept="audio/*" style="display:none;" onchange="handleAudioUpload(event)">
-      <input type="text" id="chat-input" class="chat-input" placeholder="پیام خود را بنویسید...">
+      <input type="text" id="chat-input" class="chat-input" placeholder="پیام خود را بنویسید..." autocomplete="off" enterkeyhint="send">
       <button class="action-btn" onclick="sendTextMessage()" aria-label="ارسال">
         <svg class="ico" viewBox="0 0 24 24" fill="currentColor"><path d="M22 21 1 12 22 3v7l-15 2 15 2z"/></svg>
       </button>
@@ -697,6 +960,12 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
     let currentTaskData = null;
     let pollInterval = null;
     let lastMessageId = null;
+    let lastMessageAt = null;
+    let lastSeenCache = null;
+    let presenceTicks = 0;
+    let lastMarkReadAt = 0;
+    let readSupport = true;
+    const renderedIds = new Set();
     let isPolling = false;
     let isSending = false;
     let cachedUsers = [];
@@ -716,7 +985,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
     let recordingSeconds = 0;
 
     /* ===== Push Notification Setup ===== */
-    const VAPID_PUBLIC_KEY = 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuBkr3qBUYIHBQFLXYp5Nksh8E';
+    const VAPID_PUBLIC_KEY = 'BClsxFi-nA5LuAs91fA5jtKcjAQ9hRdIMwgoRMnsZrro8-w0FsT8fgvGCvoT4vmGuzHj-s5-1NoJ7gBxruFO1sM';
 
     function urlBase64ToUint8Array(base64String) {
         const padding = '='.repeat((4 - base64String.length % 4) % 4);
@@ -729,56 +998,95 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
         return outputArray;
     }
 
-    async function requestPushPermission() {
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-            alert('مرورگر شما از اعلان پوش پشتیبانی نمی‌کند.');
-            return;
-        }
-
+    function keyMatchesCurrent(subscription) {
         try {
+            const current = subscription.options && subscription.options.applicationServerKey;
+            if (!current) return false;
+            const a = new Uint8Array(current);
+            const b = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+            if (a.length !== b.length) return false;
+            for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) return false;
+            return true;
+        } catch (e) { return false; }
+    }
+
+    async function subscribePush(options) {
+        const silent = !!(options && options.silent);
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            if (!silent) alert('مرورگر شما از اعلان پوش پشتیبانی نمی‌کند.');
+            return false;
+        }
+        if (!db || Notification.permission === 'denied') {
+            if (!silent) alert('اجازه اعلان داده نشده است. از تنظیمات مرورگر اجازه دهید.');
+            return false;
+        }
+        if (Notification.permission === 'default') {
+            if (silent) return false;
             const permission = await Notification.requestPermission();
             if (permission !== 'granted') {
                 alert('شما اجازه اعلان را نداده‌اید. از تنظیمات مرورگر اجازه دهید.');
-                return;
+                return false;
             }
+        }
 
-            const registration = await navigator.serviceWorker.ready;
-            let subscription = await registration.pushManager.getSubscription();
-            
-            if (!subscription) {
-                subscription = await registration.pushManager.subscribe({
-                    userVisibleOnly: true,
-                    applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-                });
-            }
+        const registration = await navigator.serviceWorker.ready;
+        let subscription = await registration.pushManager.getSubscription();
 
-            const { data: session } = await db.auth.getSession();
-            if (!session || !session.session) return;
+        // اگر اشتراک قدیمی با کلید قبلی ساخته شده باشد، جایگزین می‌شود
+        if (subscription && !keyMatchesCurrent(subscription)) {
+            try { await subscription.unsubscribe(); } catch (e) {}
+            subscription = null;
+        }
 
-            const myId = session.session.user.id;
-            const subJSON = subscription.toJSON(); // اصلاح شد: J بزرگ
+        if (!subscription) {
+            subscription = await registration.pushManager.subscribe({
+                userVisibleOnly: true,
+                applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
+        }
 
-            const { error } = await db.from('push_subscriptions').upsert({
-                user_id: myId,
-                subscription: subJSON
-            }, { onConflict: 'user_id' });
+        const sessionRes = await db.auth.getSession();
+        const session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+        if (!session) return false;
 
-            if (error) throw error;
-            alert('اعلان‌های پوش با موفقیت فعال شد!');
+        const { error } = await db.from('push_subscriptions').upsert({
+            user_id: session.user.id,
+            subscription: subscription.toJSON()
+        }, { onConflict: 'user_id' });
+
+        if (error) throw error;
+        return true;
+    }
+
+    async function requestPushPermission() {
+        try {
+            const ok = await subscribePush({ silent: false });
+            if (ok) alert('اعلان‌های پوش با موفقیت فعال شد!');
         } catch (err) {
             console.error('Push setup error:', err);
             alert('خطا در فعال‌سازی اعلان‌ها: ' + err.message);
         }
     }
 
-    async function triggerPush(targetUserId, title, body) {
-        if (!targetUserId) return;
+    async function triggerPush(targetUserId, title, body, taskId) {
+        if (!targetUserId || !taskId || !db) return;
         try {
-            // 👇 تغییر آدرس به Vercel API
-            await fetch('/api/send-push', { 
+            const sessionRes = await db.auth.getSession();
+            const session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
+            if (!session) return;
+            await fetch('/api/send-push', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ targetUserId, title, body, url: window.location.origin })
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + session.access_token
+                },
+                body: JSON.stringify({
+                    taskId: taskId,
+                    targetUserId: targetUserId,
+                    title: title,
+                    body: body,
+                    url: window.location.origin
+                })
             });
         } catch (e) {
             console.warn('Push failed silently', e);
@@ -894,25 +1202,81 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
             return { ok: true, tasks: tasks };
         }
 
-        if (action === 'getTaskDetail' || action === 'getUpdates') {
-            const { data: task, error: taskErr } = await db.from('tasks').select('*').eq('id', data.taskId).single();
+        if (action === 'getTaskDetail') {
+            const { data: task, error: taskErr } = await db.from('tasks')
+                .select('id,title,description,status,due_date,due_time,from_user_id,to_user_id,created_at')
+                .eq('id', data.taskId).maybeSingle();
             if (taskErr || !task) return { ok: false, error: 'موضوع یافت نشد یا حذف شده است', deleted: true };
-            const { data: messages } = await db.from('messages').select('*').eq('task_id', data.taskId).order('created_at', { ascending: true });
-            let newMessages = messages || [];
-            if (action === 'getUpdates' && data.lastMessageId) {
-                const idx = newMessages.findIndex(m => m.id === data.lastMessageId);
-                if (idx !== -1) newMessages = newMessages.slice(idx + 1);
-            }
+
+            const { data: msgs, error: msgErr } = await db.from('messages')
+                .select('id,task_id,from_user_id,type,content,transcription,created_at')
+                .eq('task_id', data.taskId)
+                .order('created_at', { ascending: false })
+                .limit(150);
+            if (msgErr) return { ok: false, error: msgErr.message };
+
+            const messages = (msgs || []).slice().reverse();
             const otherUserId = myId === task.from_user_id ? task.to_user_id : task.from_user_id;
-            const { data: otherProfile } = await db.from('profiles').select('last_seen').eq('id', otherUserId).single();
-            if (action === 'getTaskDetail') {
-                db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', myId);
-            }
+            const { data: otherProfile } = await db.from('profiles').select('last_seen').eq('id', otherUserId).maybeSingle();
+
+            db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', myId)
+                .then(function () {}, function () {});
+
             return {
-                ok: true, task: task,
-                messages: action === 'getTaskDetail' ? newMessages : undefined,
-                newMessages: action === 'getUpdates' ? newMessages : undefined,
-                otherUserLastSeen: otherProfile?.last_seen || task.created_at,
+                ok: true,
+                task: task,
+                messages: messages,
+                otherUserLastSeen: (otherProfile && otherProfile.last_seen) || task.created_at,
+                canDelete: myId === task.from_user_id,
+                otherUserId: otherUserId
+            };
+        }
+
+        if (action === 'getUpdates') {
+            const { data: task, error: taskErr } = await db.from('tasks')
+                .select('id,title,description,status,due_date,due_time,from_user_id,to_user_id')
+                .eq('id', data.taskId).maybeSingle();
+            if (taskErr || !task) return { ok: false, error: 'موضوع یافت نشد یا حذف شده است', deleted: true };
+
+            let query = db.from('messages')
+                .select('id,task_id,from_user_id,type,content,transcription,created_at')
+                .eq('task_id', data.taskId);
+            if (data.since) query = query.gte('created_at', data.since);
+
+            const { data: msgs, error: msgErr } = await query
+                .order('created_at', { ascending: true })
+                .limit(100);
+            if (msgErr) return { ok: false, error: msgErr.message };
+
+            const otherUserId = myId === task.from_user_id ? task.to_user_id : task.from_user_id;
+            let myReadStates = null;
+            if (data.wantReadStates && readSupport) {
+                const readRes = await db.from('messages')
+                    .select('id,read_at')
+                    .eq('task_id', data.taskId)
+                    .eq('from_user_id', myId)
+                    .order('created_at', { ascending: false })
+                    .limit(30);
+                if (readRes.error) {
+                    if (String(readRes.error.message || '').indexOf('read_at') !== -1) readSupport = false;
+                    myReadStates = [];
+                } else {
+                    myReadStates = readRes.data || [];
+                }
+            }
+
+            let lastSeen = data.lastSeenCache || null;
+            if (data.wantPresence) {
+                const { data: otherProfile } = await db.from('profiles').select('last_seen').eq('id', otherUserId).maybeSingle();
+                lastSeen = (otherProfile && otherProfile.last_seen) || null;
+            }
+
+            return {
+                ok: true,
+                task: task,
+                newMessages: msgs || [],
+                myReadStates: myReadStates,
+                otherUserLastSeen: lastSeen,
                 canDelete: myId === task.from_user_id,
                 otherUserId: otherUserId
             };
@@ -929,7 +1293,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
         if (action === 'sendTextMessage') {
             const { error } = await db.from('messages').insert({ task_id: data.taskId, from_user_id: myId, type: 'text', content: data.text });
             if (error) return { ok: false, error: error.message };
-            if (data.otherUserId) triggerPush(data.otherUserId, 'پیام جدید', data.text);
+            if (data.otherUserId) triggerPush(data.otherUserId, 'پیام جدید', data.text, data.taskId);
             return { ok: true };
         }
 
@@ -938,13 +1302,12 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
             const fileName = `${data.taskId}_${Date.now()}.${ext}`;
             const { error: uploadError } = await db.storage.from('voice-messages').upload(fileName, data.blob, { contentType: data.mimeType });
             if (uploadError) return { ok: false, error: 'خطا در آپلود: ' + uploadError.message };
-            const { data: urlData } = db.storage.from('voice-messages').getPublicUrl(fileName);
-            const publicUrl = urlData.publicUrl;
+            // فقط مسیر فایل ذخیره می‌شود؛ لینک هنگام پخش امضا می‌شود
             const { error: insertError } = await db.from('messages').insert({
-                task_id: data.taskId, from_user_id: myId, type: 'voice', content: publicUrl, transcription: ''
+                task_id: data.taskId, from_user_id: myId, type: 'voice', content: fileName, transcription: ''
             });
             if (insertError) return { ok: false, error: 'خطای دیتابیس: ' + insertError.message };
-            if (data.otherUserId) triggerPush(data.otherUserId, 'پیام صوتی جدید', 'یک پیام صوتی دریافت کردید');
+            if (data.otherUserId) triggerPush(data.otherUserId, 'پیام صوتی جدید', 'یک پیام صوتی دریافت کردید', data.taskId);
             return { ok: true };
         }
 
@@ -961,14 +1324,29 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
             return { ok: true, text: fnData.text };
         }
 
+        if (action === 'markRead') {
+            if (!readSupport) return { ok: true, count: 0 };
+            const { data: updated, error } = await db.from('messages')
+                .update({ read_at: new Date().toISOString() })
+                .eq('task_id', data.taskId)
+                .neq('from_user_id', myId)
+                .is('read_at', null)
+                .select('id');
+            if (error) {
+                if (String(error.message || '').indexOf('read_at') !== -1) readSupport = false;
+                return { ok: false, error: error.message };
+            }
+            return { ok: true, count: (updated || []).length };
+        }
+
         if (action === 'createTask') {
-            const { error } = await db.from('tasks').insert({
+            const { data: created, error } = await db.from('tasks').insert({
                 title: data.title, description: data.description,
                 from_user_id: myId, to_user_id: data.to_user_id,
                 due_date: data.due_date, due_time: data.due_time
-            });
+            }).select('id').single();
             if (error) return { ok: false, error: error.message };
-            triggerPush(data.to_user_id, 'موضوع جدید', data.title);
+            triggerPush(data.to_user_id, 'موضوع جدید', data.title, created && created.id);
             return { ok: true };
         }
 
@@ -1136,6 +1514,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
                             showContactsView();
                             loadNotifications();
                             startHeartbeat();
+                            subscribePush({ silent: true }).catch(function () {});
                         }
                     });
                 }
@@ -1162,7 +1541,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
       const btn = document.getElementById('login-btn');
       btn.disabled = true; btn.innerText = 'در حال ورود...';
       const res = await callBackend('login', { username: user, password: pass });
-      if (res.ok) { currentUser = res.user; showContactsView(); loadNotifications(); startHeartbeat(); }
+      if (res.ok) { currentUser = res.user; showContactsView(); loadNotifications(); startHeartbeat(); subscribePush({ silent: true }).catch(function () {}); }
       else { alert(res.error); }
       btn.disabled = false; btn.innerText = 'ورود به سیستم';
     }
@@ -1293,6 +1672,10 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
     async function openChat(id) {
         currentTaskId = id;
         lastMessageId = null;
+        lastMessageAt = null;
+        lastSeenCache = null;
+        presenceTicks = 0;
+        renderedIds.clear();
         currentTaskData = null;
         document.getElementById('profile-view').classList.add('hidden');
         document.getElementById('chat-view').classList.remove('hidden');
@@ -1309,7 +1692,10 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
         area.innerHTML = '';
         if (res.messages.length > 0) {
             lastMessageId = res.messages[res.messages.length - 1].id;
+            lastMessageAt = res.messages[res.messages.length - 1].created_at || null;
             res.messages.forEach(appendMessage);
+            lastMarkReadAt = 0;
+            markConversationRead();
         } else {
             area.innerHTML = '<p class="empty-note">پیامی وجود ندارد. اولین پیام را بفرستید!</p>';
         }
@@ -1319,6 +1705,7 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
     }
 
     function closeChat() {
+        if (signedUrlCache) signedUrlCache.clear();
         if (isRecording) { try { mediaRecorder.stop(); } catch (e) {} isRecording = false; document.getElementById('mic-btn').classList.remove('recording'); }
         stopRecordingTimer();
         currentTaskId = null;
@@ -1334,39 +1721,79 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
         }
     }
 
-    async function pollUpdates() {
+    async function pollUpdates(force) {
         if (!currentTaskId || isPolling) return;
+        if (!force && document.visibilityState !== 'visible') return;
         isPolling = true;
-        const res = await callBackend('getUpdates', { taskId: currentTaskId, lastMessageId: lastMessageId });
-        if (res.ok) {
-            currentTaskData = res.task;
-            updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
-            if (res.newMessages.length > 0) {
-                const area = document.getElementById('messages-area');
-                if (area.innerHTML.includes('پیامی وجود ندارد')) area.innerHTML = '';
-                const isB = area.scrollHeight - area.scrollTop <= area.clientHeight + 50;
-                res.newMessages.forEach(m => { appendMessage(m); lastMessageId = m.id; });
-                if (isB) area.scrollTop = area.scrollHeight;
+        try {
+            const wantPresence = (presenceTicks++ % 10 === 0);
+            const res = await callBackend('getUpdates', {
+                taskId: currentTaskId,
+                since: lastMessageAt,
+                wantReadStates: true,
+                wantPresence: wantPresence,
+                lastSeenCache: lastSeenCache
+            });
+            if (res.ok) {
+                currentTaskData = res.task;
+                if (res.otherUserLastSeen) lastSeenCache = res.otherUserLastSeen;
+                updateTaskInfoUI(res.task, lastSeenCache || res.task.created_at, res.canDelete);
+
+                const fresh = (res.newMessages || []).filter(function (m) { return !renderedIds.has(m.id); });
+                if (fresh.length > 0) {
+                    const area = document.getElementById('messages-area');
+                    if (area.innerHTML.indexOf('پیامی وجود ندارد') !== -1) area.innerHTML = '';
+                    const atBottom = area.scrollHeight - area.scrollTop <= area.clientHeight + 80;
+                    fresh.forEach(function (m) {
+                        appendMessage(m);
+                        lastMessageAt = m.created_at || lastMessageAt;
+                        lastMessageId = m.id;
+                    });
+                    if (atBottom) area.scrollTop = area.scrollHeight;
+                }
+                if (res.myReadStates) applyReadStates(res.myReadStates);
+                if (fresh.length > 0 && document.visibilityState === 'visible') markConversationRead();
+            } else if (res.deleted) {
+                alert('این موضوع توسط فرستنده حذف شده است.');
+                closeChat();
             }
-        } else if (res.deleted) {
-            alert('این موضوع توسط فرستنده حذف شده است.');
-            closeChat();
+        } catch (e) {
+            console.warn('poll failed', e);
+        } finally {
+            isPolling = false;
         }
-        isPolling = false;
     }
 
+    let lastTaskInfoSignature = '';
     function updateTaskInfoUI(task, lastSeen, canDelete) {
-        document.getElementById('chat-title').innerText = task.title;
-        document.getElementById('chat-task-details').innerHTML = `
+        if (!task) return;
+        const titleEl = document.getElementById('chat-title');
+        if (titleEl && titleEl.innerText !== task.title) titleEl.innerText = task.title || '';
+
+        const signature = [task.description || '', task.status || '', task.due_date || '', task.due_time || '', lastSeen || '', canDelete ? 1 : 0].join('|');
+        if (signature === lastTaskInfoSignature) return;
+        lastTaskInfoSignature = signature;
+
+        const details = document.getElementById('chat-task-details');
+        if (details) {
+            details.innerHTML = `
             <p>${task.description || 'بدون توضیحات'}</p>
-            <span class="status">مهلت: ${formatJalali(task.due_date)}${task.due_time ? ' - ' + task.due_time.slice(0,5) : ''} | آخرین بازدید: ${timeAgo(lastSeen)}</span>
+            <span class="status">مهلت: ${formatJalali(task.due_date)}${task.due_time ? ' - ' + task.due_time.slice(0, 5) : ''} | آخرین بازدید: ${timeAgo(lastSeen)}</span>
         `;
-        document.getElementById('delete-task-btn').style.display = canDelete ? 'block' : 'none';
+        }
+        const delBtn = document.getElementById('delete-task-btn');
+        if (delBtn) delBtn.style.display = canDelete ? 'block' : 'none';
     }
 
     function appendMessage(msg) {
+        if (msg && msg.id) {
+            if (renderedIds.has(msg.id)) return;
+            renderedIds.add(msg.id);
+        }
+        const mine = msg.from_user_id === currentUser.id;
         const d = document.createElement('div');
-        d.className = 'message ' + (msg.from_user_id === currentUser.id ? 'me' : 'other');
+        if (msg && msg.id) d.dataset.id = msg.id;
+        d.className = 'message ' + (mine ? 'me' : 'other');
         if (msg.type === 'voice') {
             const transText = msg.transcription || '';
             const transBtn = transText ? '' : `<button class="transcribe-btn" onclick="manualTranscribe('${msg.id}', '${msg.content}', this)">${ICO.doc}تبدیل به متن</button>`;
@@ -1382,15 +1809,26 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
                 ${transBox}
             `;
         } else {
-            d.innerText = msg.content;
+            const textEl = document.createElement('div');
+            textEl.className = 'msg-text';
+            textEl.textContent = msg.content || '';
+            d.appendChild(textEl);
         }
+
+        const meta = document.createElement('div');
+        meta.className = 'msg-meta';
+        meta.innerHTML = '<span class="msg-time">' + formatMsgTime(msg.created_at) + '</span>' +
+            (mine ? tickMarkup(!!msg.read_at) : '');
+        d.appendChild(meta);
+
         document.getElementById('messages-area').appendChild(d);
     }
 
     async function manualTranscribe(msgId, audioUrl, btn) {
         btn.innerText = 'در حال تبدیل...'; btn.disabled = true;
         try {
-            const res = await callBackend('manualTranscribe', { msgId, audioUrl });
+            const signed = await resolveAudioUrl(audioUrl);
+            const res = await callBackend('manualTranscribe', { msgId, audioUrl: signed });
             if (res.ok) {
                 const box = document.getElementById('trans-box-' + msgId);
                 box.innerText = res.text;
@@ -1406,7 +1844,41 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
         }
     }
 
-    function playAudioDirect(url, btn) {
+    const SIGNED_URL_TTL = 3600;
+    const signedUrlCache = new Map();
+
+    // مسیر فایل را از URL عمومی قدیمی یا از مسیر خام استخراج می‌کند
+    function extractVoicePath(value) {
+        if (!value) return null;
+        const marker = '/voice-messages/';
+        const idx = value.indexOf(marker);
+        if (idx !== -1) return decodeURIComponent(value.slice(idx + marker.length).split('?')[0]);
+        if (/^https?:\/\//i.test(value)) return null;
+        return value.replace(/^\/+/, '');
+    }
+
+    async function resolveAudioUrl(value) {
+        if (!value) return value;
+        if (/^https?:\/\//i.test(value) && value.indexOf('/voice-messages/') === -1) return value;
+        const path = extractVoicePath(value);
+        if (!path || !db) return value;
+
+        const cached = signedUrlCache.get(path);
+        if (cached && cached.expiresAt > Date.now() + 60000) return cached.url;
+
+        const res = await db.storage.from('voice-messages').createSignedUrl(path, SIGNED_URL_TTL);
+        if (res.error || !res.data || !res.data.signedUrl) {
+            console.warn('signed url failed', res.error && res.error.message);
+            return value;
+        }
+        signedUrlCache.set(path, {
+            url: res.data.signedUrl,
+            expiresAt: Date.now() + SIGNED_URL_TTL * 1000
+        });
+        return res.data.signedUrl;
+    }
+
+    async function playAudioDirect(url, btn) {
         if (globalAudioPlayer && activePlayBtn === btn) {
             if (globalAudioPlayer.paused) {
                 globalAudioPlayer.play();
@@ -1423,7 +1895,8 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
             if (activePlayBtn) activePlayBtn.classList.remove('is-playing', 'is-loading');
         }
         btn.classList.add('is-loading');
-        globalAudioPlayer = new Audio(url);
+        const src = await resolveAudioUrl(url);
+        globalAudioPlayer = new Audio(src);
         activePlayBtn = btn;
         globalAudioPlayer.play().then(() => {
             btn.classList.remove('is-loading');
@@ -1440,10 +1913,11 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
     }
 
     async function downloadAudio(msgId, url) {
+        const src = await resolveAudioUrl(url);
         try {
             const cache = await caches.open('voice-cache-v1');
-            let response = await cache.match(url);
-            if (!response) response = await fetch(url);
+            let response = await cache.match(src);
+            if (!response) response = await fetch(src);
             if (response.ok) {
                 const blob = await response.blob();
                 const a = document.createElement('a');
@@ -1453,11 +1927,52 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
                 a.click();
                 document.body.removeChild(a);
             } else {
-                window.open(url, '_blank');
+                window.open(src, '_blank');
             }
         } catch (e) {
-            window.open(url, '_blank');
+            window.open(src, '_blank');
         }
+    }
+
+    function formatMsgTime(value) {
+        if (!value) return '';
+        const dt = new Date(value);
+        if (isNaN(dt.getTime())) return '';
+        try {
+            return dt.toLocaleTimeString('fa-IR', { hour: '2-digit', minute: '2-digit' });
+        } catch (e) {
+            return String(dt.getHours()).padStart(2, '0') + ':' + String(dt.getMinutes()).padStart(2, '0');
+        }
+    }
+
+    function tickMarkup(isRead) {
+        return '<span class="msg-ticks' + (isRead ? ' is-read' : '') + '" aria-label="' + (isRead ? 'خوانده شد' : 'ارسال شد') + '">' +
+            '<svg viewBox="0 0 19 12" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' +
+            '<path d="M1 7.1 4.2 10.2 9.8 3"/>' +
+            '<path class="tick-b" d="M8.4 7.1 11.6 10.2 17.4 3"/>' +
+            '</svg></span>';
+    }
+
+    function applyReadStates(states) {
+        if (!states || !states.length) return;
+        const area = document.getElementById('messages-area');
+        if (!area) return;
+        states.forEach(function (st) {
+            if (!st || !st.id) return;
+            const el = area.querySelector('.message[data-id="' + st.id + '"]');
+            if (!el) return;
+            const ticks = el.querySelector('.msg-ticks');
+            if (!ticks) return;
+            if (st.read_at) ticks.classList.add('is-read');
+        });
+    }
+
+    function markConversationRead() {
+        if (!currentTaskId || !readSupport) return;
+        const now = Date.now();
+        if (now - lastMarkReadAt < 4000) return;
+        lastMarkReadAt = now;
+        callBackend('markRead', { taskId: currentTaskId }).catch(function () {});
     }
 
     function formatTimer(seconds) {
@@ -1737,7 +2252,28 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
         } else alert(res.error);
     }
 
-    if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(console.log); }); }
+    // ارسال پیام با Enter
+    var chatInputEl = document.getElementById('chat-input');
+    if (chatInputEl) {
+        chatInputEl.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendTextMessage();
+            }
+        });
+    }
+
+    // وقتی صفحه دوباره فعال شد، فوری به‌روزرسانی شود
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible' && currentTaskId) pollUpdates(true);
+    });
+
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => { navigator.serviceWorker.register('./sw.js').catch(console.log); });
+        navigator.serviceWorker.addEventListener('message', function (ev) {
+            if (ev.data && ev.data.type === 'notification-click' && currentTaskId) pollUpdates(true);
+        });
+    }
   </script>
 </body>
 </html>

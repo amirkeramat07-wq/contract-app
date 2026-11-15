@@ -1,83 +1,100 @@
-const CACHE_NAME = 'contract-app-v27';
-const ASSETS_TO_CACHE = [
-  './',
-  './index.html',
-  'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap'
-];
+const CACHE_NAME = 'contract-app-v28';
+const SHELL = ['./', './index.html', './manifest.json', './logo.png', './icon-192.png', './icon-512.png', './supabase.min.js'];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => cache.addAll(SHELL).catch(() => {})).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
+    caches.keys()
+      .then((names) => Promise.all(names.map((n) => (n === CACHE_NAME ? null : caches.delete(n)))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
 self.addEventListener('fetch', (event) => {
-  if (event.request.method !== 'GET' || event.request.url.includes('supabase.co')) {
+  const req = event.request;
+
+  // درخواست‌های غیر GET و ارتباط با Supabase و API را دست نمی‌زنیم
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.startsWith('/api/')) return;
+
+  // صفحه اصلی: شبکه اول، کش به‌عنوان پشتیبان (تا نسخه جدید همیشه دیده شود)
+  const isNavigation = req.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('/index.html');
+  if (isNavigation) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          const copy = res.clone();
+          caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => {});
+          return res;
+        })
+        .catch(() => caches.match(req).then((hit) => hit || caches.match('./index.html')))
+    );
     return;
   }
-  
+
+  // فایل‌های ثابت: کش اول
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      return response || fetch(event.request).catch(() => {
-          return new Response('', { status: 408, statusText: 'Network Error' });
-      });
+    caches.match(req).then((hit) => {
+      if (hit) return hit;
+      return fetch(req)
+        .then((res) => {
+          if (res && res.status === 200 && res.type === 'basic') {
+            const copy = res.clone();
+            caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => hit || Response.error());
     })
   );
 });
-self.addEventListener('install', (event) => {
-  self.skipWaiting();
-});
 
-self.addEventListener('activate', (event) => {
-  event.waitUntil(clients.claim());
-});
-
-// دریافت نوتیفیکیشن
-self.addEventListener('push', function(event) {
-  if (event.data) {
-    const data = event.data.json();
-    const options = {
-      body: data.body,
-      icon: './logo.png',
-      badge: './logo.png',
-      data: { url: data.url || '/' },
-      vibrate: [200, 100, 200]
-    };
-    event.waitUntil(
-      self.registration.showNotification(data.title, options)
-    );
+self.addEventListener('push', (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { body: event.data ? event.data.text() : '' };
   }
+
+  const options = {
+    body: data.body || 'پیام جدیدی دارید',
+    icon: './logo.png',
+    badge: './logo.png',
+    dir: 'rtl',
+    lang: 'fa',
+    tag: data.tag || 'contract-app',
+    renotify: true,
+    data: { url: data.url || './' },
+    vibrate: [180, 90, 180],
+  };
+
+  event.waitUntil(
+    self.registration.showNotification(data.title || 'پیام‌رسان قراردادها', options)
+  );
 });
 
-// وقتی روی نوتیفیکیشن کلیک شد
-self.addEventListener('notificationclick', function(event) {
+self.addEventListener('notificationclick', (event) => {
   event.notification.close();
+  const target = (event.notification.data && event.notification.data.url) || './';
+
   event.waitUntil(
-    clients.matchAll({ type: 'window' }).then(windowClients => {
-      // اگر برنامه باز است، فوکوس کن
-      for (var i = 0; i < windowClients.length; i++) {
-        var client = windowClients[i];
-        if (client.url === event.notification.data.url && 'focus' in client) {
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          client.postMessage({ type: 'notification-click' });
           return client.focus();
         }
       }
-      // وگرنه برنامه را باز کن
-      if (clients.openWindow) {
-        return clients.openWindow(event.notification.data.url);
-      }
+      if (self.clients.openWindow) return self.clients.openWindow(target);
+      return undefined;
     })
   );
 });
