@@ -1224,12 +1224,23 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     let lastMessageId = null;
     let lastMessageAt = null;
     let lastSeenCache = null;
-    let presenceTicks = 0;
+    let lastPresenceAt = 0;
     let lastMarkReadAt = 0;
     let readSupport = true;
+    let readRpcSupport = true;
     const renderedIds = new Set();
     let isPolling = false;
     let isSending = false;
+
+    /* ---------- جریان زنده (Supabase Realtime) ---------- */
+    let rtChannel = null;
+    let rtTaskId = null;
+    let rtConnected = false;
+    let rtProven = false;
+    let rtRefreshTimer = null;
+    let rtSafetyAt = 0;
+    const POLL_FALLBACK_MS = 3000;
+    const RT_SAFETY_MS = 30000;
     let cachedUsers = [];
     let allContacts = [];
     let mediaRecorder = null;
@@ -1471,7 +1482,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
             if (taskErr || !task) return { ok: false, error: 'موضوع یافت نشد یا حذف شده است', deleted: true };
 
             const { data: msgs, error: msgErr } = await db.from('messages')
-                .select('id,task_id,from_user_id,type,content,transcription,created_at')
+                .select('id,task_id,from_user_id,type,content,transcription,created_at,read_at')
                 .eq('task_id', data.taskId)
                 .order('created_at', { ascending: false })
                 .limit(150);
@@ -1501,7 +1512,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
             if (taskErr || !task) return { ok: false, error: 'موضوع یافت نشد یا حذف شده است', deleted: true };
 
             let query = db.from('messages')
-                .select('id,task_id,from_user_id,type,content,transcription,created_at')
+                .select('id,task_id,from_user_id,type,content,transcription,created_at,read_at')
                 .eq('task_id', data.taskId);
             if (data.since) query = query.gte('created_at', data.since);
 
@@ -1588,6 +1599,23 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
 
         if (action === 'markRead') {
             if (!readSupport) return { ok: true, count: 0 };
+            // مسیر اصلی: تابع امن دیتابیس (به سیاست UPDATE روی جدول نیاز ندارد)
+            if (readRpcSupport) {
+                try {
+                    const rpcRes = await db.rpc('mark_task_read', { p_task_id: data.taskId });
+                    if (!rpcRes.error) return { ok: true, count: rpcRes.data || 0 };
+                    const rpcMsg = String((rpcRes.error && rpcRes.error.message) || '');
+                    const missing = (rpcRes.error && rpcRes.error.code === 'PGRST202') ||
+                        /could not find|does not exist|schema cache/i.test(rpcMsg);
+                    if (missing) {
+                        readRpcSupport = false; // تابع نصب نشده؛ مسیر پشتیبان
+                    } else {
+                        console.warn('[read] mark_task_read failed:', rpcMsg);
+                    }
+                } catch (e) {
+                    readRpcSupport = false;
+                }
+            }
             const { data: updated, error } = await db.from('messages')
                 .update({ read_at: new Date().toISOString() })
                 .eq('task_id', data.taskId)
@@ -1596,7 +1624,11 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
                 .select('id');
             if (error) {
                 if (String(error.message || '').indexOf('read_at') !== -1) readSupport = false;
+                console.warn('[read] update read_at failed:', error.message);
                 return { ok: false, error: error.message };
+            }
+            if ((updated || []).length === 0) {
+                console.warn('[read] update affected 0 rows - احتمالاً سیاست UPDATE اجازه نمی‌دهد؛ read-receipts.sql را اجرا کنید.');
             }
             return { ok: true, count: (updated || []).length };
         }
@@ -1936,7 +1968,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         lastMessageId = null;
         lastMessageAt = null;
         lastSeenCache = null;
-        presenceTicks = 0;
+        lastPresenceAt = 0;
         renderedIds.clear();
         currentTaskData = null;
         document.getElementById('profile-view').classList.add('hidden');
@@ -1963,7 +1995,8 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         }
         area.scrollTop = area.scrollHeight;
         if (pollInterval) clearInterval(pollInterval);
-        pollInterval = setInterval(pollUpdates, 3000);
+        pollInterval = setInterval(pollUpdates, POLL_FALLBACK_MS);
+        startRealtime(id);
     }
 
     function closeChat() {
@@ -1974,6 +2007,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         currentTaskData = null;
         lastMessageId = null;
         if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+        stopRealtime();
         document.getElementById('chat-view').classList.add('hidden');
         if (currentContactId) {
             document.getElementById('profile-view').classList.remove('hidden');
@@ -1983,12 +2017,91 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         }
     }
 
+    function startRealtime(taskId) {
+        stopRealtime();
+        if (!db || typeof db.channel !== 'function') return;
+        rtTaskId = taskId;
+        rtConnected = false;
+        rtProven = false;
+        const ch = db.channel('chat-' + taskId);
+        ch.on('postgres_changes', {
+            event: '*', schema: 'public', table: 'messages',
+            filter: 'task_id=eq.' + taskId
+        }, function (payload) {
+            if (ch !== rtChannel) return;
+            rtSafetyAt = Date.now();
+            rtProven = true;
+            handleRealtimeMessage(payload);
+        });
+        ch.on('postgres_changes', {
+            event: '*', schema: 'public', table: 'tasks',
+            filter: 'id=eq.' + taskId
+        }, function () {
+            if (ch !== rtChannel) return;
+            rtSafetyAt = Date.now();
+            rtProven = true;
+            scheduleRealtimeRefresh();
+        });
+        rtChannel = ch;
+        ch.subscribe(function (status) {
+            if (ch !== rtChannel) return;
+            if (status === 'SUBSCRIBED') {
+                rtConnected = true;
+                rtSafetyAt = Date.now();
+                // همگام‌سازی اولیه و جبران رویدادهای از دست‌رفته
+                scheduleRealtimeRefresh();
+            } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                // اتصال قطع شد؛ پولینگ دوره‌ای دوباره به‌عنوان پشتیبان فعال می‌شود
+                rtConnected = false;
+            }
+        });
+    }
+
+    function stopRealtime() {
+        if (rtRefreshTimer) { clearTimeout(rtRefreshTimer); rtRefreshTimer = null; }
+        const ch = rtChannel;
+        rtChannel = null;
+        rtTaskId = null;
+        rtConnected = false;
+        rtProven = false;
+        rtSafetyAt = 0;
+        if (ch && db && typeof db.removeChannel === 'function') {
+            try { db.removeChannel(ch); } catch (e) {}
+        }
+    }
+
+    function scheduleRealtimeRefresh() {
+        if (rtRefreshTimer) return;
+        rtRefreshTimer = setTimeout(function () {
+            rtRefreshTimer = null;
+            if (currentTaskId && document.visibilityState === 'visible') pollUpdates(true);
+        }, 250);
+    }
+
+    function handleRealtimeMessage(payload) {
+        if (!payload || !payload.new) { scheduleRealtimeRefresh(); return; }
+        const row = payload.new;
+        // تیک خوانده‌شدن: اگر طرف مقابل پیام ما را خوانده، همان‌جا و بدون درخواست اضافه اعمال شود
+        if (currentUser && row.from_user_id === currentUser.id && row.read_at) {
+            applyReadStates([{ id: row.id, read_at: row.read_at }]);
+            if (payload.eventType === 'UPDATE') return;
+        }
+        scheduleRealtimeRefresh();
+    }
+
     async function pollUpdates(force) {
         if (!currentTaskId || isPolling) return;
         if (!force && document.visibilityState !== 'visible') return;
+        // تا وقتی اولین رویداد واقعی از Realtime نرسیده، پولینگ ۳ ثانیه‌ای پابرجا می‌ماند؛
+        // بعد از آن فقط یک همگام‌سازی ایمنی هر ۳۰ ثانیه لازم است.
+        if (!force && rtConnected && rtProven) {
+            if (Date.now() - rtSafetyAt < RT_SAFETY_MS) return;
+            rtSafetyAt = Date.now();
+        }
         isPolling = true;
         try {
-            const wantPresence = (presenceTicks++ % 10 === 0);
+            const wantPresence = (Date.now() - lastPresenceAt >= 30000);
+            if (wantPresence) lastPresenceAt = Date.now();
             const res = await callBackend('getUpdates', {
                 taskId: currentTaskId,
                 since: lastMessageAt,
@@ -2234,7 +2347,9 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         const now = Date.now();
         if (now - lastMarkReadAt < 4000) return;
         lastMarkReadAt = now;
-        callBackend('markRead', { taskId: currentTaskId }).catch(function () {});
+        callBackend('markRead', { taskId: currentTaskId }).then(function (r) {
+            if (r && !r.ok) console.warn('[read] markConversationRead:', r.error);
+        }).catch(function () {});
     }
 
     function formatTimer(seconds) {
