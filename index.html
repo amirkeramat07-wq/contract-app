@@ -346,6 +346,17 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
 .badge-status { padding: 4px 11px; border-radius: 999px; font-size: 11.5px; font-weight: 700; color: #fff; box-shadow: inset 0 1px 0 rgba(255, 255, 255, .3), 0 3px 8px rgba(0, 0, 0, .10); }
 
 #chat-view { animation: slideInRight .3s ease; }
+/* چت همیشه دقیقاً هم‌اندازهٔ صفحهٔ گوشی باشد، مستقل از بقیهٔ ویوها */
+#chat-view:not(.hidden) {
+    position: fixed; inset: 0; z-index: 40;
+    height: 100vh; height: 100dvh;
+    max-height: 100vh; max-height: 100dvh;
+    width: 100%; max-width: 100vw;
+    overflow: hidden;
+    background: transparent;
+}
+#chat-view .messages-area { min-height: 0; overflow-x: hidden; }
+#chat-view .chat-input-area { flex-shrink: 0; }
 .chat-header { padding-left: 14px; padding-right: 14px; }
 .chat-header-right { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .chat-header h3 { font-size: 16px !important; font-weight: 700 !important; color: var(--navy) !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin: 0; }
@@ -1228,6 +1239,41 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     let lastMarkReadAt = 0;
     let readSupport = true;
     let readRpcSupport = true;
+    let presenceRpcSupport = true;
+    let presenceVisibilityHooked = false;
+
+    // جدیدترین زمان از بین دو مقدار
+    function latestOf(a, b) {
+        if (!a) return b || null;
+        if (!b) return a;
+        return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
+    }
+
+    function markPresenceDirect() {
+        if (!db || !currentUser) return;
+        db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', currentUser.id)
+            .then(function () {}, function () {});
+    }
+
+    // مسیر اصلی: تابع امن دیتابیس (به سیاست UPDATE روی profiles نیاز ندارد)
+    function markPresence() {
+        if (!db) return;
+        if (!presenceRpcSupport) return markPresenceDirect();
+        db.rpc('touch_last_seen').then(function (res) {
+            if (res && !res.error) return;
+            const err = res && res.error;
+            const msg = String((err && err.message) || '');
+            if (!err || err.code === 'PGRST202' || /could not find|does not exist|schema cache/i.test(msg)) {
+                presenceRpcSupport = false;
+                markPresenceDirect();
+            } else {
+                console.warn('[presence] touch_last_seen failed:', msg);
+            }
+        }).catch(function () {
+            presenceRpcSupport = false;
+            markPresenceDirect();
+        });
+    }
     const renderedIds = new Set();
     let isPolling = false;
     let isSending = false;
@@ -1459,6 +1505,20 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         const myId = session.user.id;
 
         if (action === 'heartbeat') {
+            if (presenceRpcSupport) {
+                try {
+                    const rpcRes = await db.rpc('touch_last_seen');
+                    if (!rpcRes.error) return { ok: true };
+                    const rpcMsg = String((rpcRes.error && rpcRes.error.message) || '');
+                    if (rpcRes.error.code === 'PGRST202' || /could not find|does not exist|schema cache/i.test(rpcMsg)) {
+                        presenceRpcSupport = false;
+                    } else {
+                        console.warn('[presence] touch_last_seen failed:', rpcMsg);
+                    }
+                } catch (e) {
+                    presenceRpcSupport = false;
+                }
+            }
             await db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', myId);
             return { ok: true };
         }
@@ -1492,14 +1552,15 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
             const otherUserId = myId === task.from_user_id ? task.to_user_id : task.from_user_id;
             const { data: otherProfile } = await db.from('profiles').select('last_seen').eq('id', otherUserId).maybeSingle();
 
-            db.from('profiles').update({ last_seen: new Date().toISOString() }).eq('id', myId)
-                .then(function () {}, function () {});
+            markPresence();
+
+            const lastOtherMsg = messages.filter(function (m) { return m.from_user_id === otherUserId; }).pop();
 
             return {
                 ok: true,
                 task: task,
                 messages: messages,
-                otherUserLastSeen: (otherProfile && otherProfile.last_seen) || task.created_at,
+                otherUserLastSeen: latestOf(otherProfile && otherProfile.last_seen, lastOtherMsg && lastOtherMsg.created_at) || task.created_at,
                 canDelete: myId === task.from_user_id,
                 otherUserId: otherUserId
             };
@@ -1538,10 +1599,13 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
                 }
             }
 
+            const lastOtherMsg = (msgs || []).filter(function (m) { return m.from_user_id === otherUserId; }).pop();
             let lastSeen = data.lastSeenCache || null;
             if (data.wantPresence) {
                 const { data: otherProfile } = await db.from('profiles').select('last_seen').eq('id', otherUserId).maybeSingle();
-                lastSeen = (otherProfile && otherProfile.last_seen) || null;
+                lastSeen = latestOf(otherProfile && otherProfile.last_seen, lastOtherMsg && lastOtherMsg.created_at) || null;
+            } else {
+                lastSeen = latestOf(lastSeen, lastOtherMsg && lastOtherMsg.created_at) || null;
             }
 
             return {
@@ -1707,6 +1771,12 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     function startHeartbeat() {
         if (heartbeatInterval) clearInterval(heartbeatInterval);
         heartbeatInterval = setInterval(() => callBackend('heartbeat'), 60000);
+        if (!presenceVisibilityHooked) {
+            presenceVisibilityHooked = true;
+            document.addEventListener('visibilitychange', function () {
+                if (document.visibilityState === 'visible' && currentUser) callBackend('heartbeat').catch(function () {});
+            });
+        }
     }
 
     async function openAddUserModal() {
@@ -1878,6 +1948,12 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         }
     }
 
+    function dismissTaskNotifs(taskId) {
+        // همهٔ حالت‌های اعلان این موضوع پاک می‌شوند تا دوباره برنگردد
+        [taskId, taskId + ':soon', taskId + ':doing', taskId + ':late', taskId + ':senderLate'].forEach(markRead);
+        loadNotifications();
+    }
+
     async function openNotifModal() {
         openModalEl(document.getElementById('notif-modal'));
         const c = document.getElementById('notif-list-container');
@@ -1889,10 +1965,13 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
                 const d = document.createElement('div');
                 d.className = 'notif-item ' + n.type;
                 d.onclick = () => {
+                    d.remove();
+                    const box = document.getElementById('notif-list-container');
+                    if (box && !box.querySelector('.notif-item')) {
+                        box.innerHTML = '<p class="empty-note">اعلان جدیدی ندارید.</p>';
+                    }
+                    dismissTaskNotifs(n.id);
                     closeNotifModal();
-                    const keys = n.status === 'گذشته از مهلت' ? [n.id + ':late', n.id + ':senderLate'] : [n.id, n.id + ':soon', n.id + ':doing'];
-                    keys.forEach(markRead);
-                    loadNotifications();
                     openChat(n.id);
                 };
                 d.innerHTML = `<span class="n-title">${n.title}</span><span class="n-msg">${n.message}</span>`;
@@ -1971,7 +2050,10 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         lastPresenceAt = 0;
         renderedIds.clear();
         currentTaskData = null;
+        document.getElementById('contacts-view').classList.add('hidden');
         document.getElementById('profile-view').classList.add('hidden');
+        document.getElementById('admin-view').classList.add('hidden');
+        closeNotifModal();
         document.getElementById('chat-view').classList.remove('hidden');
         document.getElementById('messages-area').innerHTML = '<p class="empty-note">در حال دریافت...</p>';
         const res = await callBackend('getTaskDetail', { taskId: id });
