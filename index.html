@@ -744,6 +744,267 @@ html[data-theme="dark"] .chat-task-info { background: rgba(255, 255, 255, .06); 
 .msg-ticks.is-read .tick-b { opacity: 1; }
 html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
   </style>
+<style id="motion">
+  /* ============================================================
+     Motion layer — tokens and recipes from transitions.dev
+     (modal open/close, panel reveal, page side-by-side,
+      notification badge, error state shake)
+     ============================================================ */
+  :root {
+    /* Durations */
+    --duration-stagger: 40ms;
+    --duration-micro: 80ms;
+    --duration-quick: 150ms;
+    --duration-fast: 250ms;
+    --duration-medium: 350ms;
+    --duration-slow: 400ms;
+    --duration-very-slow: 500ms;
+    /* Easings */
+    --ease-smooth-out: cubic-bezier(0.22, 1, 0.36, 1);
+    --ease-in-out: ease-in-out;
+    --ease-bounce: cubic-bezier(0.34, 1.36, 0.64, 1);
+    /* Distances / scales / blur */
+    --distance-micro: 4px;
+    --distance-small: 6px;
+    --distance-base: 8px;
+    --distance-medium: 12px;
+    --scale-large: 0.96;
+    --blur-small: 2px;
+    --blur-medium: 3px;
+    /* Modal open / close */
+    --modal-open-dur: var(--duration-fast);
+    --modal-close-dur: var(--duration-quick);
+    --modal-scale: var(--scale-large);
+    --modal-ease: var(--ease-smooth-out);
+    /* Panel reveal */
+    --panel-open-dur: var(--duration-slow);
+    --panel-close-dur: var(--duration-medium);
+    --panel-translate-y: 100px;
+    --panel-blur: var(--blur-small);
+    --panel-ease: var(--ease-smooth-out);
+    /* Page side-by-side */
+    --page-slide-dur: var(--duration-fast);
+    --page-fade-dur: var(--duration-fast);
+    --page-slide-distance: var(--distance-base);
+    --page-blur: var(--blur-medium);
+    --page-ease: var(--ease-smooth-out);
+    /* Notification badge */
+    --badge-slide-dur: 260ms;
+    --badge-pop-dur: var(--duration-very-slow);
+    --badge-pop-ease: var(--ease-bounce);
+    --badge-blur: var(--blur-small);
+    --badge-offset-x: -8.2px;
+    --badge-offset-y: 12.4px;
+    /* Error state */
+    --shake-distance: var(--distance-small);
+    --shake-overshoot: 4px;
+    --revert-hold: 4000ms;
+    --revert-dur: 280ms;
+  }
+
+  /* --- Modal open / close ------------------------------------ */
+  .modal-overlay {
+    animation: none;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    will-change: opacity;
+    transition:
+      opacity var(--modal-close-dur) var(--modal-ease),
+      visibility 0s linear var(--modal-close-dur);
+  }
+  .modal-overlay .modal-content {
+    animation: none;
+    transform: scale(var(--modal-scale));
+    opacity: 0;
+    will-change: transform, opacity;
+    transition:
+      transform var(--modal-open-dur) var(--modal-ease),
+      opacity   var(--modal-open-dur) var(--modal-ease);
+  }
+  .modal-overlay.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition:
+      opacity var(--modal-open-dur) var(--modal-ease),
+      visibility 0s;
+  }
+  .modal-overlay.is-open .modal-content {
+    transform: scale(1);
+    opacity: 1;
+  }
+  /* notif sheet reads as a panel, not a dialog */
+  .modal-overlay .modal-content#notif-sheet,
+  #notif-modal .modal-content {
+    transform: translateY(calc(var(--panel-translate-y) * 0.35));
+  }
+  #notif-modal.is-open .modal-content { transform: none; }
+  .modal-overlay.is-closing {
+    visibility: visible;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+      opacity var(--modal-close-dur) var(--modal-ease),
+      visibility 0s linear var(--modal-close-dur);
+  }
+  .modal-overlay.is-closing .modal-content {
+    opacity: 0;
+    transition:
+      transform var(--modal-close-dur) var(--modal-ease),
+      opacity   var(--modal-close-dur) var(--modal-ease);
+  }
+  .modal-overlay.is-closing:not(#notif-modal) .modal-content {
+    transform: scale(var(--modal-scale));
+  }
+
+  /* --- Page side-by-side: contacts <-> chat / profile / admin -- */
+  @keyframes t-view-in {
+    from {
+      opacity: 0;
+      transform: translateX(calc(var(--page-slide-distance) * var(--t-view-dir, 1)));
+      filter: blur(var(--page-blur));
+    }
+  }
+  #chat-view:not(.hidden) {
+    --t-view-dir: -1;
+    animation: t-view-in var(--page-slide-dur) var(--page-ease) backwards;
+  }
+  #profile-view:not(.hidden),
+  #admin-view:not(.hidden) {
+    --t-view-dir: 1;
+    animation: t-view-in var(--page-slide-dur) var(--page-ease) backwards;
+  }
+
+  /* --- Panel reveal: the side drawer ------------------------- */
+  .drawer {
+    opacity: 0;
+    filter: blur(var(--panel-blur));
+    transition:
+      right var(--panel-close-dur) var(--panel-ease),
+      opacity var(--panel-close-dur) var(--panel-ease),
+      filter var(--panel-close-dur) var(--panel-ease);
+    will-change: right, opacity, filter;
+  }
+  .drawer.open {
+    right: 0;
+    opacity: 1;
+    filter: blur(0);
+    transition-duration: var(--panel-open-dur);
+  }
+
+  /* --- Notification badge ------------------------------------ */
+  @keyframes t-badge-pop {
+    from {
+      transform: translate(var(--badge-offset-x), var(--badge-offset-y)) scale(0.2);
+      opacity: 0;
+      filter: blur(var(--badge-blur));
+    }
+  }
+  .bell-badge {
+    animation: t-badge-pop var(--badge-pop-dur) var(--badge-pop-ease);
+    transform-origin: center;
+  }
+
+  /* --- Message bubbles --------------------------------------- */
+  @keyframes t-msg-in {
+    from {
+      opacity: 0;
+      transform: translateY(var(--distance-medium)) scale(0.985);
+      filter: blur(var(--blur-small));
+    }
+  }
+  .message { animation: t-msg-in var(--duration-fast) var(--ease-smooth-out); }
+
+  /* --- Error state: login ------------------------------------ */
+  .t-error-msg {
+    margin: 10px 2px 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--danger);
+    text-align: right;
+    opacity: 0;
+    visibility: hidden;
+    transition:
+      opacity var(--revert-dur) ease-out,
+      visibility 0s linear var(--revert-dur);
+  }
+  .login-box.is-error .t-error-msg {
+    opacity: 1;
+    visibility: visible;
+    transition:
+      opacity var(--revert-dur) ease-out,
+      visibility 0s;
+  }
+  .login-box.is-error .input { border-color: var(--danger); }
+
+  @media (prefers-reduced-motion: reduce) {
+    .modal-overlay,
+    .modal-overlay .modal-content,
+    .drawer,
+    .message,
+    #chat-view,
+    #profile-view,
+    #admin-view,
+    .bell-badge,
+    .t-error-msg {
+      animation: none !important;
+      transition: none !important;
+    }
+  }
+</style>
+
+  <script>
+    /* Motion helpers (transitions.dev recipes) */
+    window.__motionMs = function (name, fallback) {
+      var v = parseFloat(getComputedStyle(document.documentElement).getPropertyValue(name));
+      return Number.isFinite(v) ? v : fallback;
+    };
+    window.openModalEl = function (el) {
+      if (!el) return;
+      el.classList.remove('hidden', 'is-closing');
+      void el.offsetWidth;
+      el.classList.add('is-open');
+      el.setAttribute('aria-hidden', 'false');
+    };
+    window.closeModalEl = function (el) {
+      if (!el || el.classList.contains('hidden')) return;
+      el.classList.remove('is-open');
+      el.classList.add('is-closing');
+      el.setAttribute('aria-hidden', 'true');
+      var ms = window.__motionMs('--modal-close-dur', 150);
+      setTimeout(function () {
+        if (!el.classList.contains('is-open')) {
+          el.classList.add('hidden');
+          el.classList.remove('is-closing');
+        }
+      }, ms + 20);
+    };
+    window.loginError = function (msg) {
+      var box = document.querySelector('.login-box');
+      var el = document.getElementById('login-error');
+      if (el) el.textContent = msg || '';
+      if (!box) return;
+      box.classList.add('is-error');
+      clearTimeout(box.__revertTimer);
+      box.__revertTimer = setTimeout(function () {
+        box.classList.remove('is-error');
+      }, window.__motionMs('--revert-hold', 4000));
+      /* cubic-bezier shake, 6px / -6px / 4px overshoot */
+      if (typeof box.animate === 'function') {
+        var d = window.__motionMs('--shake-distance', 6);
+        var o = window.__motionMs('--shake-overshoot', 4);
+        var e = 'cubic-bezier(0.22, 1, 0.36, 1)';
+        box.animate([
+          { transform: 'translateX(0px)', easing: e },
+          { transform: 'translateX(' + d + 'px)', easing: e },
+          { transform: 'translateX(' + (-d) + 'px)', easing: e },
+          { transform: 'translateX(' + o + 'px)', easing: e },
+          { transform: 'translateX(0px)' }
+        ], { duration: 280, easing: 'linear' });
+      }
+    };
+  </script>
 </head>
 <body>
 
@@ -755,6 +1016,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
       <div class="form-group"><label>نام کاربری</label><input type="text" id="login-username" class="input" dir="ltr" style="text-align:left;" placeholder="نام کاربری خود را وارد کنید" autocomplete="username" autocapitalize="none" spellcheck="false" enterkeyhint="next"></div>
       <div class="form-group"><label>رمز عبور</label><input type="password" id="login-password" class="input" dir="ltr" style="text-align:left;" placeholder="رمز عبور خود را وارد کنید" autocomplete="current-password" enterkeyhint="go"></div>
       <button class="btn" style="width: 100%;" id="login-btn" onclick="handleLogin()">ورود به سیستم</button>
+      <p id="login-error" class="t-error-msg" role="alert" aria-live="polite"></p>
     </div>
   </div>
 
@@ -1426,9 +1688,9 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         document.getElementById('username-group').style.display = 'block';
         document.getElementById('password-group').style.display = 'block';
         populateManagersCheckboxes([]);
-        document.getElementById('user-modal').classList.remove('hidden');
+        openModalEl(document.getElementById('user-modal'));
     }
-    function closeUserModal() { document.getElementById('user-modal').classList.add('hidden'); }
+    function closeUserModal() { closeModalEl(document.getElementById('user-modal')); }
 
     function populateManagersCheckboxes(selectedIds) {
         const c = document.getElementById('u-manager-container'); c.innerHTML = '';
@@ -1473,9 +1735,9 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         document.getElementById('admin-pass-username-label').innerText = 'کاربر: ' + userName;
         document.getElementById('admin-new-password').value = '';
         document.getElementById('admin-confirm-password').value = '';
-        document.getElementById('admin-pass-modal').classList.remove('hidden');
+        openModalEl(document.getElementById('admin-pass-modal'));
     }
-    function closeAdminPassModal() { document.getElementById('admin-pass-modal').classList.add('hidden'); }
+    function closeAdminPassModal() { closeModalEl(document.getElementById('admin-pass-modal')); }
 
     async function submitAdminResetPass() {
         const userId = document.getElementById('admin-pass-user-id').value;
@@ -1537,12 +1799,12 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     async function handleLogin() {
       const user = document.getElementById('login-username').value.trim();
       const pass = document.getElementById('login-password').value.trim();
-      if (!user || !pass) return alert('نام کاربری و رمز را وارد کنید');
+      if (!user || !pass) return loginError('نام کاربری و رمز عبور را وارد کنید');
       const btn = document.getElementById('login-btn');
       btn.disabled = true; btn.innerText = 'در حال ورود...';
       const res = await callBackend('login', { username: user, password: pass });
       if (res.ok) { currentUser = res.user; showContactsView(); loadNotifications(); startHeartbeat(); subscribePush({ silent: true }).catch(function () {}); }
-      else { alert(res.error); }
+      else { loginError(res.error || 'ورود ناموفق بود، دوباره تلاش کنید'); }
       btn.disabled = false; btn.innerText = 'ورود به سیستم';
     }
 
@@ -1585,7 +1847,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     }
 
     async function openNotifModal() {
-        document.getElementById('notif-modal').classList.remove('hidden');
+        openModalEl(document.getElementById('notif-modal'));
         const c = document.getElementById('notif-list-container');
         c.innerHTML = '<p class="empty-note">در حال دریافت...</p>';
         const res = await callBackend('getNotifications');
@@ -1606,7 +1868,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
             });
         }
     }
-    function closeNotifModal() { document.getElementById('notif-modal').classList.add('hidden'); }
+    function closeNotifModal() { closeModalEl(document.getElementById('notif-modal')); }
 
     async function loadContacts() {
       const c = document.getElementById('contacts-container');
@@ -2188,7 +2450,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         document.getElementById('username-group').style.display = 'none';
         document.getElementById('password-group').style.display = 'none';
         populateManagersCheckboxes(u.manager_id ? String(u.manager_id).split(',') : []);
-        document.getElementById('user-modal').classList.remove('hidden');
+        openModalEl(document.getElementById('user-modal'));
     }
 
     const jMonths = ["فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور", "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"];
@@ -2231,9 +2493,9 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     }
 
     async function openCreateModalFromProfile() {
-        document.getElementById('create-modal').classList.remove('hidden'); initCalendar();
+        openModalEl(document.getElementById('create-modal')); initCalendar();
     }
-    function closeCreateModal() { document.getElementById('create-modal').classList.add('hidden'); }
+    function closeCreateModal() { closeModalEl(document.getElementById('create-modal')); }
 
     async function submitNewTask() {
         const title = document.getElementById('task-title').value;
