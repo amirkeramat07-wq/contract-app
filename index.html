@@ -367,6 +367,8 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
 .chat-task-info { margin: 10px 14px 0; padding: 12px 15px; border-radius: var(--r-md); background: linear-gradient(160deg, rgba(255,255,255,.72), rgba(255,255,255,.44)); border: 1px solid var(--edge); box-shadow: var(--shadow-1), inset 0 1px 0 #fff; }
 .chat-task-info p { font-size: 13px; line-height: 1.75; color: var(--text); margin-bottom: 6px; }
 .chat-task-info .status { font-size: 11.5px; font-weight: 600; color: var(--text-light); }
+.chat-task-info .presence-online { display: inline-flex; align-items: center; gap: 5px; color: var(--success); font-weight: 700; }
+.chat-task-info .presence-online::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: var(--success); box-shadow: 0 0 0 3px rgba(52, 199, 89, .18); }
 
 .messages-area { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 16px 14px 8px; overflow-y: auto; -webkit-overflow-scrolling: touch; scroll-behavior: smooth; }
 .message { max-width: 84%; padding: 10px 14px; border-radius: var(--r-md); font-size: 14.5px; line-height: 1.75; word-wrap: break-word; animation: slideUp .3s cubic-bezier(.22, 1, .36, 1); }
@@ -1235,6 +1237,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     let lastMessageId = null;
     let lastMessageAt = null;
     let lastSeenCache = null;
+    let onlineCache = false;
     let lastPresenceAt = 0;
     let lastMarkReadAt = 0;
     let readSupport = true;
@@ -1247,6 +1250,15 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         if (!a) return b || null;
         if (!b) return a;
         return new Date(a).getTime() >= new Date(b).getTime() ? a : b;
+    }
+
+    // اگر آخرین ضربان حضور طرف مقابل خیلی تازه باشد، او آنلاین است
+    const ONLINE_WINDOW_MS = 120000;
+    function isUserOnline(seen) {
+        if (!seen) return false;
+        const t = new Date(seen).getTime();
+        if (isNaN(t)) return false;
+        return (Date.now() - t) < ONLINE_WINDOW_MS;
     }
 
     function markPresenceDirect() {
@@ -1561,6 +1573,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
                 task: task,
                 messages: messages,
                 otherUserLastSeen: latestOf(otherProfile && otherProfile.last_seen, lastOtherMsg && lastOtherMsg.created_at) || task.created_at,
+                otherUserOnline: isUserOnline(otherProfile && otherProfile.last_seen),
                 canDelete: myId === task.from_user_id,
                 otherUserId: otherUserId
             };
@@ -1601,9 +1614,11 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
 
             const lastOtherMsg = (msgs || []).filter(function (m) { return m.from_user_id === otherUserId; }).pop();
             let lastSeen = data.lastSeenCache || null;
+            let online = !!data.onlineCache;
             if (data.wantPresence) {
                 const { data: otherProfile } = await db.from('profiles').select('last_seen').eq('id', otherUserId).maybeSingle();
                 lastSeen = latestOf(otherProfile && otherProfile.last_seen, lastOtherMsg && lastOtherMsg.created_at) || null;
+                online = isUserOnline(otherProfile && otherProfile.last_seen);
             } else {
                 lastSeen = latestOf(lastSeen, lastOtherMsg && lastOtherMsg.created_at) || null;
             }
@@ -1614,6 +1629,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
                 newMessages: msgs || [],
                 myReadStates: myReadStates,
                 otherUserLastSeen: lastSeen,
+                otherUserOnline: online,
                 canDelete: myId === task.from_user_id,
                 otherUserId: otherUserId
             };
@@ -1724,7 +1740,11 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
                 const key = `${t.id}:${owner}:${type}`;
                 if (seen.has(key)) return;
                 seen.add(key);
-                notifs.push({ id: t.id, title: t.title, status: t.status, message: msg, type, owner });
+                const dueAt = t.due_date ? dueDateTime(t) : null;
+                notifs.push({
+                    id: t.id, title: t.title, status: t.status, message: msg, type, owner,
+                    due: (dueAt && !isNaN(dueAt.getTime())) ? dueAt.toISOString() : null
+                });
             }
             function dueDateTime(t) {
                 if (!t.due_date) return null;
@@ -1737,7 +1757,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
                 .in('status', ['در انتظار', 'در حال انجام', 'گذشته از مهلت']);
 
             (incoming || []).forEach(t => {
-                if (isRead(t.id) && t.status !== 'گذشته از مهلت') return;
+                // هر نوع اعلان مستقل بررسی می‌شود؛ بستن یک اعلان نباید اعلان‌های آیندهٔ همان موضوع را خاموش کند
                 const due = dueDateTime(t);
                 if (due && due < now) {
                     if (!isRead(t.id + ':late')) pushTaskNotif(t, 'danger', 'مهلت این موضوع گذشته است!', 'receiver');
@@ -1948,9 +1968,24 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         }
     }
 
-    function dismissTaskNotifs(taskId) {
-        // همهٔ حالت‌های اعلان این موضوع پاک می‌شوند تا دوباره برنگردد
-        [taskId, taskId + ':soon', taskId + ':doing', taskId + ':late', taskId + ':senderLate'].forEach(markRead);
+    function dismissTaskNotifs(notif) {
+        // فقط اعلان‌هایی که همین حالا برقرارند بسته می‌شوند؛
+        // هشدارهای آیندهٔ همان موضوع (نزدیک شدن مهلت، گذشته از مهلت) باید بعداً بیایند.
+        const taskId = notif && notif.id ? notif.id : notif;
+        if (!taskId) return;
+        markRead(taskId);
+        const now = Date.now();
+        const dueMs = notif && notif.due ? new Date(notif.due).getTime() : NaN;
+        const isLate = !isNaN(dueMs) && dueMs < now;
+        const isSoon = !isNaN(dueMs) && !isLate && (dueMs - now) <= 24 * 3600 * 1000;
+        if (isLate) {
+            markRead(taskId + ':late');
+            markRead(taskId + ':senderLate');
+        } else if (isSoon) {
+            // وقتی مهلت می‌گذرد، اعلان «گذشته از مهلت» تازه و جداگانه می‌آید
+            markRead(taskId + ':soon');
+        }
+        if (notif && notif.status === 'در حال انجام') markRead(taskId + ':doing');
         loadNotifications();
     }
 
@@ -1970,7 +2005,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
                     if (box && !box.querySelector('.notif-item')) {
                         box.innerHTML = '<p class="empty-note">اعلان جدیدی ندارید.</p>';
                     }
-                    dismissTaskNotifs(n.id);
+                    dismissTaskNotifs(n);
                     closeNotifModal();
                     openChat(n.id);
                 };
@@ -2047,6 +2082,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         lastMessageId = null;
         lastMessageAt = null;
         lastSeenCache = null;
+        onlineCache = false;
         lastPresenceAt = 0;
         renderedIds.clear();
         currentTaskData = null;
@@ -2063,7 +2099,8 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
             return;
         }
         currentTaskData = res.task;
-        updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete);
+        onlineCache = !!res.otherUserOnline;
+        updateTaskInfoUI(res.task, res.otherUserLastSeen, res.canDelete, onlineCache);
         const area = document.getElementById('messages-area');
         area.innerHTML = '';
         if (res.messages.length > 0) {
@@ -2189,12 +2226,14 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
                 since: lastMessageAt,
                 wantReadStates: true,
                 wantPresence: wantPresence,
-                lastSeenCache: lastSeenCache
+                lastSeenCache: lastSeenCache,
+                onlineCache: onlineCache
             });
             if (res.ok) {
                 currentTaskData = res.task;
                 if (res.otherUserLastSeen) lastSeenCache = res.otherUserLastSeen;
-                updateTaskInfoUI(res.task, lastSeenCache || res.task.created_at, res.canDelete);
+                onlineCache = !!res.otherUserOnline;
+                updateTaskInfoUI(res.task, lastSeenCache || res.task.created_at, res.canDelete, onlineCache);
 
                 const fresh = (res.newMessages || []).filter(function (m) { return !renderedIds.has(m.id); });
                 if (fresh.length > 0) {
@@ -2222,12 +2261,12 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     }
 
     let lastTaskInfoSignature = '';
-    function updateTaskInfoUI(task, lastSeen, canDelete) {
+    function updateTaskInfoUI(task, lastSeen, canDelete, online) {
         if (!task) return;
         const titleEl = document.getElementById('chat-title');
         if (titleEl && titleEl.innerText !== task.title) titleEl.innerText = task.title || '';
 
-        const signature = [task.description || '', task.status || '', task.due_date || '', task.due_time || '', lastSeen || '', canDelete ? 1 : 0].join('|');
+        const signature = [task.description || '', task.status || '', task.due_date || '', task.due_time || '', lastSeen || '', online ? 'on' : 'off', canDelete ? 1 : 0].join('|');
         if (signature === lastTaskInfoSignature) return;
         lastTaskInfoSignature = signature;
 
@@ -2235,7 +2274,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         if (details) {
             details.innerHTML = `
             <p>${task.description || 'بدون توضیحات'}</p>
-            <span class="status">مهلت: ${formatJalali(task.due_date)}${task.due_time ? ' - ' + task.due_time.slice(0, 5) : ''} | آخرین بازدید: ${timeAgo(lastSeen)}</span>
+            <span class="status">مهلت: ${formatJalali(task.due_date)}${task.due_time ? ' - ' + task.due_time.slice(0, 5) : ''} | ${online ? '<span class="presence-online">آنلاین</span>' : 'آخرین بازدید: ' + timeAgo(lastSeen)}</span>
         `;
         }
         const delBtn = document.getElementById('delete-task-btn');
