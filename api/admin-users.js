@@ -9,6 +9,13 @@ import { createClient } from '@supabase/supabase-js';
 const ALLOWED_ROLES = ['مدیر', 'رئیس', 'سرپرست', 'کارشناس'];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_NAME = 120;
+const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,29}$/;
+
+// ورود با «نام کاربری + @example.com» انجام می‌شود؛ پس ایمیل حساب احراز هویت
+// باید همیشه از روی همین نام کاربری ساخته شود.
+function loginEmail(username) {
+  return String(username).trim().toLowerCase() + '@example.com';
+}
 
 function bad(res, status, message) {
   return res.status(status).json({ error: message });
@@ -72,7 +79,34 @@ export default async function handler(req, res) {
   if (targetError) return bad(res, 500, 'خطا در دریافت کاربر');
   if (!target) return bad(res, 404, 'کاربر پیدا نشد');
 
+  // نام کاربری همان چیزی است که کاربر با آن وارد می‌شود؛ تغییرش باید ایمیل
+  // حساب احراز هویت را هم عوض کند، وگرنه ورود با نام قدیمی می‌ماند.
+  let nextUsername = target.username;
+  if (body.username !== undefined) {
+    const username = String(body.username).trim().toLowerCase();
+    if (!USERNAME_RE.test(username)) {
+      return bad(res, 400, 'نام کاربری باید ۳ تا ۳۰ کاراکتر انگلیسی، عدد، نقطه، خط تیره یا زیرخط باشد');
+    }
+    if (target.username === 'admin') {
+      if (username !== 'admin') return bad(res, 400, 'نام کاربری حساب مدیر سیستم قابل تغییر نیست');
+    } else if (username === 'admin') {
+      return bad(res, 400, 'این نام کاربری رزرو شده است');
+    } else if (username !== target.username) {
+      const { data: dup, error: dupError } = await admin
+        .from('profiles')
+        .select('id')
+        .eq('username', username)
+        .maybeSingle();
+      if (dupError) return bad(res, 500, 'خطا در بررسی نام کاربری');
+      if (dup && dup.id !== userId) {
+        return bad(res, 400, 'این نام کاربری قبلاً برای کاربر دیگری ثبت شده است');
+      }
+      nextUsername = username;
+    }
+  }
+
   const update = {};
+  if (nextUsername !== target.username) update.username = nextUsername;
 
   if (body.name !== undefined) {
     const name = String(body.name).trim();
@@ -99,7 +133,20 @@ export default async function handler(req, res) {
     update.active = body.active;
   }
 
-  if (Object.keys(update).length === 0) return bad(res, 400, 'تغییری برای ذخیره وجود ندارد');
+  // ایمیل ورود باید با نام کاربری هم‌خوان باشد؛ اگر قبلاً دستی عوض شده باشد
+  // (نام کاربری پروفایل جدید و ایمیل ورود قدیمی)، همین‌جا اصلاح می‌شود.
+  const desiredEmail = loginEmail(nextUsername);
+  const { data: authUserData, error: authUserError } = await admin.auth.admin.getUserById(userId);
+  if (authUserError) {
+    console.error('admin-users getUserById failed:', authUserError.message);
+    return bad(res, 500, 'خطا در دریافت حساب کاربر');
+  }
+  const currentEmail = authUserData && authUserData.user ? String(authUserData.user.email || '') : '';
+  const emailNeedsSync = currentEmail.toLowerCase() !== desiredEmail;
+
+  if (Object.keys(update).length === 0 && !emailNeedsSync) {
+    return bad(res, 400, 'تغییری برای ذخیره وجود ندارد');
+  }
 
   // محافظت از حساب مدیر سیستم: نه غیرفعال شود، نه نقشش عوض شود
   if (target.username === 'admin') {
@@ -109,11 +156,33 @@ export default async function handler(req, res) {
     }
   }
 
-  const { error: updateError } = await admin.from('profiles').update(update).eq('id', userId);
-  if (updateError) {
-    console.error('admin-users update failed:', updateError.message);
-    return bad(res, 500, 'خطا در ذخیرهٔ تغییرات');
+  if (emailNeedsSync) {
+    const { error: emailError } = await admin.auth.admin.updateUserById(userId, {
+      email: desiredEmail,
+      email_confirm: true,
+      user_metadata: { username: nextUsername },
+    });
+    if (emailError) {
+      console.error('admin-users email sync failed:', emailError.message);
+      return bad(res, 500, 'تغییر نام کاربری برای ورود ذخیره نشد؛ دوباره تلاش کنید');
+    }
   }
 
-  return res.status(200).json({ ok: true });
+  if (Object.keys(update).length > 0) {
+    const { error: updateError } = await admin.from('profiles').update(update).eq('id', userId);
+    if (updateError) {
+      console.error('admin-users update failed:', updateError.message);
+      // برگرداندن ایمیل ورود تا حساب با نام کاربریِ ذخیره‌نشده ناهم‌خوان نماند
+      if (emailNeedsSync && currentEmail) {
+        try {
+          await admin.auth.admin.updateUserById(userId, { email: currentEmail, email_confirm: true });
+        } catch (e) {
+          console.error('admin-users email rollback failed:', e && e.message);
+        }
+      }
+      return bad(res, 500, 'خطا در ذخیرهٔ تغییرات');
+    }
+  }
+
+  return res.status(200).json({ ok: true, username: nextUsername });
 }

@@ -1906,6 +1906,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         document.getElementById('u-role').value = 'کارشناس';
         document.getElementById('username-group').style.display = 'block';
         document.getElementById('password-group').style.display = 'block';
+        document.getElementById('u-username').readOnly = false;
         populateManagersCheckboxes([]);
         openModalEl(document.getElementById('user-modal'));
     }
@@ -1952,10 +1953,15 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         const manager_ids = Array.from(document.querySelectorAll('#u-manager-container input:checked')).map(cb => cb.value).join(',');
         if (!name || !role) return alert('نام و نقش الزامی است');
         if (editId) {
+            const username = document.getElementById('u-username').value.trim().toLowerCase();
+            if (!username) return alert('نام کاربری الزامی است');
+            if (!/^[a-z0-9][a-z0-9._-]{2,29}$/.test(username)) {
+                return alert('نام کاربری باید ۳ تا ۳۰ کاراکتر انگلیسی، عدد، نقطه، خط تیره یا زیرخط باشد');
+            }
             const btn = document.getElementById('save-user-btn');
             btn.disabled = true; btn.innerText = 'در حال ذخیره...';
             try {
-                await adminUpdateUser({ userId: editId, name, role, manager_id: manager_ids });
+                await adminUpdateUser({ userId: editId, username, name, role, manager_id: manager_ids });
                 closeUserModal(); loadAdminUsers();
             } catch (err) {
                 alert('خطا در ویرایش: ' + err.message);
@@ -2832,8 +2838,13 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         document.getElementById('u-name').value = u.name;
         document.getElementById('u-username').value = u.username;
         document.getElementById('u-role').value = u.role;
-        document.getElementById('username-group').style.display = 'none';
+        document.getElementById('username-group').style.display = 'block';
         document.getElementById('password-group').style.display = 'none';
+        const unameInput = document.getElementById('u-username');
+        unameInput.readOnly = (u.username === 'admin');
+        unameInput.title = (u.username === 'admin')
+            ? 'نام کاربری حساب مدیر سیستم قابل تغییر نیست'
+            : 'کاربر با این نام کاربری وارد می‌شود';
         populateManagersCheckboxes(u.manager_id ? String(u.manager_id).split(',') : []);
         openModalEl(document.getElementById('user-modal'));
     }
