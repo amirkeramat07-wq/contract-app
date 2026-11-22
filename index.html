@@ -1911,6 +1911,31 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     }
     function closeUserModal() { closeModalEl(document.getElementById('user-modal')); }
 
+    /* تغییر مشخصات کاربران از مسیر سرور؛ جدول profiles عمداً اجازهٔ UPDATE
+       برای دیگران را به کلاینت نمی‌دهد و این تغییر باید با تأیید ادمین انجام شود. */
+    async function adminUpdateUser(payload) {
+        const { data: sessionData } = await db.auth.getSession();
+        const session = sessionData && sessionData.session;
+        if (!session) throw new Error('نشست شما منقضی شده است؛ دوباره وارد شوید');
+        let res;
+        try {
+            res = await fetch('/api/admin-users', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + session.access_token
+                },
+                body: JSON.stringify(payload)
+            });
+        } catch (e) {
+            throw new Error('ارتباط با سرور برقرار نشد');
+        }
+        let body = null;
+        try { body = await res.json(); } catch (e) {}
+        if (!res.ok) throw new Error((body && body.error) || ('خطای سرور (' + res.status + ')'));
+        return body || { ok: true };
+    }
+
     function populateManagersCheckboxes(selectedIds) {
         const c = document.getElementById('u-manager-container'); c.innerHTML = '';
         cachedUsers.forEach(u => {
@@ -1927,8 +1952,16 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         const manager_ids = Array.from(document.querySelectorAll('#u-manager-container input:checked')).map(cb => cb.value).join(',');
         if (!name || !role) return alert('نام و نقش الزامی است');
         if (editId) {
-            const { error } = await db.from('profiles').update({ name, role, manager_id: manager_ids }).eq('id', editId);
-            if (!error) { closeUserModal(); loadAdminUsers(); } else { alert('خطا در ویرایش'); }
+            const btn = document.getElementById('save-user-btn');
+            btn.disabled = true; btn.innerText = 'در حال ذخیره...';
+            try {
+                await adminUpdateUser({ userId: editId, name, role, manager_id: manager_ids });
+                closeUserModal(); loadAdminUsers();
+            } catch (err) {
+                alert('خطا در ویرایش: ' + err.message);
+            } finally {
+                btn.disabled = false; btn.innerText = 'ذخیره';
+            }
         } else {
             const username = document.getElementById('u-username').value;
             const password = document.getElementById('u-password').value;
@@ -2784,8 +2817,12 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     }
 
     async function toggleUserStatus(id, currentStatus) {
-        await db.from('profiles').update({ active: !currentStatus }).eq('id', id);
-        loadAdminUsers();
+        try {
+            await adminUpdateUser({ userId: id, active: !currentStatus });
+            loadAdminUsers();
+        } catch (err) {
+            alert('خطا در تغییر وضعیت: ' + err.message);
+        }
     }
 
     function openEditUserModal(userId) {
