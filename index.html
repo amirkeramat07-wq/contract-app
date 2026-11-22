@@ -1439,6 +1439,11 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     function updateNotifBanner() {
         const bar = document.getElementById('notif-permission-bar');
         if (!bar) return;
+        if (appHasNativeBridge()) {
+            // در اپ اندروید، اعلان‌ها از مسیر بومی خود اپ مدیریت می‌شوند
+            bar.classList.add('hidden');
+            return;
+        }
         if (!('Notification' in window) || !('serviceWorker' in navigator)) {
             bar.classList.add('hidden');
             return;
@@ -1469,11 +1474,24 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         requestPushPermission();
     }
 
-    /* شمارندهٔ اعلان‌های نخوانده روی آیکون اپ (PWA/Badge API) */
+    /* آیا صفحه داخل اپ اندروید (WebView فلاتر) باز شده است؟ */
+    function appHasNativeBridge() {
+        return !!(window.flutter_inappwebview && typeof window.flutter_inappwebview.callHandler === 'function');
+    }
+
+    /* شمارندهٔ اعلان‌های نخوانده روی آیکون اپ:
+       در اپ اندروید با پل بومی فلاتر، در PWA با Badging API */
     function updateAppBadge(count) {
+        var n = Number(count) || 0;
+        if (n < 0) n = 0;
+        try {
+            if (appHasNativeBridge()) {
+                window.flutter_inappwebview.callHandler('appBadge', n).catch(function () {});
+            }
+        } catch (e) {}
         try {
             if (!('setAppBadge' in navigator)) return;
-            if (count > 0) navigator.setAppBadge(count);
+            if (n > 0) navigator.setAppBadge(n);
             else if (navigator.clearAppBadge) navigator.clearAppBadge();
         } catch (e) {}
     }
@@ -1990,6 +2008,12 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         updateNotifBanner();
         if (currentUser) loadNotifications();
     });
+
+    // هر ۶۰ ثانیه در حالت باز بودن صفحه، شمارندهٔ اعلان‌ها و بج تازه می‌شود
+    setInterval(function() {
+        if (document.visibilityState !== 'visible' || !currentUser) return;
+        loadNotifications();
+    }, 60000);
 
     function showContactsView() {
         document.getElementById('login-view').classList.add('hidden');
