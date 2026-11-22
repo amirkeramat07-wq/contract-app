@@ -302,6 +302,31 @@ textarea.input { resize: vertical; min-height: 84px; line-height: 1.8; }
 .bell-badge { position: absolute; top: 2px; left: 2px; min-width: 15px; height: 15px; background: linear-gradient(180deg, #d9524a, var(--danger)); border: 2px solid #fff; border-radius: 50%; display: none; box-shadow: 0 2px 6px rgba(192, 57, 43, .5); }
 
 .search-container { padding: 12px 16px 6px; }
+.notif-permission-bar {
+    display: flex; align-items: center; gap: 10px;
+    margin: 4px 16px 6px; padding: 9px 12px;
+    border-radius: var(--r-sm);
+    background: var(--glass-mid);
+    border: 1px solid rgba(180, 99, 31, .38);
+    box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, .45);
+    animation: slideUp .45s cubic-bezier(.22, 1, .36, 1);
+}
+.npb-icon { flex-shrink: 0; display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; color: #b4631f; }
+.npb-icon svg { width: 20px; height: 20px; }
+.npb-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; line-height: 1.4; }
+.npb-text strong { font-size: 12.5px; font-weight: 800; color: var(--navy); }
+.npb-text span { font-size: 11.5px; color: var(--text-light); }
+.npb-btn {
+    flex-shrink: 0; padding: 7px 13px; border: none; border-radius: 999px;
+    font-family: inherit; font-size: 12px; font-weight: 800; color: #fff; cursor: pointer;
+    background: linear-gradient(180deg, #e0933f, #b4631f);
+    box-shadow: 0 4px 10px rgba(160, 86, 20, .28), inset 0 1px 0 rgba(255, 255, 255, .45);
+    transition: transform .15s ease, filter .2s ease;
+}
+.npb-btn:active { transform: scale(.95); }
+html[data-theme="dark"] .notif-permission-bar { border-color: rgba(224, 147, 63, .42); box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, .06); }
+html[data-theme="dark"] .npb-icon { color: #e8ab60; }
+html[data-theme="dark"] .npb-text strong { color: #eef2f8; }
 .search-input { width: 100%; padding: 12px 18px; border-radius: 999px; border: 1px solid var(--edge); background: rgba(255, 255, 255, .62); font-size: 14.5px; color: var(--text); outline: none; box-shadow: inset 0 1px 2px rgba(27, 42, 74, .05), inset 0 1px 0 #fff; transition: box-shadow .25s, background .25s; }
 .search-input:focus { background: rgba(255, 255, 255, .88); border-color: rgba(184, 53, 43, .45); box-shadow: 0 0 0 4px rgba(184, 53, 43, .1); }
 
@@ -1094,6 +1119,16 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     <div class="search-container">
         <input type="text" id="search-contacts" class="search-input" placeholder="جستجوی نام همکار..." oninput="filterContacts()">
     </div>
+    <div id="notif-permission-bar" class="notif-permission-bar hidden" role="status">
+        <span class="npb-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8.6a6 6 0 1 0-12 0c0 3.2-1 4.6-1.6 5.4-.3.4 0 1 .5 1h14.2c.5 0 .8-.6.5-1-.6-.8-1.6-2.2-1.6-5.4Z"/><path d="M9.6 18.3a2.6 2.6 0 0 0 4.8 0"/></svg>
+        </span>
+        <div class="npb-text">
+            <strong id="npb-title">اعلان‌ها را فعال کنید</strong>
+            <span id="npb-desc">تا پیام‌ها و مهلت‌ها را از دست ندهید.</span>
+        </div>
+        <button type="button" class="npb-btn" id="npb-btn" onclick="handleNotifBannerClick()">فعال‌سازی</button>
+    </div>
     <div class="contact-list" id="contacts-container"></div>
   </div>
 
@@ -1397,6 +1432,50 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
             console.error('Push setup error:', err);
             alert('خطا در فعال‌سازی اعلان‌ها: ' + err.message);
         }
+        updateNotifBanner();
+    }
+
+    /* نوار «فعال‌سازی اعلان‌ها» تا وقتی اجازهٔ اعلان داده نشده */
+    function updateNotifBanner() {
+        const bar = document.getElementById('notif-permission-bar');
+        if (!bar) return;
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+            bar.classList.add('hidden');
+            return;
+        }
+        if (Notification.permission === 'granted') {
+            bar.classList.add('hidden');
+            return;
+        }
+        const denied = Notification.permission === 'denied';
+        const title = document.getElementById('npb-title');
+        const desc = document.getElementById('npb-desc');
+        const btn = document.getElementById('npb-btn');
+        if (title) title.innerText = denied ? 'اعلان‌ها مسدود شده‌اند' : 'اعلان‌ها را فعال کنید';
+        if (desc) desc.innerText = denied
+            ? 'برای دریافت اعلان، از تنظیمات مرورگر اجازهٔ اعلان را بدهید.'
+            : 'تا پیام‌ها و مهلت‌ها را از دست ندهید.';
+        if (btn) btn.innerText = denied ? 'چگونه؟' : 'فعال‌سازی';
+        bar.classList.remove('hidden');
+    }
+
+    function showNotifPermissionHelp() {
+        alert('برای فعال‌سازی اعلان:\nروی آیکون قفل کنار آدرس سایت بزنید ← اعلان‌ها ← اجازه.\nدر گوشی: تنظیمات مرورگر ← اعلان‌ها ← این سایت ← اجازه.');
+    }
+
+    function handleNotifBannerClick() {
+        if (!('Notification' in window)) return;
+        if (Notification.permission === 'denied') { showNotifPermissionHelp(); return; }
+        requestPushPermission();
+    }
+
+    /* شمارندهٔ اعلان‌های نخوانده روی آیکون اپ (PWA/Badge API) */
+    function updateAppBadge(count) {
+        try {
+            if (!('setAppBadge' in navigator)) return;
+            if (count > 0) navigator.setAppBadge(count);
+            else if (navigator.clearAppBadge) navigator.clearAppBadge();
+        } catch (e) {}
     }
 
     async function triggerPush(targetUserId, title, body, taskId) {
@@ -1906,6 +1985,12 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         }
     });
 
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState !== 'visible') return;
+        updateNotifBanner();
+        if (currentUser) loadNotifications();
+    });
+
     function showContactsView() {
         document.getElementById('login-view').classList.add('hidden');
         document.getElementById('contacts-view').classList.remove('hidden');
@@ -1915,6 +2000,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         document.getElementById('drawer-name').innerText = currentUser.name;
         document.getElementById('drawer-role').innerText = currentUser.role;
         document.getElementById('drawer-admin-btn').style.display = currentUser.username === 'admin' ? 'flex' : 'none';
+        updateNotifBanner();
         loadContacts();
     }
 
@@ -1933,6 +2019,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
     async function handleLogout() {
         if (heartbeatInterval) { clearInterval(heartbeatInterval); heartbeatInterval = null; }
         stopRecordingTimer();
+        updateAppBadge(0);
         await callBackend('logout'); location.reload();
     }
 
@@ -1955,6 +2042,7 @@ html[data-theme="dark"] .message.other .msg-meta { color: #93a1b5; }
         if (!currentUser) return;
         const res = await callBackend('getNotifications');
         if (res.ok) {
+            updateAppBadge(res.notifications.length);
             const b = document.getElementById('bell-badge');
             const dbadge = document.getElementById('drawer-bell-badge');
             if (res.notifications.length > 0) {
