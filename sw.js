@@ -1,5 +1,5 @@
-const CACHE_NAME = 'contract-app-v28';
-const SHELL = ['./', './index.html', './manifest.json', './logo.png', './icon-192.png', './icon-512.png', './supabase.min.js'];
+const CACHE_NAME = 'contract-app-v29';
+const SHELL = ['./', './index.html', './app.js', './app-version.json', './manifest.json', './logo.png', './icon-192.png', './icon-512.png', './supabase.min.js'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -24,9 +24,12 @@ self.addEventListener('fetch', (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith('/api/')) return;
 
-  // صفحه اصلی: شبکه اول، کش به‌عنوان پشتیبان (تا نسخه جدید همیشه دیده شود)
+  // صفحه اصلی و کد اپ: شبکه اول، کش به‌عنوان پشتیبان
+  // (اگر app.js کش‌اول باشد، کاربر نسخهٔ جدید صفحه را با کد قدیمی می‌گیرد؛
+  // پس همان سیاست صفحه برای آن هم اعمال می‌شود.)
   const isNavigation = req.mode === 'navigate' || url.pathname === '/' || url.pathname.endsWith('/index.html');
-  if (isNavigation) {
+  const isCode = url.pathname.endsWith('/app.js') || url.pathname.endsWith('/app-version.json');
+  if (isNavigation || isCode) {
     event.respondWith(
       fetch(req)
         .then((res) => {
@@ -34,7 +37,12 @@ self.addEventListener('fetch', (event) => {
           caches.open(CACHE_NAME).then((c) => c.put(req, copy)).catch(() => {});
           return res;
         })
-        .catch(() => caches.match(req).then((hit) => hit || caches.match('./index.html')))
+        .catch(() =>
+          caches.match(req).then((hit) => {
+            if (hit) return hit;
+            return isNavigation ? caches.match('./index.html') : Response.error();
+          })
+        )
     );
     return;
   }

@@ -1,15 +1,24 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * ویرایش مشخصات کاربران توسط ادمین.
+ * مدیریت کاربران توسط ادمین و مدیران سلسله‌مراتبی.
  * چرا سرور؟ جدول profiles سیاست UPDATE برای «دیگران» ندارد و درست هم همین است؛
- * پس تغییر نقش/نام/مدیران/وضعیت با کلید سرویس و پس از احراز هویت ادمین انجام می‌شود.
+ * پس تغییر نقش/نام/مدیران/وضعیت/رمز با کلید سرویس و پس از احراز هویت انجام می‌شود.
+ *
+ * اکشن‌ها (body.action):
+ *   update        پیش‌فرض؛ ویرایش پروفایل
+ *   resetPassword تغییر رمز عبور + بستن نشست‌های فعال کاربر
+ *   audit         آخرین رخدادهای ثبت‌شده (فقط مدیر سیستم)
  */
 
 const ALLOWED_ROLES = ['مدیر', 'رئیس', 'سرپرست', 'کارشناس'];
+const ROLE_RANK = { 'مدیر': 4, 'رئیس': 3, 'سرپرست': 2, 'کارشناس': 1 };
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MAX_NAME = 120;
 const USERNAME_RE = /^[a-z0-9][a-z0-9._-]{2,29}$/;
+const MIN_PASSWORD = 6;
+const MAX_PASSWORD = 128;
+const MAX_SUBTREE_DEPTH = 6;
 
 // ورود با «نام کاربری + @example.com» انجام می‌شود؛ پس ایمیل حساب احراز هویت
 // باید همیشه از روی همین نام کاربری ساخته شود.
@@ -19,6 +28,95 @@ function loginEmail(username) {
 
 function bad(res, status, message) {
   return res.status(status).json({ error: message });
+}
+
+function clientIp(req) {
+  const raw = req.headers['x-forwarded-for'] || req.headers['x-real-ip'] || '';
+  return String(raw).split(',')[0].trim().slice(0, 60);
+}
+
+// ثبت رخداد امنیتی؛ اگر جدول audit_log نصب نشده باشد، جریان اصلی نباید بشکند.
+async function recordAudit(admin, req, entry) {
+  try {
+    const { error } = await admin.from('audit_log').insert({
+      actor_id: entry.actorId || null,
+      action: entry.action,
+      target_id: entry.targetId || null,
+      details: entry.details || {},
+      ip: clientIp(req),
+    });
+    if (error) console.warn('audit insert failed:', error.message);
+  } catch (e) {
+    console.warn('audit insert failed:', e && e.message);
+  }
+}
+
+// اگر ستون session_epoch هنوز ساخته نشده باشد، همان درخواست بدون آن ذخیره می‌شود.
+async function updateProfile(admin, userId, patch) {
+  const payload = { ...patch };
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const { error } = await admin.from('profiles').update(payload).eq('id', userId);
+    if (!error) return { ok: true };
+    const msg = String(error.message || '');
+    if (attempt === 0 && Object.prototype.hasOwnProperty.call(payload, 'session_epoch') && /session_epoch/i.test(msg)) {
+      delete payload.session_epoch;
+      continue;
+    }
+    console.error('admin-users update failed:', msg);
+    return { ok: false, error: { message: msg } };
+  }
+  return { ok: false, error: { message: 'update failed' } };
+}
+
+function isSystemAdmin(caller) {
+  return !!caller && caller.username === 'admin' && caller.active !== false;
+}
+
+// آیا کاربر هدف در زیرمجموعهٔ (مستقیم یا غیرمستقیم) این مدیر قرار دارد؟
+async function isInSubtree(admin, targetId, managerId) {
+  const seen = new Set([targetId]);
+  let frontier = [targetId];
+  for (let depth = 0; depth < MAX_SUBTREE_DEPTH && frontier.length; depth++) {
+    const { data: rows, error } = await admin
+      .from('profiles')
+      .select('id, manager_id')
+      .in('id', frontier);
+    if (error || !rows || rows.length === 0) return false;
+    const next = [];
+    for (const row of rows) {
+      const ids = String(row.manager_id || '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean);
+      if (ids.includes(managerId)) return true;
+      for (const id of ids) {
+        if (!seen.has(id)) {
+          seen.add(id);
+          next.push(id);
+        }
+      }
+    }
+    frontier = next;
+  }
+  return false;
+}
+
+async function authorize(admin, caller, target) {
+  if (isSystemAdmin(caller)) return { ok: true, admin: true };
+  const callerRank = ROLE_RANK[caller.role] || 0;
+  const targetRank = ROLE_RANK[target.role] || 0;
+  if (callerRank < ROLE_RANK['رئیس']) {
+    return { ok: false, status: 403, message: 'فقط مدیر سیستم و رئیس‌ها می‌توانند کاربران را تغییر دهند' };
+  }
+  if (target.username === 'admin') {
+    return { ok: false, status: 403, message: 'فقط مدیر سیستم می‌تواند حساب مدیر را تغییر دهد' };
+  }
+  if (targetRank >= callerRank) {
+    return { ok: false, status: 403, message: 'فقط می‌توانید زیردستان خودتان را تغییر دهید' };
+  }
+  const inTree = await isInSubtree(admin, target.id, caller.id);
+  if (!inTree) return { ok: false, status: 403, message: 'این کاربر زیرمجموعهٔ شما نیست' };
+  return { ok: true, admin: false };
 }
 
 export default async function handler(req, res) {
@@ -46,17 +144,19 @@ export default async function handler(req, res) {
   const callerId = userData && userData.user ? userData.user.id : null;
   if (userError || !callerId) return bad(res, 401, 'نشست شما معتبر نیست؛ دوباره وارد شوید');
 
-  // ۲) و باید ادمین سیستم باشد (بر اساس پروفایل، نه ادعای کلاینت)
+  // ۲) و باید مدیر سیستم یا مدیر یک زیرمجموعه باشد (بر اساس پروفایل، نه ادعای کلاینت)
   const { data: caller, error: callerError } = await admin
     .from('profiles')
-    .select('id, username, role, active')
+    .select('id, username, name, role, active, manager_id')
     .eq('id', callerId)
     .maybeSingle();
 
   if (callerError) return bad(res, 500, 'خطا در بررسی دسترسی');
-  if (!caller || caller.username !== 'admin' || caller.active === false) {
-    return bad(res, 403, 'فقط مدیر سیستم دسترسی دارد');
-  }
+  if (!caller || caller.active === false) return bad(res, 403, 'حساب شما فعال نیست');
+
+  const callerRank = ROLE_RANK[caller.role] || 0;
+  const canEnterPanel = isSystemAdmin(caller) || callerRank >= ROLE_RANK['رئیس'];
+  if (!canEnterPanel) return bad(res, 403, 'فقط مدیر سیستم و رئیس‌ها دسترسی دارند');
 
   const body = req.body || {};
   if (typeof body === 'string') {
@@ -65,6 +165,32 @@ export default async function handler(req, res) {
     } catch (e) {
       return bad(res, 400, 'بدنهٔ درخواست نامعتبر است');
     }
+  }
+
+  const action = String(body.action || 'update');
+
+  // ---- گزارش فعالیت (فقط مدیر سیستم) ----
+  if (action === 'audit') {
+    if (!isSystemAdmin(caller)) return bad(res, 403, 'فقط مدیر سیستم دسترسی دارد');
+    const { data: rows, error } = await admin
+      .from('audit_log')
+      .select('id, actor_id, action, target_id, details, ip, created_at')
+      .order('created_at', { ascending: false })
+      .limit(100);
+    if (error) {
+      console.error('admin-users audit read failed:', error.message);
+      return bad(res, 500, 'خطا در خواندن گزارش فعالیت (جدول audit_log ساخته شده است؟)');
+    }
+    const actorIds = Array.from(new Set((rows || []).map((r) => r.actor_id).filter(Boolean)));
+    let names = {};
+    if (actorIds.length) {
+      const { data: actors } = await admin.from('profiles').select('id, name').in('id', actorIds);
+      (actors || []).forEach((a) => { names[a.id] = a.name; });
+    }
+    return res.status(200).json({
+      ok: true,
+      entries: (rows || []).map((r) => ({ ...r, actor_name: names[r.actor_id] || null })),
+    });
   }
 
   const userId = String(body.userId || '').trim();
@@ -79,6 +205,38 @@ export default async function handler(req, res) {
   if (targetError) return bad(res, 500, 'خطا در دریافت کاربر');
   if (!target) return bad(res, 404, 'کاربر پیدا نشد');
 
+  const gate = await authorize(admin, caller, target);
+  if (!gate.ok) return bad(res, gate.status || 403, gate.message);
+
+  // ---- تغییر رمز عبور + بستن نشست‌های فعال ----
+  if (action === 'resetPassword') {
+    const newPassword = String(body.newPassword || '');
+    if (newPassword.length < MIN_PASSWORD || newPassword.length > MAX_PASSWORD) {
+      return bad(res, 400, 'رمز باید بین ' + MIN_PASSWORD + ' تا ' + MAX_PASSWORD + ' کاراکتر باشد');
+    }
+    const { error: passError } = await admin.auth.admin.updateUserById(userId, { password: newPassword });
+    if (passError) {
+      console.error('admin-users resetPassword failed:', passError.message);
+      return bad(res, 500, 'تغییر رمز انجام نشد: ' + passError.message);
+    }
+    // نشست‌های قبلی با تغییر «مهر نشست» باطل می‌شوند؛ اپ در ضربان بعدی
+    // خودش را بیرون می‌برد و سیاست امنیتی دیتابیس هم کاربر غیرمجاز را می‌بندد.
+    // اگر مدیر رمز خودش را عوض کند، نشست جاری‌اش نباید بسته شود.
+    const bumpEpoch = userId !== callerId;
+    const epoch = bumpEpoch
+      ? await updateProfile(admin, userId, { session_epoch: new Date().toISOString() })
+      : { ok: true };
+    if (!epoch.ok) console.warn('session_epoch bump failed (ستون ساخته نشده؟)');
+    await recordAudit(admin, req, {
+      actorId: callerId,
+      action: 'reset_password',
+      targetId: userId,
+      details: { target: target.username },
+    });
+    return res.status(200).json({ ok: true, sessionsRevoked: epoch.ok });
+  }
+
+  // ---- ویرایش پروفایل ----
   // نام کاربری همان چیزی است که کاربر با آن وارد می‌شود؛ تغییرش باید ایمیل
   // حساب احراز هویت را هم عوض کند، وگرنه ورود با نام قدیمی می‌ماند.
   let nextUsername = target.username;
@@ -117,6 +275,10 @@ export default async function handler(req, res) {
   if (body.role !== undefined) {
     const role = String(body.role).trim();
     if (!ALLOWED_ROLES.includes(role)) return bad(res, 400, 'نقش نامعتبر است');
+    // هیچ‌کس نمی‌تواند نقشی هم‌رتبه یا بالاتر از خودش بدهد (جز مدیر سیستم)
+    if (!gate.admin && (ROLE_RANK[role] || 0) >= callerRank) {
+      return bad(res, 403, 'نمی‌توانید نقشی هم‌رتبه یا بالاتر از خودتان تعیین کنید');
+    }
     update.role = role;
   }
 
@@ -168,10 +330,13 @@ export default async function handler(req, res) {
     }
   }
 
+  // غیرفعال‌سازی یا تغییر رمز باید نشست‌های باز را هم ببندد.
+  const revokeSessions = update.active === false || body.revokeSessions === true;
+  if (revokeSessions) update.session_epoch = new Date().toISOString();
+
   if (Object.keys(update).length > 0) {
-    const { error: updateError } = await admin.from('profiles').update(update).eq('id', userId);
-    if (updateError) {
-      console.error('admin-users update failed:', updateError.message);
+    const saved = await updateProfile(admin, userId, update);
+    if (!saved.ok) {
       // برگرداندن ایمیل ورود تا حساب با نام کاربریِ ذخیره‌نشده ناهم‌خوان نماند
       if (emailNeedsSync && currentEmail) {
         try {
@@ -184,5 +349,16 @@ export default async function handler(req, res) {
     }
   }
 
-  return res.status(200).json({ ok: true, username: nextUsername });
+  await recordAudit(admin, req, {
+    actorId: callerId,
+    action: 'update_user',
+    targetId: userId,
+    details: {
+      target: nextUsername,
+      fields: Object.keys(update),
+      deactivated: update.active === false,
+    },
+  });
+
+  return res.status(200).json({ ok: true, username: nextUsername, sessionsRevoked: revokeSessions });
 }
