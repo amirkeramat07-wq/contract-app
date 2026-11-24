@@ -1048,9 +1048,8 @@ async function forceLogout(reason) {
 
 /* ===== کاربران (پنل مدیریت) ===== */
 function canManageUsers() {
-    if (!currentUser) return false;
-    if (currentUser.username === 'admin') return true;
-    return ['مدیر', 'رئیس'].indexOf(currentUser.role) !== -1;
+    // فقط مدیر سیستم (username === admin) به مدیریت کاربران دسترسی دارد
+    return !!(currentUser && currentUser.username === "admin");
 }
 
 async function adminApi(payload) {
