@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * مدیریت کاربران توسط ادمین و مدیران سلسله‌مراتبی.
+ * مدیریت کاربران فقط توسط مدیر سیستم (username === 'admin').
  * چرا سرور؟ جدول profiles سیاست UPDATE برای «دیگران» ندارد و درست هم همین است؛
  * پس تغییر نقش/نام/مدیران/وضعیت/رمز با کلید سرویس و پس از احراز هویت انجام می‌شود.
+ * نقش رئیس/مدیر هم اگرچه دکمه را نمی‌بیند، با درخواست مستقیم هم رد می‌شود.
  *
  * اکشن‌ها (body.action):
  *   update        پیش‌فرض؛ ویرایش پروفایل
@@ -106,7 +107,7 @@ async function authorize(admin, caller, target) {
   const callerRank = ROLE_RANK[caller.role] || 0;
   const targetRank = ROLE_RANK[target.role] || 0;
   if (callerRank < ROLE_RANK['رئیس']) {
-    return { ok: false, status: 403, message: 'فقط مدیر سیستم و رئیس‌ها می‌توانند کاربران را تغییر دهند' };
+    return { ok: false, status: 403, message: 'فقط مدیر سیستم می‌تواند کاربران را تغییر دهد' };
   }
   if (target.username === 'admin') {
     return { ok: false, status: 403, message: 'فقط مدیر سیستم می‌تواند حساب مدیر را تغییر دهد' };
@@ -155,8 +156,9 @@ export default async function handler(req, res) {
   if (!caller || caller.active === false) return bad(res, 403, 'حساب شما فعال نیست');
 
   const callerRank = ROLE_RANK[caller.role] || 0;
-  const canEnterPanel = isSystemAdmin(caller) || callerRank >= ROLE_RANK['رئیس'];
-  if (!canEnterPanel) return bad(res, 403, 'فقط مدیر سیستم و رئیس‌ها دسترسی دارند');
+  // دروازهٔ اصلی: هر اکشنی (ویرایش، تغییر رمز، گزارش فعالیت) فقط برای مدیر سیستم.
+  // این بررسی بر اساس پروفایل سروری است، نه چیزی که کلاینت ادعا می‌کند.
+  if (!isSystemAdmin(caller)) return bad(res, 403, 'فقط مدیر سیستم دسترسی دارد');
 
   const body = req.body || {};
   if (typeof body === 'string') {
