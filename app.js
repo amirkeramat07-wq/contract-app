@@ -966,6 +966,7 @@ async function callBackend(action, data) {
         }
 
         if (action === 'createGroup') {
+            if (!canCreateGroup()) return { ok: false, error: 'فقط مدیر، رئیس و سرپرست می‌توانند گروه بسازند' };
             var name = String(data.name || '').trim();
             if (!name) return { ok: false, error: 'نام گروه الزامی است' };
             var groupIns = await db.from('chat_groups').insert({ name: name, created_by: myId }).select('id').single();
@@ -2307,6 +2308,14 @@ async function sendTextMessage() {
 }
 
 /* ===== گروه‌ها ===== */
+/* ساخت گروه فقط برای مدیر سیستم، مدیر، رئیس و سرپرست؛ کارشناس فقط می‌بیند و پیام می‌فرستد */
+var GROUP_CREATOR_ROLES = ['مدیر', 'رئیس', 'سرپرست'];
+function canCreateGroup() {
+    if (!currentUser) return false;
+    if (currentUser.username === 'admin') return true;
+    return GROUP_CREATOR_ROLES.indexOf(currentUser.role) !== -1;
+}
+
 async function openGroups() {
     closeDrawer();
     document.getElementById('contacts-view').classList.add('hidden');
@@ -2320,6 +2329,8 @@ function closeGroups() {
 }
 
 async function loadGroups() {
+    var addBtn = document.getElementById('add-group-btn');
+    if (addBtn) addBtn.style.display = canCreateGroup() ? 'block' : 'none';
     var container = document.getElementById('groups-list-container');
     container.innerHTML = '<p class="empty-note">در حال دریافت...</p>';
     var res = await callBackend('getGroups');
@@ -2329,7 +2340,9 @@ async function loadGroups() {
         return;
     }
     if (!res.groups.length) {
-        container.appendChild(el('p', 'empty-note', 'هنوز گروهی ندارید. با دکمهٔ بالا گروه بسازید.'));
+        container.appendChild(el('p', 'empty-note', canCreateGroup()
+            ? 'هنوز گروهی ندارید. با دکمهٔ بالا گروه بسازید.'
+            : 'هنوز گروهی ندارید.'));
         return;
     }
     res.groups.forEach(function (g) {
@@ -2349,6 +2362,7 @@ async function loadGroups() {
 }
 
 function openCreateGroupModal() {
+    if (!canCreateGroup()) return alert('فقط مدیر، رئیس و سرپرست می‌توانند گروه بسازند');
     var container = document.getElementById('group-members');
     container.innerHTML = '';
     if (!cachedUsers.length) {
@@ -2374,6 +2388,7 @@ function openCreateGroupModal() {
 function closeCreateGroupModal() { closeModalEl(document.getElementById('group-modal')); }
 
 async function submitNewGroup() {
+    if (!canCreateGroup()) return alert('فقط مدیر، رئیس و سرپرست می‌توانند گروه بسازند');
     var name = document.getElementById('group-name').value.trim();
     if (!name) return alert('نام گروه الزامی است');
     var memberIds = Array.prototype.slice
