@@ -617,7 +617,12 @@ async function callBackend(action, data) {
                 var legacyRes = await legacyPasswordLogin(data.username, data.password);
                 if (legacyRes.error) return { ok: false, error: legacyRes.error };
             }
-            var profileRes = await db.from('profiles').select('*').eq('id', authRes.data.user.id).single();
+            var loginSessionRes = await db.auth.getSession();
+            var loginSession = loginSessionRes && loginSessionRes.data ? loginSessionRes.data.session : null;
+            if (!loginSession || !loginSession.user) {
+                return { ok: false, error: 'ورود انجام شد اما نشست ساخته نشد؛ دوباره تلاش کنید' };
+            }
+            var profileRes = await db.from('profiles').select('*').eq('id', loginSession.user.id).single();
             if (profileRes.error) { await db.auth.signOut(); return { ok: false, error: 'پروفایل یافت نشد' }; }
             if (!profileRes.data.active) { await db.auth.signOut(); return { ok: false, error: 'حساب غیرفعال است' }; }
             try {
