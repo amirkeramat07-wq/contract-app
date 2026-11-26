@@ -633,7 +633,12 @@ async function callBackend(action, data) {
             return { ok: true, user: profileRes.data };
         }
 
-        if (action === 'logout') { await db.auth.signOut(); return { ok: true }; }
+        if (action === 'logout') {
+            // لینک‌های امضاشدهٔ صدا نباید پس از خروج در حافظه بمانند
+            try { signedUrlCache.clear(); } catch (e) {}
+            await db.auth.signOut();
+            return { ok: true };
+        }
 
         var sessionRes = await db.auth.getSession();
         var session = sessionRes && sessionRes.data ? sessionRes.data.session : null;
@@ -2033,6 +2038,12 @@ async function manualTranscribe(msgId, audioUrl, btn, box) {
     btn.disabled = true;
     try {
         var signed = await resolveAudioUrl(audioUrl);
+        if (!signed) {
+            alert('دریافت لینک صدا ناموفق بود؛ صفحه را دوباره باز کنید.');
+            btn.textContent = 'تبدیل به متن';
+            btn.disabled = false;
+            return;
+        }
         var res = await callBackend('manualTranscribe', { msgId: msgId, audioUrl: signed });
         if (res.ok) {
             var target = box || document.getElementById('trans-box-' + msgId);
@@ -2076,8 +2087,14 @@ async function resolveAudioUrl(value) {
 
     var res = await db.storage.from('voice-messages').createSignedUrl(path, SIGNED_URL_TTL);
     if (res.error || !res.data || !res.data.signedUrl) {
+        // ممکن است نشست هنوز بازیابی نشده باشد؛ یک بار پس از دریافت نشست دوباره تلاش می‌کنیم
+        try { await db.auth.getSession(); } catch (e) {}
+        res = await db.storage.from('voice-messages').createSignedUrl(path, SIGNED_URL_TTL);
+    }
+    if (res.error || !res.data || !res.data.signedUrl) {
+        // باکت خصوصی است؛ بدون لینک امضاشده نباید آدرس خام فایل به پخش‌کننده داده شود
         console.warn('signed url failed', res.error && res.error.message);
-        return value;
+        return null;
     }
     signedUrlCache.set(path, {
         url: res.data.signedUrl,
@@ -2104,6 +2121,11 @@ async function playAudioDirect(url, btn) {
     }
     btn.classList.add('is-loading');
     var src = await resolveAudioUrl(url);
+    if (!src) {
+        btn.classList.remove('is-loading', 'is-playing');
+        alert('لینک پخش صدا ساخته نشد؛ اینترنت را بررسی کنید و صفحه را دوباره باز کنید.');
+        return;
+    }
     globalAudioPlayer = new Audio(src);
     activePlayBtn = btn;
     globalAudioPlayer.play().then(function () {
@@ -2122,6 +2144,10 @@ async function playAudioDirect(url, btn) {
 
 async function downloadAudio(msgId, url) {
     var src = await resolveAudioUrl(url);
+    if (!src) {
+        alert('لینک دانلود صدا ساخته نشد؛ اینترنت را بررسی کنید و صفحه را دوباره باز کنید.');
+        return;
+    }
     try {
         var cache = await caches.open('voice-cache-v1');
         var response = await cache.match(src);
