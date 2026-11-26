@@ -373,6 +373,57 @@ function formatEmail(username) {
     return u + '@example.com';
 }
 
+// ورود سمت سرور: رمز هرگز در مرورگر بررسی نمی‌شود (شمارش تلاش و قفل موقت سمت سرور است)
+async function serverLoginRequest(username, password) {
+    var res;
+    try {
+        res = await fetch('/api/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, password: password })
+        });
+    } catch (e) {
+        return { error: 'اتصال به سرور برقرار نشد؛ اینترنت را بررسی کنید' };
+    }
+    var body = null;
+    try { body = await res.json(); } catch (e) { body = null; }
+    if (body && body.code === 'USER_NOT_FOUND') return { error: 'این نام کاربری وجود ندارد' };
+    if (body && body.code === 'BAD_PASSWORD') {
+        var left = typeof body.attemptsLeft === 'number' ? body.attemptsLeft : null;
+        if (left !== null && left > 0) return { error: 'رمز عبور اشتباه است (' + left + ' تلاش باقی مانده)' };
+        return { error: 'رمز عبور اشتباه است' };
+    }
+    if (body && body.code === 'ACCOUNT_LOCKED') {
+        return { error: body.error || 'حساب شما موقتاً قفل شده است؛ چند دقیقه بعد دوباره تلاش کنید' };
+    }
+    if (!res.ok) {
+        if (body && body.error) return { error: String(body.error) };
+        return { error: 'ورود ناموفق بود، دوباره تلاش کنید' };
+    }
+    var session = body && body.session;
+    if (session && session.access_token && session.refresh_token) return { session: session };
+    return {};
+}
+
+// مسیر پشتیبان برای وقتی سرور هنوز نسخهٔ قدیمی است و نشستی برنمی‌گرداند
+async function legacyPasswordLogin(username, password) {
+    var resolved = await resolveLoginEmail(username);
+    if (resolved && resolved.error) {
+        if (resolved.code === 'USER_NOT_FOUND' || resolved.status === 404) {
+            return { error: 'این نام کاربری وجود ندارد' };
+        }
+        return { error: resolved.error };
+    }
+    var email = (resolved && resolved.email) || formatEmail(username);
+    var authRes = await db.auth.signInWithPassword({ email: email, password: password });
+    if (authRes.error) {
+        // اگر سرور نام کاربری را تأیید کرده باشد، خطای احراز هویت یعنی رمز نادرست است
+        if (resolved && resolved.email) return { error: 'رمز عبور اشتباه است' };
+        return { error: 'نام کاربری یا رمز اشتباه است' };
+    }
+    return {};
+}
+
 async function resolveLoginEmail(username) {
     try {
         var res = await fetch('/api/login', {
@@ -550,20 +601,21 @@ async function callBackend(action, data) {
         if (!db) return { ok: false, error: 'سیستم در حال بارگذاری است. لطفاً اینترنت را بررسی کنید.' };
 
         if (action === 'login') {
-            var resolved = await resolveLoginEmail(data.username);
-            if (resolved && resolved.error) {
-                // نام کاربری ناموجود را از بقیهٔ خطاها (نامعتبر، غیرفعال، محدودیت نرخ) جدا نشان می‌دهیم
-                if (resolved.code === 'USER_NOT_FOUND' || resolved.status === 404) {
-                    return { ok: false, error: 'این نام کاربری وجود ندارد' };
+            // رمز در مرورگر بررسی نمی‌شود؛ سرور آن را می‌سنجد، تلاش‌ها را می‌شمارد و نشست را برمی‌گرداند
+            var loginRes = await serverLoginRequest(data.username, data.password);
+            if (loginRes.error) return { ok: false, error: loginRes.error };
+            if (loginRes.session) {
+                var setRes = await db.auth.setSession({
+                    access_token: loginRes.session.access_token,
+                    refresh_token: loginRes.session.refresh_token
+                });
+                if (setRes.error || !setRes.data || !setRes.data.session) {
+                    return { ok: false, error: 'ورود انجام شد اما نشست ساخته نشد؛ دوباره تلاش کنید' };
                 }
-                return { ok: false, error: resolved.error };
-            }
-            var email = (resolved && resolved.email) || formatEmail(data.username);
-            var authRes = await db.auth.signInWithPassword({ email: email, password: data.password });
-            if (authRes.error) {
-                // اگر سرور نام کاربری را تأیید کرده باشد، خطای احراز هویت یعنی رمز نادرست است
-                if (resolved && resolved.email) return { ok: false, error: 'رمز عبور اشتباه است' };
-                return { ok: false, error: 'نام کاربری یا رمز اشتباه است' };
+            } else {
+                // سرور نسخهٔ قدیمی (بدون نشست): مسیر پشتیبان تا پایان انتشار
+                var legacyRes = await legacyPasswordLogin(data.username, data.password);
+                if (legacyRes.error) return { ok: false, error: legacyRes.error };
             }
             var profileRes = await db.from('profiles').select('*').eq('id', authRes.data.user.id).single();
             if (profileRes.error) { await db.auth.signOut(); return { ok: false, error: 'پروفایل یافت نشد' }; }
