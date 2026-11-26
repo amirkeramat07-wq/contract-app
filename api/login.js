@@ -67,7 +67,8 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'خطا در بررسی نام کاربری' });
   }
   if (!profile) {
-    return res.status(404).json({ error: 'نام کاربری یا رمز اشتباه است' });
+    // کد ماشینی به کلاینت اجازه می‌دهد پیام «نام کاربری ناموجود» را از «رمز اشتباه» جدا کند
+    return res.status(404).json({ error: 'این نام کاربری وجود ندارد', code: 'USER_NOT_FOUND' });
   }
   if (profile.active === false) {
     return res.status(403).json({ error: 'حساب غیرفعال است' });

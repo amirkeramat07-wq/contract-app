@@ -383,7 +383,7 @@ async function resolveLoginEmail(username) {
         var body = null;
         try { body = await res.json(); } catch (e) { body = null; }
         if (res.ok && body && body.email) return { email: String(body.email) };
-        if (body && body.error) return { error: String(body.error) };
+        if (body && body.error) return { error: String(body.error), code: body.code || null, status: res.status };
         // سرور در دسترس نیست: مسیر پشتیبان (رفتار قدیمی) استفاده می‌شود
         return null;
     } catch (e) {
@@ -551,10 +551,20 @@ async function callBackend(action, data) {
 
         if (action === 'login') {
             var resolved = await resolveLoginEmail(data.username);
-            if (resolved && resolved.error) return { ok: false, error: resolved.error };
+            if (resolved && resolved.error) {
+                // نام کاربری ناموجود را از بقیهٔ خطاها (نامعتبر، غیرفعال، محدودیت نرخ) جدا نشان می‌دهیم
+                if (resolved.code === 'USER_NOT_FOUND' || resolved.status === 404) {
+                    return { ok: false, error: 'این نام کاربری وجود ندارد' };
+                }
+                return { ok: false, error: resolved.error };
+            }
             var email = (resolved && resolved.email) || formatEmail(data.username);
             var authRes = await db.auth.signInWithPassword({ email: email, password: data.password });
-            if (authRes.error) return { ok: false, error: 'نام کاربری یا رمز اشتباه است' };
+            if (authRes.error) {
+                // اگر سرور نام کاربری را تأیید کرده باشد، خطای احراز هویت یعنی رمز نادرست است
+                if (resolved && resolved.email) return { ok: false, error: 'رمز عبور اشتباه است' };
+                return { ok: false, error: 'نام کاربری یا رمز اشتباه است' };
+            }
             var profileRes = await db.from('profiles').select('*').eq('id', authRes.data.user.id).single();
             if (profileRes.error) { await db.auth.signOut(); return { ok: false, error: 'پروفایل یافت نشد' }; }
             if (!profileRes.data.active) { await db.auth.signOut(); return { ok: false, error: 'حساب غیرفعال است' }; }
