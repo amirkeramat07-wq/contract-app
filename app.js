@@ -2590,26 +2590,62 @@ async function submitNewTask() {
 }
 
 /* ===== به‌روزرسانی اپ اندروید ===== */
-async function checkAppUpdate() {
+// نسخهٔ APKهای ۱.۱.۲ که پل نسخه ندارند؛ پس از عبور همه از نسخهٔ ۴ قابل حذف است.
+var LEGACY_NATIVE_VERSION_CODE = 4;
+var APP_UPDATE_DISMISSED_KEY = 'app_update_dismissed_code';
+var appUpdateLastCheck = 0;
+
+// نسخهٔ واقعی نصب‌شده را از پل بومی می‌خواند؛ null یعنی پل نسخه در دسترس نیست
+function getInstalledAppVersion() {
+    if (!appHasNativeBridge()) return Promise.resolve(null);
     try {
-        var res = await fetch('app-version.json?ts=' + Date.now(), { cache: 'no-store' });
+        return window.flutter_inappwebview.callHandler('getAppVersion').then(function (info) {
+            var code = parseInt(info && info.versionCode, 10) || 0;
+            if (!code) return null;
+            return { versionCode: code, versionName: (info && info.versionName) || '' };
+        }).catch(function () { return null; });
+    } catch (e) {
+        return Promise.resolve(null);
+    }
+}
+
+async function checkAppUpdate(force) {
+    try {
+        // این نوار فقط برای نصب اندروید معنا دارد
+        if (!appHasNativeBridge()) { hideAppUpdateBar(); return; }
+        var now = Date.now();
+        if (!force && appUpdateLastCheck && (now - appUpdateLastCheck) < 60000) return;
+        appUpdateLastCheck = now;
+        var res = await fetch('app-version.json?ts=' + now, { cache: 'no-store' });
         if (!res.ok) return;
         var info = await res.json();
         var code = parseInt(info && info.versionCode, 10) || 0;
         if (!code) return;
-        var seen = parseInt(localStorage.getItem('app_version_code') || '0', 10) || 0;
-        if (!seen) {
-            try { localStorage.setItem('app_version_code', String(code)); } catch (e) {}
-            return;
-        }
-        if (code > seen) {
+        var installed = await getInstalledAppVersion();
+        var installedCode = installed ? installed.versionCode : LEGACY_NATIVE_VERSION_CODE;
+        var dismissed = parseInt(localStorage.getItem(APP_UPDATE_DISMISSED_KEY) || '0', 10) || 0;
+        if (code > installedCode && code > dismissed) {
             appUpdateInfo = info;
             var bar = document.getElementById('update-bar');
             var text = document.getElementById('update-bar-text');
             if (text) text.textContent = 'نسخهٔ ' + (info.versionName || code) + ' اپ موجود است';
             if (bar) bar.classList.remove('hidden');
+        } else {
+            appUpdateInfo = null;
+            hideAppUpdateBar();
         }
     } catch (e) {}
+}
+
+function markAppUpdateDismissed() {
+    var code = parseInt(appUpdateInfo && appUpdateInfo.versionCode, 10) || 0;
+    if (!code) return;
+    try { localStorage.setItem(APP_UPDATE_DISMISSED_KEY, String(code)); } catch (e) {}
+}
+
+function hideAppUpdateBar() {
+    var bar = document.getElementById('update-bar');
+    if (bar) bar.classList.add('hidden');
 }
 
 function openAppUpdate() {
@@ -2620,24 +2656,31 @@ function openAppUpdate() {
     } catch (e) {
         url = String(appUpdateInfo.url);
     }
-    try {
-        if (appHasNativeBridge()) {
-            window.flutter_inappwebview.callHandler('openUrl', url).catch(function () {
-                window.open(url, '_blank');
-            });
-        } else {
+    // ناوبری به فایل APK باعث می‌شود WebView آن را به دانلودر (مرورگر) بسپارد؛
+    // window.open در WebView به‌طور پیش‌فرض مسدود است.
+    function openInBrowser() {
+        hideAppUpdateBar();
+        try {
+            window.location.href = url;
+        } catch (e) {
             window.open(url, '_blank');
         }
-    } catch (e) {
-        window.open(url, '_blank');
     }
-    try { localStorage.setItem('app_version_code', String(appUpdateInfo.versionCode || 0)); } catch (e) {}
-    dismissAppUpdate();
+    if (!appHasNativeBridge()) { openInBrowser(); return; }
+    try {
+        window.flutter_inappwebview.callHandler('openUrl', url).then(function (ok) {
+            // در نسخه‌های بدون هندلر openUrl پل مقدار null برمی‌گرداند، نه خطا
+            if (ok) { markAppUpdateDismissed(); hideAppUpdateBar(); }
+            else { openInBrowser(); }
+        }).catch(openInBrowser);
+    } catch (e) {
+        openInBrowser();
+    }
 }
 
 function dismissAppUpdate() {
-    var bar = document.getElementById('update-bar');
-    if (bar) bar.classList.add('hidden');
+    markAppUpdateDismissed();
+    hideAppUpdateBar();
 }
 
 /* ===== راه‌اندازی ===== */
@@ -2672,6 +2715,8 @@ window.addEventListener('load', function () {
 document.addEventListener('visibilitychange', function () {
     if (document.visibilityState !== 'visible') return;
     updateNotifBanner();
+    // بازگشت به اپ: نسخهٔ تازه را دوباره بررسی کن (حداکثر هر ۶۰ ثانیه)
+    checkAppUpdate();
     if (currentUser) {
         loadNotifications();
         loadUnreadCounts();
