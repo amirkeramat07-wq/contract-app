@@ -1,4 +1,4 @@
-const CACHE_NAME = 'contract-app-v31';
+const CACHE_NAME = 'contract-app-v32';
 const SHELL = ['./', './index.html', './app.js', './app-version.json', './manifest.json', './logo.png', './icon-192.png', './icon-512.png', './supabase.min.js'];
 
 self.addEventListener('install', (event) => {
